@@ -1,0 +1,138 @@
+.sponsors-section {
+  background-color: var(--color-bg);
+  position: relative;
+  overflow: hidden;
+}
+
+.blob-sponsors-cyan {
+  width: 400px;
+  height: 400px;
+  background: var(--color-accent);
+  top: 30%;
+  right: -10%;
+  opacity: 0.03;
+}
+
+.sponsors-layout {
+  display: flex;
+  flex-direction: column;
+  gap: 4rem;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.sponsor-tier {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.tier-name {
+  font-family: var(--font-heading);
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+  color: var(--color-text-secondary);
+  margin-bottom: 2rem;
+  position: relative;
+}
+
+.tier-name::after {
+  content: '';
+  position: absolute;
+  bottom: -6px;
+  left: 20%;
+  right: 20%;
+  height: 1px;
+  background: var(--gradient-blue-cyan);
+}
+
+.logos-grid {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 2rem;
+  width: 100%;
+}
+
+/* Base Logo Card */
+.sponsor-logo-box {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--card-border);
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+  cursor: pointer;
+}
+
+.sponsor-image {
+  max-width: 75%;
+  max-height: 55%;
+  object-fit: contain;
+  filter: grayscale(100%) brightness(0.8) opacity(0.5);
+  transition: all 0.4s ease;
+}
+
+.sponsor-logo-box:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.15);
+  transform: translateY(-4px) scale(1.02);
+  box-shadow: 0 10px 25px -10px rgba(0, 212, 255, 0.15);
+}
+
+.sponsor-logo-box:hover .sponsor-image {
+  filter: grayscale(0%) brightness(1.1) opacity(1);
+}
+
+/* Sizing by Tiers */
+.title-logo {
+  width: 280px;
+  height: 110px;
+}
+
+.gold-logo {
+  width: 220px;
+  height: 90px;
+}
+
+.silver-logo {
+  width: 180px;
+  height: 80px;
+}
+
+.partner-logo {
+  width: 160px;
+  height: 70px;
+  padding: 0.5rem;
+}
+
+/* Responsive Overrides */
+@media (max-width: 768px) {
+  .sponsors-layout {
+    gap: 3rem;
+  }
+  .title-logo {
+    width: 220px;
+    height: 90px;
+  }
+  .gold-logo {
+    width: 180px;
+    height: 80px;
+  }
+  .silver-logo {
+    width: 150px;
+    height: 75px;
+  }
+  .partner-logo {
+    width: 130px;
+    height: 65px;
+  }
+  .logos-grid {
+    gap: 1.25rem;
+  }
+}

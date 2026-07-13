@@ -1,0 +1,95 @@
+.eligibility-section {
+  background-color: var(--color-bg);
+  position: relative;
+}
+
+.blob-eligibility-cyan {
+  width: 400px;
+  height: 400px;
+  background: var(--color-accent);
+  bottom: 10%;
+  right: -5%;
+  opacity: 0.05;
+}
+
+.eligibility-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 2rem;
+}
+
+.eligibility-card {
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: 16px;
+  padding: 2.5rem;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  transition: all 0.3s ease;
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.eligibility-card:hover {
+  transform: translateY(-5px);
+  border-color: rgba(0, 212, 255, 0.25);
+  box-shadow: var(--glow-card), 0 15px 30px -10px rgba(0, 212, 255, 0.1);
+  background: var(--card-bg-hover);
+}
+
+.eligibility-icon-wrapper {
+  width: 50px;
+  height: 50px;
+  border-radius: 12px;
+  background: rgba(0, 212, 255, 0.06);
+  border: 1px solid rgba(0, 212, 255, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 1.5rem;
+  transition: all 0.3s ease;
+}
+
+.eligibility-card:hover .eligibility-icon-wrapper {
+  background: rgba(0, 212, 255, 0.15);
+  border-color: var(--color-accent);
+  box-shadow: var(--glow-accent);
+}
+
+.eligibility-icon {
+  font-size: 1.5rem;
+  color: var(--color-accent);
+}
+
+.eligibility-card-title {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--color-text);
+  margin-bottom: 0.75rem;
+}
+
+.eligibility-card-desc {
+  font-size: 0.9rem;
+  line-height: 1.6;
+  color: var(--color-text-secondary);
+}
+
+/* Responsive Overrides */
+@media (max-width: 1024px) {
+  .eligibility-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.5rem;
+  }
+}
+
+@media (max-width: 600px) {
+  .eligibility-grid {
+    grid-template-columns: 1fr;
+    gap: 1.25rem;
+  }
+  .eligibility-card {
+    padding: 2rem;
+  }
+}

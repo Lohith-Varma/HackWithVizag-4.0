@@ -1,0 +1,283 @@
+.rewards-section {
+  background-color: var(--color-bg-darker);
+  position: relative;
+  overflow: hidden;
+}
+
+.blob-rewards-purple {
+  width: 500px;
+  height: 500px;
+  background: var(--color-primary);
+  top: 10%;
+  left: -10%;
+  opacity: 0.05;
+}
+
+.blob-rewards-cyan {
+  width: 450px;
+  height: 450px;
+  background: var(--color-accent);
+  bottom: 10%;
+  right: -5%;
+  opacity: 0.05;
+}
+
+/* Total Prize Pool Banner */
+.prize-pool-banner {
+  background: linear-gradient(135deg, rgba(91, 95, 255, 0.05) 0%, rgba(0, 212, 255, 0.05) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 24px;
+  padding: 3rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2.5rem;
+  margin-bottom: 4rem;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  box-shadow: var(--glow-card);
+  position: relative;
+  overflow: hidden;
+}
+
+.prize-pool-banner::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.02), transparent);
+  transform: translateX(-100%);
+  animation: shine 4s infinite linear;
+}
+
+@keyframes shine {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+.banner-award-icon {
+  font-size: 4rem;
+  color: var(--color-accent);
+  filter: drop-shadow(0 0 10px rgba(0, 212, 255, 0.4));
+}
+
+.banner-info {
+  text-align: left;
+}
+
+.banner-label {
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  color: var(--color-text-secondary);
+}
+
+.banner-amount {
+  font-size: clamp(2.5rem, 5vw, 4rem);
+  font-weight: 900;
+  background: linear-gradient(135deg, #FFF 0%, var(--color-accent) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  line-height: 1.1;
+  margin: 0.25rem 0;
+}
+
+.banner-subtext {
+  font-size: 0.95rem;
+  color: var(--color-text-secondary);
+}
+
+/* Rewards Cards Grid */
+.rewards-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 2rem;
+  margin-bottom: 6rem;
+}
+
+.reward-card {
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: 20px;
+  padding: 2.5rem 2rem;
+  display: flex;
+  flex-direction: column;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+}
+
+.reward-card:hover {
+  transform: translateY(-8px);
+  border-color: var(--glow-color);
+  box-shadow: 0 15px 30px -10px rgba(0, 0, 0, 0.5), 0 0 20px rgba(255, 255, 255, 0.02), 0 5px 15px var(--glow-color);
+}
+
+.reward-card-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+
+.reward-icon-badge {
+  font-size: 1.25rem;
+  color: var(--color-accent);
+}
+
+.reward-type {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+.reward-prize-box {
+  margin-bottom: 2rem;
+  text-align: left;
+}
+
+.prize-label {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-text-secondary);
+}
+
+.reward-prize-value {
+  font-size: 2.25rem;
+  font-weight: 800;
+  color: var(--color-text);
+  margin-top: 0.25rem;
+  font-family: var(--font-heading);
+}
+
+.reward-perks-box {
+  border-top: 1px solid var(--card-border);
+  padding-top: 1.5rem;
+  flex-grow: 1;
+  text-align: left;
+}
+
+.perks-title {
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-text);
+  margin-bottom: 0.75rem;
+  font-weight: 700;
+}
+
+.reward-perks-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.reward-perks-list li {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+  line-height: 1.4;
+  color: var(--color-text-secondary);
+}
+
+.perk-check-icon {
+  color: var(--color-accent);
+  margin-top: 0.2rem;
+  flex-shrink: 0;
+}
+
+/* General Benefits Grid */
+.general-benefits-container {
+  border-top: 1px solid var(--card-border);
+  padding-top: 6rem;
+  position: relative;
+  z-index: 2;
+}
+
+.benefits-section-title {
+  font-size: 1.75rem;
+  margin-bottom: 3.5rem;
+  background: var(--gradient-text);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.benefits-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 2rem;
+}
+
+.benefit-item-card {
+  background: rgba(255, 255, 255, 0.01);
+  border: 1px solid var(--card-border);
+  border-radius: 16px;
+  padding: 2rem;
+  transition: all 0.3s ease;
+  text-align: left;
+}
+
+.benefit-item-card:hover {
+  background: rgba(255, 255, 255, 0.03);
+  border-color: rgba(91, 95, 255, 0.25);
+}
+
+.benefit-icon {
+  font-size: 1.75rem;
+  color: var(--color-primary);
+  margin-bottom: 1.25rem;
+}
+
+.benefit-item-card h5 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--color-text);
+  margin-bottom: 0.5rem;
+}
+
+.benefit-item-card p {
+  font-size: 0.875rem;
+  line-height: 1.5;
+  color: var(--color-text-secondary);
+}
+
+/* Responsive Overrides */
+@media (max-width: 1024px) {
+  .rewards-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.5rem;
+  }
+  .benefits-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.5rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .prize-pool-banner {
+    flex-direction: column;
+    padding: 2rem;
+    gap: 1.5rem;
+    text-align: center;
+  }
+  .banner-info {
+    text-align: center;
+  }
+}
+
+@media (max-width: 600px) {
+  .rewards-grid {
+    grid-template-columns: 1fr;
+    gap: 1.25rem;
+  }
+  .benefits-grid {
+    grid-template-columns: 1fr;
+    gap: 1.25rem;
+  }
+}

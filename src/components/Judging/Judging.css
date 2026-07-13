@@ -1,0 +1,150 @@
+.judging-section {
+  background-color: var(--color-bg);
+  position: relative;
+}
+
+.blob-judging-blue {
+  width: 500px;
+  height: 500px;
+  background: var(--color-accent);
+  top: 20%;
+  right: -10%;
+  opacity: 0.04;
+}
+
+.judging-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 2.5rem;
+}
+
+.judging-card {
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: 20px;
+  padding: 2.5rem;
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: var(--shadow-sm);
+}
+
+.judging-card:hover {
+  transform: translateY(-5px);
+  border-color: rgba(91, 95, 255, 0.25);
+  background: var(--card-bg-hover);
+  box-shadow: var(--glow-card), 0 20px 40px -15px rgba(91, 95, 255, 0.1);
+}
+
+/* SVG Circle Styling */
+.judging-graphic-box {
+  position: relative;
+  width: 100px;
+  height: 100px;
+  flex-shrink: 0;
+}
+
+.progress-svg {
+  width: 100%;
+  height: 100%;
+  transform: rotate(-90deg); /* Start progress fill from 12 o'clock */
+}
+
+.circle-track {
+  fill: none;
+  stroke: rgba(255, 255, 255, 0.03);
+  stroke-width: 6px;
+}
+
+.circle-fill {
+  fill: none;
+  stroke: var(--color-accent);
+  stroke-width: 6px;
+  stroke-linecap: round;
+  transition: stroke 0.3s ease;
+}
+
+.judging-card:hover .circle-fill {
+  stroke: var(--color-primary);
+  filter: drop-shadow(0 0 4px rgba(91, 95, 255, 0.5));
+}
+
+/* Icon inside SVG Ring */
+.judging-icon-wrapper {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2;
+}
+
+.judging-icon {
+  font-size: 1.5rem;
+  color: var(--color-text-secondary);
+  transition: color 0.3s ease;
+}
+
+.judging-card:hover .judging-icon {
+  color: var(--color-text);
+}
+
+/* Judging Text Details */
+.judging-info {
+  flex-grow: 1;
+}
+
+.judging-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.75rem;
+  gap: 1rem;
+}
+
+.judging-card-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--color-text);
+  line-height: 1.3;
+}
+
+.judging-percentage {
+  font-family: var(--font-heading);
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: var(--color-accent);
+  transition: color 0.3s ease;
+}
+
+.judging-card:hover .judging-percentage {
+  color: var(--color-primary);
+}
+
+.judging-card-desc {
+  font-size: 0.9rem;
+  line-height: 1.6;
+  color: var(--color-text-secondary);
+}
+
+/* Responsive Overrides */
+@media (max-width: 1024px) {
+  .judging-grid {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
+}
+
+@media (max-width: 600px) {
+  .judging-card {
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 2rem;
+    gap: 1.5rem;
+  }
+}
