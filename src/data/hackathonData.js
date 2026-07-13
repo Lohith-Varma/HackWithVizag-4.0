@@ -150,25 +150,25 @@ export const ELIGIBILITY_DATA = [
   {
     id: 'elig-1',
     title: 'Eligible Institutions',
-    desc: 'Open to all recognized engineering, science, business, and design colleges across the nation.',
+    desc: 'Open to all recognized engineering and science colleges across the nation.',
     icon: 'FiBookOpen'
   },
   {
     id: 'elig-2',
     title: 'Course & Stream',
-    desc: 'B.Tech, M.Tech, MCA, BCA, MBA, B.Sc, or equivalent technology/management backgrounds are eligible.',
+    desc: 'B.Tech or equivalent technology backgrounds are eligible.',
     icon: 'FiCode'
   },
   {
     id: 'elig-3',
     title: 'Year of Study',
-    desc: 'Students from 1st year to final year are allowed. Post-graduate and research scholars are also welcome.',
+    desc: 'Students from 1st year to final year are allowed.',
     icon: 'FiCalendar'
   },
   {
     id: 'elig-4',
     title: 'Team Composition',
-    desc: 'Min 2 to Max 4 members per team. Cross-college teams are permitted and highly encouraged.',
+    desc: 'Min 3 to Max 4 members per team. Cross-college teams are not permitted.',
     icon: 'FiUsers'
   },
   {
@@ -267,29 +267,29 @@ export const REWARDS_DATA = [
   {
     id: 'reward-1',
     type: 'Grand Winner',
-    prize: '₹ 1,00,000',
-    perks: ['Direct entry to Vizag StartUp Incubator', 'Internship opportunities at MarineTech Corp', 'Full travel reimbursement', 'Premium developer gadgets'],
+    prize: '₹ 40,000',
+    // perks: ['Direct entry to Vizag StartUp Incubator', 'Internship opportunities at MarineTech Corp', 'Full travel reimbursement', 'Premium developer gadgets'],
     glowColor: 'var(--color-accent)'
   },
   {
     id: 'reward-2',
     type: 'First Runner-Up',
-    prize: '₹ 60,000',
-    perks: ['Fast-tracked interview for internship rolls', 'Cloud credits worth $5,000', 'Smart Speaker and fitness trackers', 'Vizag incubation cohort entry'],
+    prize: '₹ 20,000',
+    // perks: ['Fast-tracked interview for internship rolls', 'Cloud credits worth $5,000', 'Smart Speaker and fitness trackers', 'Vizag incubation cohort entry'],
     glowColor: 'var(--color-primary)'
   },
   {
     id: 'reward-3',
     type: 'Second Runner-Up',
-    prize: '₹ 40,000',
-    perks: ['Cloud credits worth $2,500', 'Premium developer hoodies & kits', 'Direct mentorship from lead architects', 'Certificate of Merit'],
+    prize: '₹ 10,000',
+    // perks: ['Cloud credits worth $2,500', 'Premium developer hoodies & kits', 'Direct mentorship from lead architects', 'Certificate of Merit'],
     glowColor: 'var(--color-secondary)'
   },
   {
     id: 'reward-4',
     type: 'Category Specials',
-    prize: '₹ 10,000 Each',
-    perks: ['Special recognition awards (Best Design, Best Hardware, Girl Power)', 'Premium Hack With Vizag official hoodies', 'Community support networks'],
+    prize: '₹ 3,000 Each',
+    // perks: ['Special recognition awards (Best Design, Best Hardware, Girl Power)', 'Premium Hack With Vizag official hoodies', 'Community support networks'],
     glowColor: '#ffffff'
   }
 ];

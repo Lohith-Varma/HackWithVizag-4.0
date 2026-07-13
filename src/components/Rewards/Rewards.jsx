@@ -31,9 +31,9 @@ export default function Rewards() {
         <div className="section-header">
           <span className="section-subtitle">Prizes & Perks</span>
           <h2 className="section-title">Rewards & Benefits</h2>
-          <p className="section-description">
+          {/* <p className="section-description">
             Compete for high-value cash rewards, incubation seats, cloud credits, and direct internship opportunities with our tech partners.
-          </p>
+          </p> */}
         </div>
 
         {/* Highlighted Total Prize Pool Banner */}
@@ -47,8 +47,8 @@ export default function Rewards() {
           <FiAward className="banner-award-icon" />
           <div className="banner-info">
             <span className="banner-label">Total Prize Pool</span>
-            <h3 className="banner-amount">₹ 2,00,000+</h3>
-            <p className="banner-subtext">Plus incubation seats, cloud credits, and premium gadgets.</p>
+            <h3 className="banner-amount">₹ 1,00,000+</h3>
+            {/* <p className="banner-subtext">Plus incubation seats, cloud credits, and premium gadgets.</p> */}
           </div>
         </motion.div>
 
@@ -80,7 +80,7 @@ export default function Rewards() {
                 <h3 className="reward-prize-value">{reward.prize}</h3>
               </div>
 
-              <div className="reward-perks-box">
+              {/* <div className="reward-perks-box">
                 <h5 className="perks-title">Additional Perks:</h5>
                 <ul className="reward-perks-list">
                   {reward.perks.map((perk, index) => (
@@ -90,7 +90,7 @@ export default function Rewards() {
                     </li>
                   ))}
                 </ul>
-              </div>
+              </div> */}
             </motion.div>
           ))}
         </motion.div>
@@ -102,17 +102,17 @@ export default function Rewards() {
             <div className="benefit-item-card">
               <FiAward className="benefit-icon" />
               <h5>Certificates</h5>
-              <p>Official digital credentials backed by Vizag Tech Hub & partners.</p>
+              {/* <p>Official digital credentials backed by Vizag Tech Hub & partners.</p> */}
             </div>
-            <div className="benefit-item-card">
+            {/* <div className="benefit-item-card">
               <FiZap className="benefit-icon" />
               <h5>Mentorship</h5>
               <p>1-on-1 architecture feedback rounds with senior engineers.</p>
-            </div>
+            </div> */}
             <div className="benefit-item-card">
               <FiGift className="benefit-icon" />
               <h5>Swag & Kits</h5>
-              <p>Stickers, water bottles, and notebooks in official welcome kits.</p>
+              {/* <p>Stickers, water bottles, and notebooks in official welcome kits.</p> */}
             </div>
           </div>
         </div>
