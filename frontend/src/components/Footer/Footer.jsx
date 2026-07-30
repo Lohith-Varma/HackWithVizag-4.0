@@ -90,11 +90,11 @@ export default function Footer() {
             <ul className="footer-contact-list">
               <li>
                 <FiMapPin className="footer-info-icon" />
-                <span>Vizag Convention Centre, Visakhapatnam</span>
+                <span>NSRIT College, Visakhapatnam</span>
               </li>
               <li>
                 <FiMail className="footer-info-icon" />
-                <a href="mailto:support@hackwithvizag.in">support@hackwithvizag.in</a>
+                <a href="mailto:hackwithvizag@nsrit.edu.in">hackwithvizag@nsrit.edu.in</a>
               </li>
               <li>
                 <FiGlobe className="footer-info-icon" />

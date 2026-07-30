@@ -1,5 +1,15 @@
-node_modules
-# Keep environment variables out of version control
+node_modules/
 .env
-
-/src/generated/prisma
+storage/uploads/**
+!storage/uploads/
+!storage/uploads/ppt/
+!storage/uploads/collegeIds/
+!storage/uploads/profilePhotos/
+!storage/uploads/**/.gitkeep
+uploads/**
+!uploads/
+!uploads/ppt/
+!uploads/profile/
+!uploads/temp/
+!uploads/**/.gitkeep
+npm-debug.log*

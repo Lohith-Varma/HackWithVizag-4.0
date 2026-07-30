@@ -91,11 +91,11 @@ export default function Contact() {
             <div className="coordinators-box">
               <div className="coord-card">
                 <span className="coord-role">Faculty Coordinator</span>
-                <h4 className="coord-name">Dr. K. Raghavendra</h4>
+                <h4 className="coord-name">Dr. V. Sreerama Murthy</h4>
                 <p className="coord-desc">Associate Professor, Department of CSE</p>
                 <div className="coord-contact-item">
                   <FiPhone size={14} />
-                  <a href="tel:+919876543210">+91 98765 43210</a>
+                  <a href="tel:+919701254792">+91 97012 54792</a>
                 </div>
               </div>
 
@@ -105,11 +105,11 @@ export default function Contact() {
                 <p className="coord-desc">President, Tech Club HWV</p>
                 <div className="coord-contact-item">
                   <FiPhone size={14} />
-                  <a href="tel:+918765432109">+91 87654 32109</a>
+                  <a href="tel:+917670818348">+91 76708 18348</a>
                 </div>
                 <div className="coord-contact-item">
                   <FaWhatsapp size={14} />
-                  <a href="https://wa.me/918765432109" target="_blank" rel="noopener noreferrer">Chat on WhatsApp</a>
+                  <a href="https://wa.me/917670818348" target="_blank" rel="noopener noreferrer">Chat on WhatsApp</a>
                 </div>
               </div>
             </div>
@@ -120,14 +120,14 @@ export default function Contact() {
                 <FiMail className="info-icon" />
                 <div>
                   <h5>General Inquiry Email</h5>
-                  <a href="mailto:support@hackwithvizag.in">support@hackwithvizag.in</a>
+                  <a href="mailto:hackwithvizag@nsrit.edu.in">hackwithvizag@nsrit.edu.in</a>
                 </div>
               </div>
               <div className="info-row">
                 <FiMapPin className="info-icon" />
                 <div>
                   <h5>Venue Address</h5>
-                  <p>Vizag Convention Centre, Beach Road, Visakhapatnam, AP, 530003</p>
+                  <p>NSRIT, Sontyam village, Visakhapatnam</p>
                 </div>
               </div>
             </div>
@@ -135,8 +135,8 @@ export default function Contact() {
             {/* Styled Dark Map Embed */}
             <div className="map-embed-container">
               <iframe 
-                title="Vizag Convention Centre Location Map"
-                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3800.7077678581786!2d83.3364736148816!3d17.7291483878775!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3a3943485fb0c91d%3A0xc3cf3387b3227a92!2sVisakhapatnam+Convention+Centre!5e0!3m2!1sen!2sin!4v1542478492023"
+                title="NSRIT College Location Map"
+                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d919.3901730987361!2d83.29508233434073!3d17.86970218514252!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3a395ef65bddc04d%3A0x2e8c26b707b47ab6!2sNSRIT%20CSE%20BLOCK!5e0!3m2!1sen!2sin!4v1785404790650!5m2!1sen!2sin"
                 width="100%" 
                 height="220" 
                 style={{ border: 0 }} 
