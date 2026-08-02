@@ -57,7 +57,16 @@ export const updateProjectDetails = async (userId, projectId, payload) => {
     throw new ApiError(409, "Project details cannot be changed after review has started");
   }
 
-  const allowedFields = ["title", "theme", "problemStatement", "abstract"];
+  const allowedFields = [
+    "title",
+    "theme",
+    "problemStatement",
+    "abstract",
+    "innovationSummary",
+    "technologyStack",
+    "githubRepository",
+    "demoVideoUrl",
+  ];
   allowedFields.forEach((field) => {
     if (payload[field] !== undefined) {
       project[field] = payload[field];

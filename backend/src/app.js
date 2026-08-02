@@ -9,6 +9,7 @@ import { getDatabaseStatus } from "./config/database.js";
 import { errorHandler, notFoundHandler } from "./middleware/error.middleware.js";
 import adminRoutes from "./modules/admin/routes/admin.routes.js";
 import authRoutes from "./modules/auth/routes/auth.routes.js";
+import inquiryRoutes from "./modules/inquiries/routes/inquiry.routes.js";
 import offlineRegistrationRoutes from "./modules/offlineRegistration/routes/offlineRegistration.routes.js";
 import paymentRoutes from "./modules/payments/routes/payment.routes.js";
 import projectRoutes from "./modules/projects/routes/project.routes.js";
@@ -56,6 +57,7 @@ app.get("/api/health", (_req, res) => {
 });
 
 app.use("/api/auth", authRoutes);
+app.use("/api/inquiry", inquiryRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/teams", teamRoutes);
 app.use("/api/projects", projectRoutes);

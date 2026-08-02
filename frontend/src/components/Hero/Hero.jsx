@@ -165,11 +165,7 @@ export default function Hero() {
 
           {/* Action CTAs */}
           <motion.div variants={itemVariants} className="hero-ctas">
-            <a
-              href="#contact"
-              className="btn-hero-primary"
-              onClick={(e) => handleScrollToSection(e, 'contact')}
-            >
+            <a href="#auth" className="btn-hero-primary">
               Register Now <FiArrowRight />
             </a>
             <a

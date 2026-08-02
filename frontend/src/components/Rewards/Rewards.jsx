@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { FiCheck, FiAward, FiGift, FiZap } from 'react-icons/fi';
+import { FiAward, FiGift, FiZap } from 'react-icons/fi';
 import { REWARDS_DATA } from '../../data/hackathonData';
 import './Rewards.css';
 

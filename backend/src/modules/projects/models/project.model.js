@@ -33,6 +33,30 @@ const projectSchema = new mongoose.Schema(
       trim: true,
       maxlength: [5000, "Abstract must not exceed 5000 characters"],
     },
+    innovationSummary: {
+      type: String,
+      trim: true,
+      maxlength: [3000, "Innovation summary must not exceed 3000 characters"],
+      default: "",
+    },
+    technologyStack: {
+      type: String,
+      trim: true,
+      maxlength: [1000, "Technology stack must not exceed 1000 characters"],
+      default: "",
+    },
+    githubRepository: {
+      type: String,
+      trim: true,
+      maxlength: [300, "GitHub repository must not exceed 300 characters"],
+      default: "",
+    },
+    demoVideoUrl: {
+      type: String,
+      trim: true,
+      maxlength: [300, "Demo video URL must not exceed 300 characters"],
+      default: "",
+    },
     pptFile: {
       url: String,
       path: String,

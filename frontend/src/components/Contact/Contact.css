@@ -251,6 +251,12 @@
   letter-spacing: 0.02em;
 }
 
+.optional-tag {
+  font-size: 0.75rem;
+  color: var(--color-text-secondary);
+  font-weight: 400;
+}
+
 .form-group input, 
 .form-group textarea {
   width: 100%;

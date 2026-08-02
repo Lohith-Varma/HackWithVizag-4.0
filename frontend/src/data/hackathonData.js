@@ -294,45 +294,6 @@ export const REWARDS_DATA = [
   }
 ];
 
-export const JUDGES_MENTORS = [
-  {
-    id: 'spk-1',
-    name: 'Dr. Srinivas Rao',
-    designation: 'Director of Oceanographic AI Labs',
-    company: 'NIO Visakhapatnam',
-    expertise: 'Marine Tech & AI Models',
-    linkedin: '#',
-    image: 'https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&q=80&w=256&h=256'
-  },
-  {
-    id: 'spk-2',
-    name: 'Anjali Sharma',
-    designation: 'Lead Architect (Cloud Platform)',
-    company: 'Microsoft India',
-    expertise: 'Scalability & Cloud Systems',
-    linkedin: '#',
-    image: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&q=80&w=256&h=256'
-  },
-  {
-    id: 'spk-3',
-    name: 'Vikram Aditya',
-    designation: 'Co-Founder & VP of Engineering',
-    company: 'FinTech Wave',
-    expertise: 'Blockchain & Digital Payments',
-    linkedin: '#',
-    image: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&q=80&w=256&h=256'
-  },
-  {
-    id: 'spk-4',
-    name: 'Nisha Deshmukh',
-    designation: 'Principal UI/UX Product Designer',
-    company: 'Devfolio Labs',
-    expertise: 'Product Design & Ergonomics',
-    linkedin: '#',
-    image: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&fit=crop&q=80&w=256&h=256'
-  }
-];
-
 export const SPONSORS_DATA = {
   title: [
     { name: 'Google Cloud', logoUrl: 'https://upload.wikimedia.org/wikipedia/commons/5/51/Google_Cloud_logo.svg' },

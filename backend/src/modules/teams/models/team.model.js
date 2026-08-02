@@ -29,6 +29,21 @@ const teamSchema = new mongoose.Schema(
       default: "pending",
       index: true,
     },
+    remarks: {
+      type: String,
+      trim: true,
+      maxlength: [1200, "Remarks must not exceed 1200 characters"],
+      default: "",
+    },
+    reviewedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      default: null,
+    },
+    reviewedAt: {
+      type: Date,
+      default: null,
+    },
   },
   {
     timestamps: true,

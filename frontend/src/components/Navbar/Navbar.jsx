@@ -7,13 +7,7 @@ const NAV_LINKS = [
   { label: 'Home', href: '#home' },
   { label: 'About', href: '#about' },
   { label: 'Themes', href: '#themes' },
-  // { label: 'Timeline', href: '#timeline' },
-  // { label: 'Eligibility', href: '#eligibility' },
-  // { label: 'Rules', href: '#rules' },
-  // { label: 'Judging', href: '#judging' },
   { label: 'Rewards', href: '#rewards' },
-  // { label: 'Mentors', href: '#mentors' },
-  // { label: 'Sponsors', href: '#sponsors' },
   { label: 'FAQ', href: '#faq' },
   { label: 'Contact', href: '#contact' },
 ];
@@ -58,6 +52,11 @@ export default function Navbar() {
   const handleLinkClick = (e, href) => {
     e.preventDefault();
     setIsMobileMenuOpen(false);
+
+    if (href === '#auth' || href === '#dashboard' || href === '#registration') {
+      window.location.hash = href;
+      return;
+    }
     
     const targetId = href.substring(1);
     const element = document.getElementById(targetId);
@@ -69,6 +68,8 @@ export default function Navbar() {
       });
       // Fallback active setter
       setActiveSection(targetId);
+    } else {
+      window.location.hash = href;
     }
   };
 
@@ -108,7 +109,7 @@ export default function Navbar() {
           </ul>
 
           <div className="navbar-actions">
-            <a href="#contact" className="btn-register" onClick={(e) => handleLinkClick(e, '#contact')}>
+            <a href="#auth" className="btn-register" onClick={(e) => handleLinkClick(e, '#auth')}>
               Register Now
             </a>
             <button className="hamburger" onClick={toggleMobileMenu} aria-label="Toggle Menu">
@@ -146,9 +147,9 @@ export default function Navbar() {
               })}
               <li style={{ marginTop: '1.5rem', width: '100%', textAlign: 'center' }}>
                 <a
-                  href="#contact"
+                  href="#auth"
                   className="mobile-btn-register"
-                  onClick={(e) => handleLinkClick(e, '#contact')}
+                  onClick={(e) => handleLinkClick(e, '#auth')}
                 >
                   Register Now
                 </a>

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FiMail, FiPhone, FiMapPin, FiSend, FiCheckCircle, FiAlertCircle } from 'react-icons/fi';
 import { FaWhatsapp, FaTwitter, FaInstagram, FaGithub, FaLinkedin } from 'react-icons/fa';
+import { api } from '../../services/api';
 import './Contact.css';
 
 export default function Contact() {
@@ -9,22 +10,27 @@ export default function Contact() {
     name: '',
     email: '',
     phone: '',
-    teamName: '',
+    subject: '',
     message: '',
   });
 
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitStatus, setSubmitStatus] = useState(null); // 'success', 'error'
+  const [statusMessage, setStatusMessage] = useState('');
 
   const validateForm = () => {
     const newErrors = {};
-    if (!formData.name.trim()) newErrors.name = 'Name is required';
+    if (!formData.name.trim()) newErrors.name = 'Full name is required';
     
     if (!formData.email.trim()) {
-      newErrors.email = 'Email is required';
+      newErrors.email = 'Email address is required';
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
       newErrors.email = 'Enter a valid email address';
+    }
+
+    if (!formData.subject.trim()) {
+      newErrors.subject = 'Subject is required';
     }
     
     if (!formData.message.trim()) {
@@ -40,33 +46,38 @@ export default function Contact() {
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
-    // Clear error on input
     if (errors[name]) {
       setErrors((prev) => ({ ...prev, [name]: '' }));
     }
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!validateForm()) return;
 
     setIsSubmitting(true);
     setSubmitStatus(null);
+    setStatusMessage('');
 
-    // Simulate backend submission API call
-    setTimeout(() => {
+    try {
+      await api.submitInquiry(formData);
       setIsSubmitting(false);
       setSubmitStatus('success');
+      setStatusMessage('Your inquiry has been emailed to hackwithvizag@nsrit.edu.in. Our team will get back to you shortly.');
       setFormData({
         name: '',
         email: '',
         phone: '',
-        teamName: '',
+        subject: '',
         message: '',
       });
-      // Clear status after 5s
-      setTimeout(() => setSubmitStatus(null), 5000);
-    }, 1500);
+      setTimeout(() => setSubmitStatus(null), 7000);
+    } catch (error) {
+      setIsSubmitting(false);
+      setSubmitStatus('error');
+      setStatusMessage(error.message || 'Unable to send inquiry email right now. Please try again or email us directly at hackwithvizag@nsrit.edu.in.');
+      setTimeout(() => setSubmitStatus(null), 7000);
+    }
   };
 
   return (
@@ -80,7 +91,7 @@ export default function Contact() {
           <span className="section-subtitle">Get In Touch</span>
           <h2 className="section-title">Contact & Venue</h2>
           <p className="section-description">
-            Register your interest, submit queries, or reach out to our event management desk. We are here to support you.
+            Have questions about Hack With Vizag 4.0? Send a general inquiry directly to our organizing desk. No registration or login required.
           </p>
         </div>
 
@@ -160,12 +171,12 @@ export default function Contact() {
           {/* Column 2: Form */}
           <div className="contact-form-column">
             <div className="form-card-container">
-              <h3 className="form-title">Registration / Inquiry Form</h3>
-              <p className="form-subtitle">Fill in details to register your team or ask general questions.</p>
+              <h3 className="form-title">General Inquiry Form</h3>
+              <p className="form-subtitle">Anyone can send an inquiry directly to hackwithvizag@nsrit.edu.in. All fields marked with * are required.</p>
 
               <form onSubmit={handleSubmit} className="contact-form">
                 
-                {/* Name */}
+                {/* Full Name */}
                 <div className="form-group">
                   <label htmlFor="name">Full Name *</label>
                   <input 
@@ -175,30 +186,29 @@ export default function Contact() {
                     value={formData.name}
                     onChange={handleInputChange}
                     className={errors.name ? 'input-error' : ''}
-                    placeholder="Enter your name"
+                    placeholder="Enter your full name"
                   />
                   {errors.name && <span className="error-text"><FiAlertCircle /> {errors.name}</span>}
                 </div>
 
-                {/* Email */}
-                <div className="form-group">
-                  <label htmlFor="email">Email Address *</label>
-                  <input 
-                    type="email" 
-                    id="email"
-                    name="email" 
-                    value={formData.email}
-                    onChange={handleInputChange}
-                    className={errors.email ? 'input-error' : ''}
-                    placeholder="you@example.com"
-                  />
-                  {errors.email && <span className="error-text"><FiAlertCircle /> {errors.email}</span>}
-                </div>
-
-                {/* Grid for Phone & Team */}
+                {/* Email & Phone Grid */}
                 <div className="form-row-2">
                   <div className="form-group">
-                    <label htmlFor="phone">Phone Number</label>
+                    <label htmlFor="email">Email Address *</label>
+                    <input 
+                      type="email" 
+                      id="email"
+                      name="email" 
+                      value={formData.email}
+                      onChange={handleInputChange}
+                      className={errors.email ? 'input-error' : ''}
+                      placeholder="you@example.com"
+                    />
+                    {errors.email && <span className="error-text"><FiAlertCircle /> {errors.email}</span>}
+                  </div>
+
+                  <div className="form-group">
+                    <label htmlFor="phone">Phone Number <span className="optional-tag">(Optional)</span></label>
                     <input 
                       type="tel" 
                       id="phone"
@@ -208,22 +218,26 @@ export default function Contact() {
                       placeholder="+91 XXXXX XXXXX"
                     />
                   </div>
-                  <div className="form-group">
-                    <label htmlFor="teamName">Team Name</label>
-                    <input 
-                      type="text" 
-                      id="teamName"
-                      name="teamName" 
-                      value={formData.teamName}
-                      onChange={handleInputChange}
-                      placeholder="e.g. Code Wave"
-                    />
-                  </div>
+                </div>
+
+                {/* Subject */}
+                <div className="form-group">
+                  <label htmlFor="subject">Subject *</label>
+                  <input 
+                    type="text" 
+                    id="subject"
+                    name="subject" 
+                    value={formData.subject}
+                    onChange={handleInputChange}
+                    className={errors.subject ? 'input-error' : ''}
+                    placeholder="e.g. Query regarding timeline or eligibility"
+                  />
+                  {errors.subject && <span className="error-text"><FiAlertCircle /> {errors.subject}</span>}
                 </div>
 
                 {/* Message */}
                 <div className="form-group">
-                  <label htmlFor="message">Your Message / Inquiry *</label>
+                  <label htmlFor="message">Message *</label>
                   <textarea 
                     id="message"
                     name="message" 
@@ -231,7 +245,7 @@ export default function Contact() {
                     value={formData.message}
                     onChange={handleInputChange}
                     className={errors.message ? 'input-error' : ''}
-                    placeholder="Tell us about your team details or submit a query..."
+                    placeholder="Type your query or message here..."
                   ></textarea>
                   {errors.message && <span className="error-text"><FiAlertCircle /> {errors.message}</span>}
                 </div>
@@ -243,10 +257,10 @@ export default function Contact() {
                   disabled={isSubmitting}
                 >
                   {isSubmitting ? (
-                    <span className="submit-spinner">Sending...</span>
+                    <span className="submit-spinner">Sending Email...</span>
                   ) : (
                     <>
-                      Submit Application <FiSend className="btn-send-icon" />
+                      Send Inquiry <FiSend className="btn-send-icon" />
                     </>
                   )}
                 </button>
@@ -262,8 +276,33 @@ export default function Contact() {
                     >
                       <FiCheckCircle className="alert-icon-success" />
                       <div>
-                        <h5>Message Sent Successfully!</h5>
-                        <p>Thank you for reaching out. Our team will contact you shortly.</p>
+                        <h5>Inquiry Sent Successfully!</h5>
+                        <p>{statusMessage}</p>
+                      </div>
+                    </motion.div>
+                  )}
+
+                  {submitStatus === 'error' && (
+                    <motion.div 
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -10 }}
+                      className="submit-alert-error"
+                      style={{
+                        display: 'flex',
+                        gap: '0.75rem',
+                        padding: '1rem',
+                        borderRadius: '0.5rem',
+                        background: 'rgba(239, 68, 68, 0.1)',
+                        border: '1px solid rgba(239, 68, 68, 0.3)',
+                        color: '#f87171',
+                        marginTop: '1rem'
+                      }}
+                    >
+                      <FiAlertCircle className="alert-icon-error" size={20} style={{ flexShrink: 0, marginTop: '2px' }} />
+                      <div>
+                        <h5 style={{ margin: 0, fontWeight: 600, color: '#f87171' }}>Submission Failed</h5>
+                        <p style={{ margin: '0.25rem 0 0 0', fontSize: '0.875rem' }}>{statusMessage}</p>
                       </div>
                     </motion.div>
                   )}
