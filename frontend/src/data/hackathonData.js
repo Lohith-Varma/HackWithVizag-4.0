@@ -310,9 +310,9 @@ export const SPONSORS_DATA = {
     { name: 'Auth0', logoUrl: 'https://upload.wikimedia.org/wikipedia/commons/6/64/Auth0_Logo.svg' }
   ],
   partners: [
-    { name: 'AP Chamber of Commerce', logoUrl: 'https://via.placeholder.com/150x50/111/fff?text=AP+Chamber' },
-    { name: 'Vizag Tech Hub', logoUrl: 'https://via.placeholder.com/150x50/111/fff?text=Vizag+Hub' },
-    { name: 'CSI Visakhapatnam', logoUrl: 'https://via.placeholder.com/150x50/111/fff?text=CSI' }
+    { name: 'AP Chamber of Commerce', logoUrl: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="150" height="50" viewBox="0 0 150 50"><rect width="100%" height="100%" fill="%23111"/><text x="50%" y="50%" fill="%23fff" font-size="12" font-family="sans-serif" dominant-baseline="middle" text-anchor="middle">AP Chamber</text></svg>' },
+    { name: 'Vizag Tech Hub', logoUrl: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="150" height="50" viewBox="0 0 150 50"><rect width="100%" height="100%" fill="%23111"/><text x="50%" y="50%" fill="%23fff" font-size="12" font-family="sans-serif" dominant-baseline="middle" text-anchor="middle">Vizag Hub</text></svg>' },
+    { name: 'CSI Visakhapatnam', logoUrl: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="150" height="50" viewBox="0 0 150 50"><rect width="100%" height="100%" fill="%23111"/><text x="50%" y="50%" fill="%23fff" font-size="12" font-family="sans-serif" dominant-baseline="middle" text-anchor="middle">CSI</text></svg>' }
   ]
 };
 

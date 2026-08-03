@@ -9,6 +9,11 @@ const buildUserResponse = (user) => ({
   name: user.name,
   email: user.email,
   phone: user.phone,
+  college: user.college || user.collegeName || "",
+  collegeName: user.collegeName || user.college || "",
+  department: user.department || "",
+  year: user.year || "",
+  team: user.team ? user.team.toString() : null,
   role: user.role,
   status: user.status,
   profilePhoto: user.profilePhoto,
@@ -27,7 +32,7 @@ export const getCurrentUser = asyncHandler(async (req, res) => {
 });
 
 export const updateCurrentUser = asyncHandler(async (req, res) => {
-  const allowedFields = ["name", "phone"];
+  const allowedFields = ["name", "phone", "college", "collegeName", "department", "year"];
   const updates = {};
 
   allowedFields.forEach((field) => {

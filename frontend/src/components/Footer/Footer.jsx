@@ -120,6 +120,8 @@ export default function Footer() {
               <a href="#">Privacy Policy</a>
               <span>|</span>
               <a href="#">Terms & Conditions</a>
+              <span>|</span>
+              <a href="/admin">Admin Portal</a>
             </div>
           </div>
         </div>

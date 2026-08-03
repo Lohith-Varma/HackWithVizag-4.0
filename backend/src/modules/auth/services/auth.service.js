@@ -7,6 +7,11 @@ const buildUserResponse = (user) => ({
   name: user.name,
   email: user.email,
   phone: user.phone,
+  college: user.college || user.collegeName || "",
+  collegeName: user.collegeName || user.college || "",
+  department: user.department || "",
+  year: user.year || "",
+  team: user.team ? user.team.toString() : null,
   role: user.role,
   status: user.status,
   createdAt: user.createdAt,
@@ -31,6 +36,10 @@ const signAccessToken = (user) => {
 };
 
 export const registerUser = async ({ name, email, phone, password }) => {
+  if (!password || password.length < 8) {
+    throw new ApiError(400, "Password is required and must be at least 8 characters");
+  }
+
   const existingUser = await User.findOne({ email });
 
   if (existingUser) {

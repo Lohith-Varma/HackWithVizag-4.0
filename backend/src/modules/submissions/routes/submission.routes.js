@@ -1,18 +1,20 @@
-import { Router } from "express";
-import { param } from "express-validator";
+import express from "express";
+import {
+  finalSubmit,
+  getMySubmission,
+  reviewSubmission,
+  submitFullRegistration,
+} from "../controllers/submission.controller.js";
 import { authenticate } from "../../../middleware/auth.middleware.js";
-import { validateRequest } from "../../../middleware/validateRequest.middleware.js";
-import { sendSuccess } from "../../../utils/apiResponse.js";
-import { finalSubmit, getMySubmission, reviewSubmission } from "../controllers/submission.controller.js";
+import { uploadProjectFiles } from "../../../middleware/upload.middleware.js";
 
-const router = Router();
-const projectIdValidation = [param("projectId").isMongoId().withMessage("Invalid project id")];
+const router = express.Router();
 
 router.use(authenticate);
 
-router.get("/", (_req, res) => sendSuccess(res, 200, "Submission routes ready"));
-router.get("/mine", getMySubmission);
-router.post("/:projectId/review", projectIdValidation, validateRequest, reviewSubmission);
-router.post("/:projectId/final-submit", projectIdValidation, validateRequest, finalSubmit);
+router.get("/me", getMySubmission);
+router.get("/review/:projectId", reviewSubmission);
+router.post("/final/:projectId", finalSubmit);
+router.post("/full", uploadProjectFiles, submitFullRegistration);
 
 export default router;

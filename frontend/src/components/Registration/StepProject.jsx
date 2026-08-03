@@ -1,67 +1,88 @@
-import { PROBLEM_STATEMENTS } from '../../data/hackathonData';
+import { countWords } from '../../utils/registrationValidation';
 
-export default function StepProject({ data, errors, onChange }) {
+export default function StepProject({ data, errors, onChange, eventConfig = {} }) {
+  const minWords = eventConfig.minAbstractWords || 50;
+  const maxWords = eventConfig.maxAbstractWords || 500;
+
   const update = (field) => (event) => onChange({ ...data, [field]: event.target.value });
+
+  const currentAbstractWords = countWords(data.abstract);
+  const isWordCountValid = currentAbstractWords >= minWords && currentAbstractWords <= maxWords;
 
   return (
     <div className="wizard-step">
       <div className="step-copy">
-        <span className="section-subtitle">Step 3</span>
+        <span className="section-subtitle">Step 4</span>
         <h2>Project Details</h2>
-        <p>Share the idea, problem focus, and build plan your team wants to submit for screening.</p>
+        <p>Define your solution, abstract, technology stack, and repository links.</p>
       </div>
 
       <div className="form-grid">
-        <label className="field">
+        <label className="field span-2">
           <span>Project Title *</span>
-          <input value={data.title} onChange={update('title')} placeholder="Smart Coastal Response Platform" />
+          <input
+            value={data.title}
+            onChange={update('title')}
+            placeholder="e.g. AI-Powered Autonomous Marine Debris Scanner"
+          />
           {errors.title && <small>{errors.title}</small>}
         </label>
 
-        <label className="field">
-          <span>Theme *</span>
-          <select value={data.theme} onChange={update('theme')}>
-            <option value="">Select theme</option>
-            {PROBLEM_STATEMENTS.map((theme) => (
-              <option key={theme.id} value={theme.title}>{theme.title}</option>
-            ))}
-          </select>
-          {errors.theme && <small>{errors.theme}</small>}
+        <label className="field span-2">
+          <span>Selected Problem Statement / Track</span>
+          <div className="readonly-box">
+            <strong>[{data.problemCode || 'Selected Track'}]</strong> {data.title || data.problemStatement || 'Not selected'}
+          </div>
         </label>
 
         <label className="field span-2">
-          <span>Problem Statement *</span>
-          <textarea rows="4" value={data.problemStatement} onChange={update('problemStatement')} placeholder="What specific problem are you solving?" />
-          {errors.problemStatement && <small>{errors.problemStatement}</small>}
-        </label>
-
-        <label className="field span-2">
-          <span>Abstract *</span>
-          <textarea rows="5" value={data.abstract} onChange={update('abstract')} placeholder="Summarize the project, target users, and expected impact." />
+          <div className="field-header-row">
+            <span>Abstract *</span>
+            <span className={`word-counter ${isWordCountValid ? 'valid' : 'invalid'}`}>
+              Word Count: {currentAbstractWords} / {minWords} - {maxWords} words
+            </span>
+          </div>
+          <textarea
+            rows="6"
+            value={data.abstract}
+            onChange={update('abstract')}
+            placeholder="Summarize the project, core methodology, target users, and expected practical impact..."
+          />
+          <small className="field-hint">
+            Abstract must be between {minWords} and {maxWords} words.
+          </small>
           {errors.abstract && <small>{errors.abstract}</small>}
         </label>
 
         <label className="field span-2">
-          <span>Innovation Summary *</span>
-          <textarea rows="4" value={data.innovationSummary} onChange={update('innovationSummary')} placeholder="What makes your solution new, practical, or differentiated?" />
-          {errors.innovationSummary && <small>{errors.innovationSummary}</small>}
-        </label>
-
-        <label className="field span-2">
           <span>Technology Stack *</span>
-          <input value={data.technologyStack} onChange={update('technologyStack')} placeholder="React, Node.js, Firebase, TensorFlow, IoT sensors..." />
+          <input
+            value={data.technologyStack}
+            onChange={update('technologyStack')}
+            placeholder="e.g. React, Node.js, Python, TensorFlow, OpenCV, Docker, MongoDB"
+          />
           {errors.technologyStack && <small>{errors.technologyStack}</small>}
         </label>
 
         <label className="field">
-          <span>GitHub Repository</span>
-          <input type="url" value={data.githubRepository} onChange={update('githubRepository')} placeholder="https://github.com/team/project" />
+          <span>GitHub Repository (Optional)</span>
+          <input
+            type="url"
+            value={data.githubRepository}
+            onChange={update('githubRepository')}
+            placeholder="https://github.com/team/project-repo"
+          />
           {errors.githubRepository && <small>{errors.githubRepository}</small>}
         </label>
 
         <label className="field">
-          <span>Demo Video URL</span>
-          <input type="url" value={data.demoVideoUrl} onChange={update('demoVideoUrl')} placeholder="https://youtu.be/demo" />
+          <span>Demo Video URL (Optional)</span>
+          <input
+            type="url"
+            value={data.demoVideoUrl}
+            onChange={update('demoVideoUrl')}
+            placeholder="https://youtu.be/your-demo-video"
+          />
           {errors.demoVideoUrl && <small>{errors.demoVideoUrl}</small>}
         </label>
       </div>

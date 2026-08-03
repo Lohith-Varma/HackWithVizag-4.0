@@ -1,32 +1,13 @@
-import { TEAM_LIMITS } from './registrationStorage';
-
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const phonePattern = /^[+]?\d[\d\s-]{7,14}\d$/;
 const urlPattern = /^https?:\/\/.+\..+/i;
-
-export const fileRules = {
-  projectDeck: {
-    label: 'Project PPT',
-    required: true,
-    maxSizeMb: 15,
-    extensions: ['ppt', 'pptx', 'pdf'],
-  },
-  synopsis: {
-    label: 'Project Synopsis',
-    required: false,
-    maxSizeMb: 10,
-    extensions: ['pdf', 'doc', 'docx'],
-  },
-  teamPhoto: {
-    label: 'Team Photo',
-    required: false,
-    maxSizeMb: 8,
-    extensions: ['jpg', 'jpeg', 'png', 'webp'],
-  },
-};
+const youtubePattern = /^(https?:\/\/)?(www\.)?(youtube\.com|youtu\.be)\/.+/i;
 
 const required = (value) => !String(value || '').trim();
-const extensionOf = (file) => (file?.name?.split('.').pop() || '').toLowerCase();
+
+export const countWords = (text = '') => {
+  return String(text).trim().split(/\s+/).filter(Boolean).length;
+};
 
 export const formatBytes = (bytes = 0) => {
   if (!bytes) return '0 KB';
@@ -35,30 +16,36 @@ export const formatBytes = (bytes = 0) => {
   return `${(bytes / 1024 ** index).toFixed(index === 0 ? 0 : 1)} ${units[index]}`;
 };
 
-export const validateFile = (file, rules) => {
-  if (!file) return rules.required ? `${rules.label} is required` : '';
-  const extension = extensionOf(file);
-  if (!rules.extensions.includes(extension)) {
-    return `${rules.label} must be ${rules.extensions.map((item) => `.${item}`).join(', ')}`;
+export const validateFile = (file, rules = {}) => {
+  if (!file) {
+    return rules.required ? `${rules.label || 'File'} is required` : '';
   }
-  if (file.size > rules.maxSizeMb * 1024 * 1024) {
-    return `${rules.label} must be under ${rules.maxSizeMb} MB`;
+  const extension = `.${(file.name || '').split('.').pop()}`.toLowerCase();
+  const allowed = (rules.extensions || ['.ppt', '.pptx', '.pdf']).map((ext) =>
+    ext.startsWith('.') ? ext.toLowerCase() : `.${ext.toLowerCase()}`
+  );
+
+  if (!allowed.includes(extension)) {
+    return `${rules.label || 'File'} must be of type: ${allowed.join(', ')}`;
   }
+
+  const maxSizeMb = rules.maxSizeMb || 15;
+  if (file.size > maxSizeMb * 1024 * 1024) {
+    return `${rules.label || 'File'} must be under ${maxSizeMb} MB`;
+  }
+
   return '';
 };
 
-export const validatePersonal = (personal) => {
+export const validatePersonal = (personal = {}) => {
   const errors = {};
   [
     ['fullName', 'Full name is required'],
     ['email', 'Email address is required'],
     ['phone', 'Phone number is required'],
     ['collegeName', 'College name is required'],
-    ['university', 'University is required'],
     ['department', 'Department / Branch is required'],
     ['year', 'Year of study is required'],
-    ['city', 'City is required'],
-    ['state', 'State is required'],
   ].forEach(([field, message]) => {
     if (required(personal[field])) errors[field] = message;
   });
@@ -69,31 +56,25 @@ export const validatePersonal = (personal) => {
   if (personal.phone && !phonePattern.test(personal.phone)) {
     errors.phone = 'Enter a valid phone number';
   }
-  if (personal.profilePhoto) {
-    const photoError = validateFile(personal.profilePhoto, {
-      label: 'Profile Photo',
-      required: false,
-      maxSizeMb: 5,
-      extensions: ['jpg', 'jpeg', 'png', 'webp'],
-    });
-    if (photoError) errors.profilePhoto = photoError;
-  }
   return errors;
 };
 
-export const validateTeam = (team) => {
+export const validateTeam = (team = {}, eventConfig = {}) => {
   const errors = { members: [] };
+  const minTeamSize = eventConfig.minTeamSize || 1;
+  const maxTeamSize = eventConfig.maxTeamSize || 4;
+
   if (required(team.teamName)) errors.teamName = 'Team name is required';
   if (required(team.teamLeader)) errors.teamLeader = 'Team leader is required';
-  const size = Number(team.numberOfMembers);
-  if (size < TEAM_LIMITS.min || size > TEAM_LIMITS.max) {
-    errors.numberOfMembers = `Team size must be between ${TEAM_LIMITS.min} and ${TEAM_LIMITS.max}`;
-  }
-  if (team.members.length !== size) {
-    errors.numberOfMembers = `Add details for all ${size} team members`;
+
+  const memberList = Array.isArray(team.members) ? team.members : [];
+  const totalCount = 1 + memberList.length; // Leader + Members
+
+  if (totalCount < minTeamSize || totalCount > maxTeamSize) {
+    errors.membersCount = `Total team members (including Leader) must be between ${minTeamSize} and ${maxTeamSize}. Current: ${totalCount}`;
   }
 
-  team.members.forEach((member, index) => {
+  memberList.forEach((member, index) => {
     const memberErrors = {};
     [
       ['fullName', 'Full name is required'],
@@ -110,50 +91,69 @@ export const validateTeam = (team) => {
     errors.members[index] = memberErrors;
   });
 
-  if (!errors.members.some((memberErrors) => Object.keys(memberErrors).length)) {
+  if (!errors.members.some((mErr) => Object.keys(mErr).length > 0)) {
     delete errors.members;
   }
+
   return errors;
 };
 
-export const validateProject = (project) => {
+export const validateProject = (project = {}, eventConfig = {}) => {
   const errors = {};
-  [
-    ['title', 'Project title is required'],
-    ['theme', 'Theme is required'],
-    ['problemStatement', 'Problem statement is required'],
-    ['abstract', 'Abstract is required'],
-    ['innovationSummary', 'Innovation summary is required'],
-    ['technologyStack', 'Technology stack is required'],
-  ].forEach(([field, message]) => {
-    if (required(project[field])) errors[field] = message;
-  });
+  const minWords = eventConfig.minAbstractWords || 50;
+  const maxWords = eventConfig.maxAbstractWords || 500;
+
+  if (required(project.title)) errors.title = 'Project title is required';
+  if (required(project.theme)) errors.theme = 'Theme is required';
+  if (required(project.problemStatement)) errors.problemStatement = 'Problem statement is required';
+
+  if (required(project.abstract)) {
+    errors.abstract = 'Abstract is required';
+  } else {
+    const words = countWords(project.abstract);
+    if (words < minWords || words > maxWords) {
+      errors.abstract = `Abstract must be between ${minWords} and ${maxWords} words. Current: ${words} words.`;
+    }
+  }
 
   if (project.githubRepository && !urlPattern.test(project.githubRepository)) {
-    errors.githubRepository = 'Enter a valid repository URL';
+    errors.githubRepository = 'Enter a valid GitHub repository URL';
   }
-  if (project.demoVideoUrl && !urlPattern.test(project.demoVideoUrl)) {
-    errors.demoVideoUrl = 'Enter a valid demo video URL';
+
+  if (project.demoVideoUrl) {
+    if (!urlPattern.test(project.demoVideoUrl)) {
+      errors.demoVideoUrl = 'Enter a valid URL';
+    } else if (!youtubePattern.test(project.demoVideoUrl)) {
+      errors.demoVideoUrl = 'Demo video must be a valid YouTube URL (e.g. youtube.com or youtu.be)';
+    }
   }
+
   return errors;
 };
 
-export const validateUploads = (uploads) => {
+export const validateUploads = (uploads = {}, eventConfig = {}) => {
   const errors = {};
-  Object.entries(fileRules).forEach(([field, rules]) => {
-    const error = validateFile(uploads[field], rules);
-    if (error) errors[field] = error;
+
+  const pptError = validateFile(uploads.pptFile, {
+    label: 'Project PPT',
+    required: true,
+    maxSizeMb: eventConfig.maxPptSizeMb || 15,
+    extensions: eventConfig.allowedPptFormats || ['.ppt', '.pptx', '.pdf'],
   });
+  if (pptError) errors.pptFile = pptError;
+
+  if (uploads.supportingDocFile) {
+    const docError = validateFile(uploads.supportingDocFile, {
+      label: 'Supporting Document',
+      required: false,
+      maxSizeMb: eventConfig.maxSupportingDocSizeMb || 15,
+      extensions: eventConfig.allowedSupportingDocFormats || ['.pdf', '.zip', '.rar', '.doc', '.docx'],
+    });
+    if (docError) errors.supportingDocFile = docError;
+  }
+
   return errors;
 };
-
-export const validators = [
-  validatePersonal,
-  validateTeam,
-  validateProject,
-  validateUploads,
-  () => ({}),
-];
 
 export const hasErrors = (errors) => {
   if (!errors || typeof errors !== 'object') return false;

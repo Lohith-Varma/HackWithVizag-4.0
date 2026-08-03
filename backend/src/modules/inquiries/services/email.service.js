@@ -60,12 +60,12 @@ ${message}
     </div>
   `;
 
-  const smtpUser = process.env.SMTP_USER?.trim();
-  const smtpPass = process.env.SMTP_PASS?.trim();
+  const smtpUser = process.env.SMTP_USER ? process.env.SMTP_USER.trim() : "";
+  const smtpPass = process.env.SMTP_PASS ? process.env.SMTP_PASS.trim() : "";
 
   if (!smtpUser || !smtpPass) {
     console.log("--------------------------------------------------");
-    console.log("[EMAIL SERVICE NOTICE] SMTP_USER/SMTP_PASS not fully configured.");
+    console.log("[EMAIL SERVICE NOTICE] SMTP credentials not configured.");
     console.log(`[INQUIRY EMAIL MOCK DISPATCH] Target: ${recipientEmail}`);
     console.log(`Subject: [Hack With Vizag Inquiry] ${subject}`);
     console.log(textContent);

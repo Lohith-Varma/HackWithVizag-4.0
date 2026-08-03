@@ -7,8 +7,8 @@ export const getUserTeam = async (userId) => {
   return Team.findOne({
     $or: [{ leader: userId }, { members: userId }],
   })
-    .populate("leader", "name email phone role status")
-    .populate("members", "name email phone role status");
+    .populate("leader", "name email phone role status college collegeName department year")
+    .populate("members", "name email phone role status college collegeName department year");
 };
 
 export const createTeamForUser = async (userId, { teamName }) => {
@@ -81,8 +81,8 @@ export const getTeamById = async (teamId) => {
   }
 
   const team = await Team.findById(teamId)
-    .populate("leader", "name email phone role status")
-    .populate("members", "name email phone role status");
+    .populate("leader", "name email phone role status college collegeName department year")
+    .populate("members", "name email phone role status college collegeName department year");
 
   if (!team) {
     throw new ApiError(404, "Team not found");

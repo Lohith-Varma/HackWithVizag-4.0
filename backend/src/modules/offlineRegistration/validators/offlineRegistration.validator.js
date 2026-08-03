@@ -12,6 +12,7 @@ export const offlineRegistrationValidation = [
     .isLength({ min: 2, max: 80 })
     .withMessage("Contact name must be between 2 and 80 characters"),
   body("contactPhone")
+    .customSanitizer((val) => (typeof val === "string" ? val.replace(/^\+91\s*/, "").replace(/\D/g, "") : val))
     .trim()
     .notEmpty()
     .withMessage("Contact phone is required")

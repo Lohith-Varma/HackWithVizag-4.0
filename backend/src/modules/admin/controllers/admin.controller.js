@@ -3,6 +3,7 @@ import User from "../../auth/models/user.model.js";
 import Project from "../../projects/models/project.model.js";
 import Submission from "../../submissions/models/submission.model.js";
 import Team from "../../teams/models/team.model.js";
+import ProblemStatement from "../../problemStatements/models/problemStatement.model.js";
 import { asyncHandler } from "../../../utils/asyncHandler.js";
 import ApiError from "../../../utils/apiError.js";
 import { sendSuccess } from "../../../utils/apiResponse.js";
@@ -25,7 +26,11 @@ const toInt = (value, fallback, min, max) => {
 const formatStatus = (value) => value || "pending";
 
 const getPrimaryCollege = (team) =>
-  team.leader?.collegeName || team.leader?.college || team.members?.find((member) => member.collegeName || member.college)?.collegeName || team.members?.find((member) => member.college)?.college || "";
+  team.leader?.collegeName ||
+  team.leader?.college ||
+  team.members?.find((member) => member.collegeName || member.college)?.collegeName ||
+  team.members?.find((member) => member.college)?.college ||
+  "";
 
 const getPrimaryDepartment = (team) =>
   team.leader?.department || team.members?.find((member) => member.department)?.department || "";
@@ -38,6 +43,7 @@ const teamPopulate = [
 
 const normalizeTeam = ({ team, project = null, submission = null } = {}) => ({
   id: team._id.toString(),
+  _id: team._id.toString(),
   teamName: team.teamName,
   leader: team.leader,
   members: team.members || [],
@@ -56,33 +62,80 @@ const normalizeTeam = ({ team, project = null, submission = null } = {}) => ({
   updatedAt: team.updatedAt,
 });
 
-const buildTeamQuery = async ({ search, status }) => {
+const buildTeamQuery = async ({ search, status, college, department, theme, problemStatement, isOpenInnovation }) => {
   const query = {};
 
   if (status) {
     query.currentStatus = status;
   }
 
-  if (!search?.trim()) {
-    return query;
+  // Filter by Project-specific fields if requested
+  const projectQuery = {};
+  if (theme) {
+    projectQuery.theme = new RegExp(escapeRegex(theme.trim()), "i");
+  }
+  if (problemStatement) {
+    projectQuery.$or = [
+      { problemCode: new RegExp(escapeRegex(problemStatement.trim()), "i") },
+      { title: new RegExp(escapeRegex(problemStatement.trim()), "i") },
+      { problemStatement: new RegExp(escapeRegex(problemStatement.trim()), "i") },
+    ];
+  }
+  if (isOpenInnovation !== undefined && isOpenInnovation !== "") {
+    projectQuery.problemType = String(isOpenInnovation) === "true" || isOpenInnovation === "open" ? "open" : "official";
   }
 
-  const regex = new RegExp(escapeRegex(search.trim()), "i");
-  const users = await User.find({
-    $or: [
+  if (Object.keys(projectQuery).length > 0) {
+    const matchingProjects = await Project.find(projectQuery).select("team");
+    const matchingTeamIds = matchingProjects.map((p) => p.team);
+    query._id = { $in: matchingTeamIds };
+  }
+
+  // User details filters
+  const userQuery = {};
+  if (college) {
+    userQuery.$or = [
+      { college: new RegExp(escapeRegex(college.trim()), "i") },
+      { collegeName: new RegExp(escapeRegex(college.trim()), "i") },
+    ];
+  }
+  if (department) {
+    userQuery.department = new RegExp(escapeRegex(department.trim()), "i");
+  }
+
+  if (search?.trim()) {
+    const regex = new RegExp(escapeRegex(search.trim()), "i");
+    userQuery.$or = userQuery.$or || [];
+    userQuery.$or.push(
       { name: regex },
       { email: regex },
       { college: regex },
       { collegeName: regex },
-      { department: regex },
-    ],
-  }).select("_id");
+      { department: regex }
+    );
+  }
 
-  query.$or = [{ teamName: regex }];
+  if (Object.keys(userQuery).length > 0) {
+    const matchingUsers = await User.find(userQuery).select("_id");
+    const userIds = matchingUsers.map((u) => u._id);
+    const searchOr = [];
 
-  if (users.length) {
-    const userIds = users.map((user) => user._id);
-    query.$or.push({ leader: { $in: userIds } }, { members: { $in: userIds } });
+    if (search?.trim()) {
+      searchOr.push({ teamName: new RegExp(escapeRegex(search.trim()), "i") });
+    }
+
+    if (userIds.length > 0) {
+      searchOr.push({ leader: { $in: userIds } }, { members: { $in: userIds } });
+    }
+
+    if (searchOr.length > 0) {
+      if (query.$or) {
+        query.$and = [{ $or: query.$or }, { $or: searchOr }];
+        delete query.$or;
+      } else {
+        query.$or = searchOr;
+      }
+    }
   }
 
   return query;
@@ -97,7 +150,7 @@ const buildSort = (sort = "newest") => {
 const getProjectsAndSubmissions = async (teams) => {
   const teamIds = teams.map((team) => team._id);
   const [projects, submissions] = await Promise.all([
-    Project.find({ team: { $in: teamIds } }),
+    Project.find({ team: { $in: teamIds } }).populate("problemStatementId"),
     Submission.find({ team: { $in: teamIds } })
       .populate("project")
       .populate("submittedBy", "name email phone role status"),
@@ -136,7 +189,7 @@ const updateReviewState = async (teamId, adminId, { status, remarks }) => {
   await User.updateMany({ _id: { $in: memberIds } }, { status: team.currentStatus });
   await Submission.findOneAndUpdate(
     { team: team._id },
-    { status: STATUS_TO_SUBMISSION_STATUS[team.currentStatus] },
+    { status: STATUS_TO_SUBMISSION_STATUS[team.currentStatus] || "under_review" },
     { runValidators: true }
   );
 
@@ -159,6 +212,8 @@ export const getDashboard = asyncHandler(async (_req, res) => {
     teamsUnderReview,
     selectedTeams,
     rejectedTeams,
+    openInnovationEntries,
+    officialEntries,
   ] = await Promise.all([
     Team.countDocuments(),
     User.countDocuments({ role: "participant" }),
@@ -167,23 +222,27 @@ export const getDashboard = asyncHandler(async (_req, res) => {
     Team.countDocuments({ currentStatus: "under_review" }),
     Team.countDocuments({ currentStatus: "selected" }),
     Team.countDocuments({ currentStatus: "rejected" }),
+    Project.countDocuments({ problemType: "open" }),
+    Project.countDocuments({ problemType: "official" }),
   ]);
 
   return sendSuccess(res, 200, "Admin dashboard fetched successfully", {
     cards: {
       totalRegisteredTeams,
       totalRegisteredParticipants,
+      totalProjects,
       totalSubmittedProjects: totalSubmittedProjects || totalProjects,
       teamsUnderReview,
       selectedTeams,
       rejectedTeams,
+      openInnovationEntries,
+      officialEntries,
     },
   });
 });
 
 export const listUsers = asyncHandler(async (_req, res) => {
   const users = await User.find().sort({ createdAt: -1 });
-
   return sendSuccess(res, 200, "Users fetched successfully", { users });
 });
 
@@ -234,7 +293,7 @@ export const getTeamDetails = asyncHandler(async (req, res) => {
   }
 
   const [project, submission] = await Promise.all([
-    Project.findOne({ team: team._id }),
+    Project.findOne({ team: team._id }).populate("problemStatementId"),
     Submission.findOne({ team: team._id })
       .populate("project")
       .populate("submittedBy", "name email phone role status"),
@@ -328,7 +387,10 @@ const countBy = async (model, field, match = {}) => {
 };
 
 const countByFirstAvailable = async (model, fields, match = {}) => {
-  const fallbackExpression = fields.reduceRight((expression, field) => ({ $ifNull: [`$${field}`, expression] }), "Not specified");
+  const fallbackExpression = fields.reduceRight(
+    (expression, field) => ({ $ifNull: [`$${field}`, expression] }),
+    "Not specified"
+  );
   const rows = await model.aggregate([
     { $match: match },
     {
@@ -351,9 +413,12 @@ export const getAnalytics = asyncHandler(async (_req, res) => {
     pendingReviews,
     selectedTeams,
     rejectedTeams,
+    openInnovationCount,
+    officialProblemCount,
     collegeWiseRegistrationCount,
     departmentWiseRegistrationCount,
     themeWiseRegistrationCount,
+    problemStatementWiseCount,
   ] = await Promise.all([
     Team.countDocuments(),
     User.countDocuments({ role: "participant" }),
@@ -361,9 +426,12 @@ export const getAnalytics = asyncHandler(async (_req, res) => {
     Team.countDocuments({ currentStatus: { $in: ["pending", "under_review"] } }),
     Team.countDocuments({ currentStatus: "selected" }),
     Team.countDocuments({ currentStatus: "rejected" }),
+    Project.countDocuments({ problemType: "open" }),
+    Project.countDocuments({ problemType: "official" }),
     countByFirstAvailable(User, ["collegeName", "college"], { role: "participant" }),
     countBy(User, "department", { role: "participant" }),
     countBy(Project, "theme"),
+    countBy(Project, "problemCode"),
   ]);
 
   const selectionPercentage = totalTeams ? Number(((selectedTeams / totalTeams) * 100).toFixed(2)) : 0;
@@ -378,12 +446,15 @@ export const getAnalytics = asyncHandler(async (_req, res) => {
       pendingReviews,
       selectedTeams,
       rejectedTeams,
+      openInnovationCount,
+      officialProblemCount,
       selectionPercentage,
     },
     charts: {
       collegeWiseRegistrationCount,
       departmentWiseRegistrationCount,
       themeWiseRegistrationCount,
+      problemStatementWiseCount,
     },
   });
 });
@@ -400,159 +471,59 @@ const toCsv = (headers, rows) => {
   return [headers.map(escape).join(","), ...rows.map((row) => headers.map((header) => escape(row[header])).join(","))].join("\n");
 };
 
-const escapeHtml = (value) =>
-  String(value ?? "")
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#39;");
-
-const toExcelHtml = (headers, rows) => `<!doctype html><html><head><meta charset="utf-8"></head><body><table><thead><tr>${headers
-  .map((header) => `<th>${escapeHtml(header)}</th>`)
-  .join("")}</tr></thead><tbody>${rows
-  .map((row) => `<tr>${headers.map((header) => `<td>${escapeHtml(row[header])}</td>`).join("")}</tr>`)
-  .join("")}</tbody></table></body></html>`;
-
-const toPdf = (title, headers, rows) => {
-  const lines = [title, "", headers.join(" | "), ...rows.map((row) => headers.map((header) => row[header] ?? "").join(" | "))];
-  const text = lines.join("\n").replace(/[()\\]/g, "\\$&");
-  const stream = `BT /F1 10 Tf 40 780 Td 14 TL (${text.split("\n").join(") Tj T* (")}) Tj ET`;
-  const objects = [
-    "<< /Type /Catalog /Pages 2 0 R >>",
-    "<< /Type /Pages /Kids [3 0 R] /Count 1 >>",
-    "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 842 595] /Resources << /Font << /F1 4 0 R >> >> /Contents 5 0 R >>",
-    "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>",
-    `<< /Length ${Buffer.byteLength(stream)} >>\nstream\n${stream}\nendstream`,
-  ];
-  let body = "%PDF-1.4\n";
-  const offsets = [0];
-  objects.forEach((object, index) => {
-    offsets.push(Buffer.byteLength(body));
-    body += `${index + 1} 0 obj\n${object}\nendobj\n`;
-  });
-  const xref = Buffer.byteLength(body);
-  body += `xref\n0 ${objects.length + 1}\n0000000000 65535 f \n`;
-  offsets.slice(1).forEach((offset) => {
-    body += `${String(offset).padStart(10, "0")} 00000 n \n`;
-  });
-  body += `trailer << /Size ${objects.length + 1} /Root 1 0 R >>\nstartxref\n${xref}\n%%EOF`;
-  return body;
-};
-
-const parseExportIds = (ids) =>
-  String(ids || "")
-    .split(",")
-    .map((id) => id.trim())
-    .filter(Boolean);
-
-const getExportRows = async (scope, status, ids) => {
-  if (scope === "participants") {
-    const users = await User.find({ role: "participant" }).sort({ createdAt: -1 });
-    return {
-      title: "Participants Export",
-      headers: ["Name", "Email", "Phone", "Status", "Registered At"],
-      rows: users.map((user) => ({
-        Name: user.name,
-        Email: user.email,
-        Phone: user.phone,
-        Status: user.status,
-        "Registered At": user.createdAt?.toISOString() || "",
-      })),
-    };
-  }
-
-  if (scope === "statistics") {
-    const analytics = await Promise.all([
-      Team.countDocuments(),
-      User.countDocuments({ role: "participant" }),
-      Project.countDocuments(),
-      Team.countDocuments({ currentStatus: "selected" }),
-      Team.countDocuments({ currentStatus: "rejected" }),
-    ]);
-    return {
-      title: "Statistics Export",
-      headers: ["Metric", "Value"],
-      rows: [
-        { Metric: "Total Teams", Value: analytics[0] },
-        { Metric: "Total Participants", Value: analytics[1] },
-        { Metric: "Total Projects", Value: analytics[2] },
-        { Metric: "Selected Teams", Value: analytics[3] },
-        { Metric: "Rejected Teams", Value: analytics[4] },
-      ],
-    };
-  }
-
+export const exportAdminData = asyncHandler(async (req, res) => {
+  const format = req.query.format || "csv";
+  const scope = req.query.scope || "teams";
+  
   const query = {};
-  const effectiveStatus = status || (scope === "selectedTeams" ? "selected" : scope === "rejectedTeams" ? "rejected" : "");
-  if (effectiveStatus) {
-    query.currentStatus = effectiveStatus;
-  }
-
-  const teamIds = parseExportIds(ids);
-  if (teamIds.length) {
-    query._id = { $in: teamIds };
+  if (req.query.status) {
+    query.currentStatus = req.query.status;
   }
 
   const teams = await Team.find(query).populate(teamPopulate).sort({ createdAt: -1 });
   const { projectByTeam, submissionByTeam } = await getProjectsAndSubmissions(teams);
 
-  return {
-    title: "Teams Export",
-    headers: [
-      "Team Name",
-      "Leader",
-      "Leader Email",
-      "Members",
-      "College",
-      "Department",
-      "Project",
-      "Theme",
-      "Status",
-      "Remarks",
-      "Submission Date",
-    ],
-    rows: teams.map((team) => {
-      const project = projectByTeam.get(team._id.toString());
-      const submission = submissionByTeam.get(team._id.toString());
-      const normalized = normalizeTeam({ team, project, submission });
-      return {
-        "Team Name": normalized.teamName,
-        Leader: normalized.leader?.name || "",
-        "Leader Email": normalized.leader?.email || "",
-        Members: normalized.memberCount,
-        College: normalized.college,
-        Department: normalized.department,
-        Project: project?.title || "",
-        Theme: project?.theme || "",
-        Status: normalized.status,
-        Remarks: normalized.remarks,
-        "Submission Date": normalized.submissionDate?.toISOString?.() || "",
-      };
-    }),
-  };
-};
+  const headers = [
+    "Team Name",
+    "Leader Name",
+    "Leader Email",
+    "Leader Phone",
+    "Members Count",
+    "College",
+    "Department",
+    "Project Title",
+    "Theme",
+    "Problem Code",
+    "Problem Type",
+    "Status",
+    "Remarks",
+    "Submission Date",
+  ];
 
-export const exportAdminData = asyncHandler(async (req, res) => {
-  const format = req.query.format || "csv";
-  const scope = req.query.scope || "teams";
-  const { title, headers, rows } = await getExportRows(scope, req.query.status, req.query.ids);
-  const safeScope = scope.replace(/[^a-z0-9-]/gi, "-").toLowerCase();
-
-  if (format === "pdf") {
-    res.setHeader("Content-Type", "application/pdf");
-    res.setHeader("Content-Disposition", `attachment; filename="${safeScope}.pdf"`);
-    return res.status(200).send(Buffer.from(toPdf(title, headers, rows), "binary"));
-  }
-
-  if (format === "excel") {
-    res.setHeader("Content-Type", "application/vnd.ms-excel");
-    res.setHeader("Content-Disposition", `attachment; filename="${safeScope}.xls"`);
-    return res.status(200).send(toExcelHtml(headers, rows));
-  }
+  const rows = teams.map((team) => {
+    const project = projectByTeam.get(team._id.toString());
+    const submission = submissionByTeam.get(team._id.toString());
+    const normalized = normalizeTeam({ team, project, submission });
+    return {
+      "Team Name": normalized.teamName,
+      "Leader Name": normalized.leader?.name || "",
+      "Leader Email": normalized.leader?.email || "",
+      "Leader Phone": normalized.leader?.phone || "",
+      "Members Count": normalized.memberCount,
+      College: normalized.college,
+      Department: normalized.department,
+      "Project Title": project?.title || "",
+      Theme: project?.theme || "",
+      "Problem Code": project?.problemCode || "",
+      "Problem Type": project?.problemType || "official",
+      Status: normalized.status,
+      Remarks: normalized.remarks,
+      "Submission Date": normalized.submissionDate?.toISOString?.() || "",
+    };
+  });
 
   res.setHeader("Content-Type", "text/csv; charset=utf-8");
-  res.setHeader("Content-Disposition", `attachment; filename="${safeScope}.csv"`);
+  res.setHeader("Content-Disposition", `attachment; filename="${scope}-export.csv"`);
   return res.status(200).send(toCsv(headers, rows));
 });
 

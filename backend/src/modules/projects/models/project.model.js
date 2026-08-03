@@ -1,5 +1,16 @@
 import mongoose from "mongoose";
 
+const fileMetaSchema = new mongoose.Schema(
+  {
+    url: { type: String, default: "" },
+    path: { type: String, default: "" },
+    originalName: { type: String, default: "" },
+    mimeType: { type: String, default: "" },
+    size: { type: Number, default: 0 },
+  },
+  { _id: false }
+);
+
 const projectSchema = new mongoose.Schema(
   {
     team: {
@@ -13,31 +24,40 @@ const projectSchema = new mongoose.Schema(
       type: String,
       required: [true, "Project title is required"],
       trim: true,
-      maxlength: [160, "Project title must not exceed 160 characters"],
+      maxlength: [200, "Project title must not exceed 200 characters"],
     },
     theme: {
       type: String,
       required: [true, "Theme is required"],
       trim: true,
-      maxlength: [120, "Theme must not exceed 120 characters"],
+      maxlength: [150, "Theme must not exceed 150 characters"],
     },
     problemStatement: {
       type: String,
       required: [true, "Problem statement is required"],
       trim: true,
-      maxlength: [3000, "Problem statement must not exceed 3000 characters"],
+      maxlength: [4000, "Problem statement must not exceed 4000 characters"],
+    },
+    problemStatementId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "ProblemStatement",
+      default: null,
+    },
+    problemCode: {
+      type: String,
+      trim: true,
+      default: "",
+    },
+    problemType: {
+      type: String,
+      enum: ["official", "open"],
+      default: "official",
     },
     abstract: {
       type: String,
       required: [true, "Abstract is required"],
       trim: true,
-      maxlength: [5000, "Abstract must not exceed 5000 characters"],
-    },
-    innovationSummary: {
-      type: String,
-      trim: true,
-      maxlength: [3000, "Innovation summary must not exceed 3000 characters"],
-      default: "",
+      maxlength: [6000, "Abstract must not exceed 6000 characters"],
     },
     technologyStack: {
       type: String,
@@ -58,11 +78,12 @@ const projectSchema = new mongoose.Schema(
       default: "",
     },
     pptFile: {
-      url: String,
-      path: String,
-      originalName: String,
-      mimeType: String,
-      size: Number,
+      type: fileMetaSchema,
+      default: () => ({}),
+    },
+    supportingDocFile: {
+      type: fileMetaSchema,
+      default: () => ({}),
     },
     submittedAt: {
       type: Date,

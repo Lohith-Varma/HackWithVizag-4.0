@@ -111,7 +111,8 @@
 .admin-plain-field textarea,
 .admin-plain-field select,
 .admin-search input,
-.admin-controls select {
+.admin-controls select,
+.admin-input-filter {
   width: 100%;
   min-height: 44px;
   border: 1px solid var(--card-border);
@@ -182,16 +183,6 @@
   text-decoration: none;
 }
 
-.admin-primary:disabled,
-.admin-secondary:disabled,
-.admin-success:disabled,
-.admin-danger:disabled,
-.admin-bulkbar button:disabled,
-.admin-pagination button:disabled {
-  cursor: not-allowed;
-  opacity: 0.48;
-}
-
 .admin-app {
   display: grid;
   grid-template-columns: 280px minmax(0, 1fr);
@@ -237,8 +228,7 @@
   margin-top: 1rem;
 }
 
-.admin-nav button,
-.admin-logout {
+.admin-nav button {
   justify-content: flex-start;
   width: 100%;
   border: 0;
@@ -253,9 +243,26 @@
   background: rgba(0, 212, 255, 0.1);
 }
 
-.admin-logout {
+.admin-user-footer {
   margin-top: auto;
+  padding: 0.75rem;
+  border-top: 1px solid var(--card-border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.admin-user-footer div {
+  display: grid;
+  min-width: 0;
+}
+
+.admin-user-footer button {
+  border: 0;
+  background: transparent;
   color: #ff8d99;
+  font-size: 1.2rem;
+  cursor: pointer;
 }
 
 .admin-content {
@@ -277,7 +284,7 @@
 
 .admin-metrics {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 1rem;
 }
 
@@ -307,11 +314,10 @@
   padding: 1rem;
 }
 
-.admin-controls {
+.admin-controls-grid {
   display: grid;
-  grid-template-columns: minmax(280px, 1fr) 180px 150px;
+  grid-template-columns: minmax(260px, 1fr) repeat(4, minmax(130px, 1fr));
   gap: 0.75rem;
-  margin-bottom: 0.8rem;
 }
 
 .admin-search {
@@ -337,11 +343,6 @@
   border: 1px solid var(--card-border);
   border-radius: 8px;
   background: rgba(255, 255, 255, 0.025);
-}
-
-.admin-bulkbar span {
-  color: var(--color-text-secondary);
-  font-weight: 900;
 }
 
 .admin-table-wrap {
@@ -482,11 +483,6 @@
   color: var(--color-accent);
 }
 
-.admin-ppt-row strong,
-.admin-ppt-row span {
-  display: block;
-}
-
 .admin-member-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -500,12 +496,6 @@
   border: 1px solid var(--card-border);
   border-radius: 8px;
   background: rgba(255, 255, 255, 0.025);
-}
-
-.admin-member strong,
-.admin-member span {
-  min-width: 0;
-  overflow-wrap: anywhere;
 }
 
 .admin-chart-list {
@@ -544,25 +534,32 @@
   background: linear-gradient(90deg, #00d4ff, #42e89c);
 }
 
-.admin-export-grid {
+/* Modals */
+.admin-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
   display: grid;
-  gap: 0.75rem;
+  place-items: center;
+  padding: 1.5rem;
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(8px);
 }
 
-.admin-export-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  padding: 0.75rem;
+.admin-modal-card {
+  width: min(720px, 100%);
+  max-height: 90vh;
+  overflow-y: auto;
+  padding: 2rem;
+  border-radius: 12px;
   border: 1px solid var(--card-border);
-  border-radius: 8px;
+  background: #0d1527;
 }
 
-.admin-export-row div {
+.admin-modal-actions {
   display: flex;
-  gap: 0.45rem;
-  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.8rem;
 }
 
 @keyframes admin-spin {
@@ -575,19 +572,12 @@
   .admin-app {
     grid-template-columns: 1fr;
   }
-
   .admin-sidebar {
     position: static;
     height: auto;
   }
-
   .admin-nav {
     grid-template-columns: repeat(4, minmax(0, 1fr));
-  }
-
-  .admin-nav button,
-  .admin-logout {
-    justify-content: center;
   }
 }
 
@@ -595,33 +585,8 @@
   .admin-metrics,
   .admin-detail-grid,
   .admin-chart-grid,
-  .admin-member-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .admin-controls {
-    grid-template-columns: 1fr;
-  }
-}
-
-@media (max-width: 640px) {
-  .admin-content {
-    padding: 0.85rem;
-  }
-
-  .admin-nav {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .admin-page-title,
-  .admin-detail-hero,
-  .admin-ppt-row,
-  .admin-export-row {
-    display: grid;
-  }
-
-  .admin-info-grid,
-  .admin-info-grid.wide {
+  .admin-member-grid,
+  .admin-controls-grid {
     grid-template-columns: 1fr;
   }
 }

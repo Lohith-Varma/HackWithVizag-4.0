@@ -1,12 +1,11 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { FiCalendar, FiMapPin, FiAward, FiArrowRight } from 'react-icons/fi';
+import { api } from '../../services/api';
 import './Hero.css';
 
-// Target date: Sept 11, 2026 09:00 AM (local time)
-const TARGET_DATE = new Date('2026-09-11T09:00:00').getTime();
-
 export default function Hero() {
+  const [eventConfig, setEventConfig] = useState(null);
   const [timeLeft, setTimeLeft] = useState({
     days: 0,
     hours: 0,
@@ -16,9 +15,28 @@ export default function Hero() {
   });
 
   useEffect(() => {
+    let isMounted = true;
+    api.getEventConfig()
+      .then((res) => {
+        if (isMounted && res.event) {
+          setEventConfig(res.event);
+        }
+      })
+      .catch(() => {});
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const targetDate = eventConfig?.hackathonDate
+    ? new Date(eventConfig.hackathonDate).getTime()
+    : new Date('2026-09-25T09:00:00').getTime();
+
+  useEffect(() => {
     const calculateTimeLeft = () => {
       const now = new Date().getTime();
-      const difference = TARGET_DATE - now;
+      const difference = targetDate - now;
 
       if (difference <= 0) {
         setTimeLeft({ days: 0, hours: 0, minutes: 0, seconds: 0, isExpired: true });
@@ -33,11 +51,10 @@ export default function Hero() {
       setTimeLeft({ days, hours, minutes, seconds, isExpired: false });
     };
 
-    calculateTimeLeft(); // Run initially
+    calculateTimeLeft();
     const interval = setInterval(calculateTimeLeft, 1000);
-
     return () => clearInterval(interval);
-  }, []);
+  }, [targetDate]);
 
   const handleScrollToSection = (e, id) => {
     e.preventDefault();
@@ -46,7 +63,7 @@ export default function Hero() {
       const offsetTop = element.offsetTop - 80;
       window.scrollTo({
         top: offsetTop,
-        behavior: 'smooth'
+        behavior: 'smooth',
       });
     }
   };
@@ -70,14 +87,17 @@ export default function Hero() {
     },
   };
 
+  const eventName = eventConfig?.eventName || 'HACK WITH VIZAG 4.0';
+  const regDeadline = eventConfig?.registrationEndDate
+    ? new Date(eventConfig.registrationEndDate).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
+    : 'August 31, 2026';
+
   return (
     <section id="home" className="hero-section">
-      {/* Background Radial Glows */}
       <div className="glow-blob blob-purple" />
       <div className="glow-blob blob-cyan" />
       <div className="glow-grid" />
 
-      {/* Floating Decorative Shapes */}
       <div className="floating-shape shape-1">{"</>"}</div>
       <div className="floating-shape shape-2">{"{ }"}</div>
       <div className="floating-shape shape-3">{"[ ]"}</div>
@@ -89,48 +109,49 @@ export default function Hero() {
           animate="visible"
           className="hero-content"
         >
-          {/* Badge */}
           <motion.div variants={itemVariants} className="hero-badge">
             <span className="badge-glow"></span>
             <span className="badge-text">Vizag's Grandest Tech Hackathon</span>
           </motion.div>
 
-          {/* Main Title */}
           <motion.h1 variants={itemVariants} className="hero-title">
-            HACK WITH <span className="gradient-text">VIZAG 4.0</span>
+            {eventName.toUpperCase()}
           </motion.h1>
 
-          {/* Subtitle / Tagline */}
           <motion.h3 variants={itemVariants} className="hero-tagline">
             Where Innovation Meets the Coast.
           </motion.h3>
 
-          {/* Metadata Grid */}
           <motion.div variants={itemVariants} className="hero-meta-grid">
             <div className="hero-meta-item">
               <FiCalendar className="meta-icon icon-primary" />
               <div>
                 <span className="meta-label">Date</span>
-                <span className="meta-value">Sept 18 - 19, 2026</span>
+                <span className="meta-value">
+                  {eventConfig?.hackathonDate
+                    ? new Date(eventConfig.hackathonDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+                    : 'Sept 25, 2026'}
+                </span>
               </div>
             </div>
             <div className="hero-meta-item">
               <FiMapPin className="meta-icon icon-accent" />
               <div>
                 <span className="meta-label">Venue</span>
-                <span className="meta-value">NSRIT</span>
+                <span className="meta-value">NSRIT, Visakhapatnam</span>
               </div>
             </div>
             <div className="hero-meta-item">
               <FiAward className="meta-icon icon-secondary" />
               <div>
-                <span className="meta-label">Prize Pool</span>
-                <span className="meta-value">₹1,00,000+ Cash</span>
+                <span className="meta-label">Registration Fee</span>
+                <span className="meta-value">
+                  {eventConfig?.registrationFee ? `₹${eventConfig.registrationFee}` : 'Free'}
+                </span>
               </div>
             </div>
           </motion.div>
 
-          {/* Countdown Timer */}
           <motion.div variants={itemVariants} className="hero-timer-container">
             <h4 className="timer-title">Hacking Begins In</h4>
             {timeLeft.isExpired ? (
@@ -159,11 +180,10 @@ export default function Hero() {
               </div>
             )}
             <div className="registration-deadline">
-              Registration closes on <strong>August 15, 2026</strong>
+              Registration closes on <strong>{regDeadline}</strong>
             </div>
           </motion.div>
 
-          {/* Action CTAs */}
           <motion.div variants={itemVariants} className="hero-ctas">
             <a href="#auth" className="btn-hero-primary">
               Register Now <FiArrowRight />

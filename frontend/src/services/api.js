@@ -1,14 +1,10 @@
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
 
-const wait = (ms = 700) => new Promise((resolve) => {
-  window.setTimeout(resolve, ms);
-});
-
 const resolveApiBaseUrl = () => {
   const base = API_BASE_URL.replace(/\/$/, '');
   if (/^https?:\/\//i.test(base)) return base;
 
-  const origin = typeof window === 'undefined' ? 'http://localhost' : window.location.origin;
+  const origin = typeof window === 'undefined' ? 'http://localhost:5000' : window.location.origin;
   if (!base) return origin;
 
   return `${origin}${base.startsWith('/') ? base : `/${base}`}`;
@@ -26,22 +22,22 @@ const buildUrl = (path, params) => {
   return url.toString();
 };
 
-const request = async (path, { method = 'GET', body, params, headers } = {}) => {
+const request = async (path, { method = 'GET', body, params, headers, isFormData = false } = {}) => {
   const response = await fetch(buildUrl(path, params), {
     method,
     credentials: 'include',
     headers: {
-      ...(body ? { 'Content-Type': 'application/json' } : {}),
+      ...(!isFormData && body ? { 'Content-Type': 'application/json' } : {}),
       ...headers,
     },
-    body: body ? JSON.stringify(body) : undefined,
+    body: isFormData ? body : body ? JSON.stringify(body) : undefined,
   });
 
   const contentType = response.headers.get('content-type') || '';
   const payload = contentType.includes('application/json') ? await response.json() : await response.text();
 
   if (!response.ok) {
-    const message = payload?.message || 'Request failed';
+    const message = payload?.errors?.[0]?.message || payload?.message || (typeof payload === 'string' ? payload : 'Request failed');
     const error = new Error(message);
     error.status = response.status;
     error.payload = payload;
@@ -74,56 +70,166 @@ const downloadFile = async (path, params) => {
   window.URL.revokeObjectURL(url);
 };
 
-const createRegistrationId = () => {
-  const suffix = Math.random().toString(36).slice(2, 8).toUpperCase();
-  return `HWV4-${new Date().getFullYear()}-${suffix}`;
-};
-
 export const api = {
   baseUrl: API_BASE_URL,
 
+  // Event Config APIs
+  async getEventConfig() {
+    return request('/event');
+  },
+
+  async getAdminEvents() {
+    return request('/event/admin');
+  },
+
+  async updateEventConfig(id, payload) {
+    return request(`/event/admin/${id}`, {
+      method: 'PUT',
+      body: payload,
+    });
+  },
+
+  async createEventConfig(payload) {
+    return request('/event/admin', {
+      method: 'POST',
+      body: payload,
+    });
+  },
+
+  async setActiveEventConfig(id) {
+    return request(`/event/admin/${id}/active`, {
+      method: 'PATCH',
+    });
+  },
+
+  // Problem Statements APIs
+  async getProblemStatements() {
+    return request('/problem-statements');
+  },
+
+  async getAdminProblemStatements() {
+    return request('/problem-statements/admin');
+  },
+
+  async createProblemStatement(payload) {
+    return request('/problem-statements/admin', {
+      method: 'POST',
+      body: payload,
+    });
+  },
+
+  async updateProblemStatement(id, payload) {
+    return request(`/problem-statements/admin/${id}`, {
+      method: 'PUT',
+      body: payload,
+    });
+  },
+
+  async deleteProblemStatement(id) {
+    return request(`/problem-statements/admin/${id}`, {
+      method: 'DELETE',
+    });
+  },
+
+  async reorderProblemStatements(items) {
+    return request('/problem-statements/admin/reorder', {
+      method: 'PATCH',
+      body: { items },
+    });
+  },
+
+  // Auth APIs
   async login(credentials) {
-    await wait();
-    return {
-      user: {
-        name: credentials.name || 'Hack With Vizag Participant',
-        email: credentials.email,
-      },
-      accessToken: 'placeholder-access-token',
-    };
+    return request('/auth/login', {
+      method: 'POST',
+      body: credentials,
+    });
   },
 
   async register(payload) {
-    await wait();
-    return {
-      user: {
-        name: payload.name,
-        email: payload.email,
+    return request('/auth/register', {
+      method: 'POST',
+      body: payload,
+    });
+  },
+
+  async logout() {
+    return request('/auth/logout', { method: 'POST' });
+  },
+
+  async getProfile() {
+    return request('/auth/profile');
+  },
+
+  async getAdminProfile() {
+    const result = await request('/auth/profile');
+    if (result.user?.role !== 'admin') {
+      const error = new Error('Forbidden: Admin role required');
+      error.status = 403;
+      throw error;
+    }
+    return result;
+  },
+
+  // Participant Dashboard API
+  async getParticipantDashboard() {
+    return request('/dashboard/participant');
+  },
+
+  // Registration Submission API (Supports Multi-part File Uploads)
+  async submitRegistration(registrationData) {
+    const formData = new FormData();
+    
+    // Copy files out to avoid stringifying circular/binary objects
+    const pptFile = registrationData.uploads?.pptFile;
+    const supportingDocFile = registrationData.uploads?.supportingDocFile;
+
+    const payloadToSerialize = {
+      ...registrationData,
+      uploads: {
+        ...registrationData.uploads,
+        pptFile: undefined,
+        supportingDocFile: undefined,
       },
-      accessToken: 'placeholder-access-token',
     };
+
+    formData.append('payload', JSON.stringify(payloadToSerialize));
+
+    if (pptFile && pptFile instanceof File) {
+      formData.append('pptFile', pptFile);
+    }
+    if (supportingDocFile && supportingDocFile instanceof File) {
+      formData.append('supportingDocFile', supportingDocFile);
+    }
+
+    return request('/submissions/full', {
+      method: 'POST',
+      body: formData,
+      isFormData: true,
+    });
   },
 
   async saveRegistrationDraft(payload) {
-    await wait(450);
+    // Save locally or sync draft
     return { ok: true, draft: payload };
   },
 
-  async submitRegistration(payload) {
-    await wait(1000);
-    return {
-      registrationId: createRegistrationId(),
-      status: 'under_review',
-      submissionDate: new Date().toISOString(),
-      payload,
-    };
-  },
-
   async downloadAcknowledgement() {
-    await wait(500);
+    // Generate text acknowledgement blob locally or fetch
+    const content = `HACK WITH VIZAG 4.0 - REGISTRATION ACKNOWLEDGEMENT\n\nDate: ${new Date().toLocaleDateString()}\nStatus: Verified\n\nThank you for registering. Keep this document for your records.`;
+    const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `HackWithVizag-Acknowledgement.txt`;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.URL.revokeObjectURL(url);
     return { ok: true };
   },
 
+  // Admin Portal APIs
   async adminLogin(credentials) {
     const result = await request('/auth/login', {
       method: 'POST',
@@ -138,14 +244,6 @@ export const api = {
     }
 
     return result;
-  },
-
-  async logout() {
-    return request('/auth/logout', { method: 'POST' });
-  },
-
-  async getAdminProfile() {
-    return request('/auth/profile');
   },
 
   async getAdminDashboard() {
@@ -180,6 +278,28 @@ export const api = {
 
   async exportAdminData(params) {
     return downloadFile('/admin/export', params);
+  },
+
+  // Offline Registration APIs
+  async getOfflineRegistrationEligibility(teamId) {
+    return request(`/offline-registration/team/${teamId}/eligibility`);
+  },
+
+  async getOfflineRegistration(teamId) {
+    return request(`/offline-registration/team/${teamId}`);
+  },
+
+  async saveOfflineRegistration(teamId, payload) {
+    return request(`/offline-registration/team/${teamId}`, {
+      method: 'POST',
+      body: payload,
+    });
+  },
+
+  async completeOfflineRegistration(teamId) {
+    return request(`/offline-registration/team/${teamId}/complete`, {
+      method: 'POST',
+    });
   },
 
   async submitInquiry(payload) {

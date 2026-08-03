@@ -1,11 +1,10 @@
 import { useState } from 'react';
-import { FiFileText, FiUploadCloud, FiX } from 'react-icons/fi';
-import { fileRules, formatBytes } from '../../utils/registrationValidation';
+import { FiFileText, FiUploadCloud, FiX, FiVideo, FiCheckCircle } from 'react-icons/fi';
+import { formatBytes } from '../../utils/registrationValidation';
 
-function UploadDropzone({ field, file, error, onFileChange }) {
+function UploadDropzone({ title, field, file, error, rules, onFileChange }) {
   const [isDragging, setIsDragging] = useState(false);
-  const rules = fileRules[field];
-  const accept = rules.extensions.map((extension) => `.${extension}`).join(',');
+  const accept = (rules.extensions || ['.pdf', '.ppt', '.pptx']).join(',');
 
   const setFile = (candidate) => {
     onFileChange(field, candidate || null);
@@ -33,8 +32,8 @@ function UploadDropzone({ field, file, error, onFileChange }) {
       />
       <label htmlFor={field}>
         <FiUploadCloud />
-        <strong>{rules.label}{rules.required ? ' *' : ''}</strong>
-        <span>{accept} up to {rules.maxSizeMb} MB</span>
+        <strong>{title}{rules.required ? ' *' : ''}</strong>
+        <span>Allowed: {accept} | Max: {rules.maxSizeMb || 15} MB</span>
       </label>
 
       {file && (
@@ -44,7 +43,7 @@ function UploadDropzone({ field, file, error, onFileChange }) {
             <strong>{file.name}</strong>
             <span>{formatBytes(file.size)}</span>
           </div>
-          <button type="button" onClick={() => setFile(null)} aria-label={`Remove ${rules.label}`}>
+          <button type="button" onClick={() => setFile(null)} aria-label={`Remove ${title}`}>
             <FiX />
           </button>
         </div>
@@ -54,26 +53,57 @@ function UploadDropzone({ field, file, error, onFileChange }) {
   );
 }
 
-export default function StepUpload({ data, errors, onFileChange }) {
+export default function StepUpload({ data, errors, onFileChange, eventConfig = {} }) {
+  const pptRules = {
+    required: true,
+    maxSizeMb: eventConfig.maxPptSizeMb || 15,
+    extensions: eventConfig.allowedPptFormats || ['.ppt', '.pptx', '.pdf'],
+  };
+
+  const docRules = {
+    required: false,
+    maxSizeMb: eventConfig.maxSupportingDocSizeMb || 15,
+    extensions: eventConfig.allowedSupportingDocFormats || ['.pdf', '.zip', '.rar', '.doc', '.docx'],
+  };
+
   return (
     <div className="wizard-step">
       <div className="step-copy">
-        <span className="section-subtitle">Step 4</span>
-        <h2>Upload Documents</h2>
-        <p>Attach the screening documents. Drag files into the upload area or choose them manually.</p>
+        <span className="section-subtitle">Step 5</span>
+        <h2>Uploads & Media</h2>
+        <p>Upload your presentation PPT, optional supporting documentation, and verify demo video URL.</p>
       </div>
 
       <div className="upload-grid">
-        {Object.keys(fileRules).map((field) => (
-          <UploadDropzone
-            key={field}
-            field={field}
-            file={data[field]}
-            error={errors[field]}
-            onFileChange={onFileChange}
-          />
-        ))}
+        <UploadDropzone
+          title="Project Presentation (PPT)"
+          field="pptFile"
+          file={data.pptFile}
+          error={errors.pptFile}
+          rules={pptRules}
+          onFileChange={onFileChange}
+        />
+
+        <UploadDropzone
+          title="Supporting Document (Architecture / Deck / Docs)"
+          field="supportingDocFile"
+          file={data.supportingDocFile}
+          error={errors.supportingDocFile}
+          rules={docRules}
+          onFileChange={onFileChange}
+        />
       </div>
+
+      {data.demoVideoUrl && (
+        <div className="video-preview-card mt-4">
+          <FiVideo className="video-icon" />
+          <div className="video-info">
+            <strong>Demo Video URL Configured</strong>
+            <span>{data.demoVideoUrl}</span>
+          </div>
+          <FiCheckCircle className="check-icon" />
+        </div>
+      )}
     </div>
   );
 }

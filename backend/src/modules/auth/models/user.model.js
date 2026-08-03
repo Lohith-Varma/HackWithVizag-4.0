@@ -29,9 +29,32 @@ const userSchema = new mongoose.Schema(
     },
     password: {
       type: String,
-      required: [true, "Password is required"],
-      minlength: [8, "Password must be at least 8 characters"],
       select: false,
+    },
+    college: {
+      type: String,
+      trim: true,
+      default: "",
+    },
+    collegeName: {
+      type: String,
+      trim: true,
+      default: "",
+    },
+    department: {
+      type: String,
+      trim: true,
+      default: "",
+    },
+    year: {
+      type: String,
+      trim: true,
+      default: "",
+    },
+    team: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Team",
+      default: null,
     },
     role: {
       type: String,
@@ -61,7 +84,7 @@ const userSchema = new mongoose.Schema(
 );
 
 userSchema.pre("save", async function hashPassword(next) {
-  if (!this.isModified("password")) {
+  if (!this.isModified("password") || !this.password) {
     return next();
   }
 

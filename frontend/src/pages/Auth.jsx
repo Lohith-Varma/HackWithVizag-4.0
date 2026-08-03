@@ -1,16 +1,17 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { FiArrowRight, FiLock, FiMail, FiUser } from 'react-icons/fi';
+import { FiArrowRight, FiLock, FiMail, FiPhone, FiUser } from 'react-icons/fi';
 import Toast from '../components/Toast/Toast';
 import { api } from '../services/api';
 import { saveCurrentUser } from '../utils/registrationStorage';
 import './Portal.css';
 
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const phonePattern = /^[6-9]\d{9}$/;
 
 export default function Auth() {
   const [mode, setMode] = useState('register');
-  const [form, setForm] = useState({ name: '', email: '', password: '' });
+  const [form, setForm] = useState({ name: '', email: '', phone: '', password: '' });
   const [errors, setErrors] = useState({});
   const [isLoading, setIsLoading] = useState(false);
   const [toast, setToast] = useState(null);
@@ -20,8 +21,20 @@ export default function Auth() {
     if (mode === 'register' && !form.name.trim()) nextErrors.name = 'Full name is required';
     if (!form.email.trim()) nextErrors.email = 'Email is required';
     if (form.email && !emailPattern.test(form.email)) nextErrors.email = 'Enter a valid email';
-    if (!form.password.trim()) nextErrors.password = 'Password is required';
-    if (form.password && form.password.length < 6) nextErrors.password = 'Use at least 6 characters';
+
+    if (mode === 'register') {
+      if (!form.phone.trim()) nextErrors.phone = 'Phone number is required';
+      else if (!phonePattern.test(form.phone.trim())) nextErrors.phone = 'Enter a valid 10-digit Indian mobile number (e.g. 9876543210)';
+
+      if (!form.password.trim()) nextErrors.password = 'Password is required';
+      else if (form.password.length < 8) nextErrors.password = 'Use at least 8 characters';
+      else if (!/[a-z]/.test(form.password) || !/[A-Z]/.test(form.password) || !/\d/.test(form.password)) {
+        nextErrors.password = 'Password must include uppercase, lowercase, and a number';
+      }
+    } else {
+      if (!form.password.trim()) nextErrors.password = 'Password is required';
+    }
+
     setErrors(nextErrors);
     return Object.keys(nextErrors).length === 0;
   };
@@ -35,14 +48,25 @@ export default function Auth() {
 
     setIsLoading(true);
     try {
-      const result = mode === 'register' ? await api.register(form) : await api.login(form);
+      const payload = mode === 'register'
+        ? { name: form.name.trim(), email: form.email.trim(), phone: form.phone.trim(), password: form.password }
+        : { email: form.email.trim(), password: form.password };
+
+      const result = mode === 'register' ? await api.register(payload) : await api.login(payload);
       saveCurrentUser(result.user);
       setToast({ type: 'success', message: mode === 'register' ? 'Account created successfully.' : 'Signed in successfully.' });
       window.setTimeout(() => {
         window.location.hash = '#dashboard';
       }, 450);
-    } catch {
-      setToast({ type: 'error', message: 'Unable to continue right now. Please try again.' });
+    } catch (err) {
+      if (err.payload?.errors) {
+        const serverErrors = {};
+        err.payload.errors.forEach((e) => {
+          if (e.field) serverErrors[e.field] = e.message;
+        });
+        setErrors(serverErrors);
+      }
+      setToast({ type: 'error', message: err.message || 'Unable to continue right now. Please try again.' });
     } finally {
       setIsLoading(false);
     }
@@ -90,10 +114,19 @@ export default function Auth() {
               {errors.email && <small>{errors.email}</small>}
             </label>
 
+            {mode === 'register' && (
+              <label className="field icon-field">
+                <span>Phone Number *</span>
+                <FiPhone />
+                <input type="tel" value={form.phone} onChange={update('phone')} placeholder="10-digit mobile number (e.g. 9876543210)" />
+                {errors.phone && <small>{errors.phone}</small>}
+              </label>
+            )}
+
             <label className="field icon-field">
               <span>Password *</span>
               <FiLock />
-              <input type="password" value={form.password} onChange={update('password')} placeholder="Minimum 6 characters" />
+              <input type="password" value={form.password} onChange={update('password')} placeholder={mode === 'register' ? 'Min 8 chars, 1 upper, 1 lower, 1 number' : 'Your password'} />
               {errors.password && <small>{errors.password}</small>}
             </label>
 
