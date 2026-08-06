@@ -73,3 +73,23 @@ export const setActiveEvent = asyncHandler(async (req, res) => {
 
   return sendSuccess(res, 200, "Event activated successfully", { event });
 });
+
+export const deleteEvent = asyncHandler(async (req, res) => {
+  const event = await Event.findByIdAndDelete(req.params.id);
+  if (!event) {
+    throw new ApiError(404, "Event not found");
+  }
+
+  // Ensure there is always at least one active event remaining
+  const activeCount = await Event.countDocuments({ activeEvent: true });
+  if (activeCount === 0) {
+    const fallback = await Event.findOne().sort({ createdAt: -1 });
+    if (fallback) {
+      fallback.activeEvent = true;
+      await fallback.save();
+    }
+  }
+
+  return sendSuccess(res, 200, "Event deleted successfully");
+});
+

@@ -66,7 +66,20 @@ export const submitFullRegistration = asyncHandler(async (req, res) => {
     );
   }
 
-  // Update profile of leader user
+  // Duplicate team name validation
+  let team = await Team.findOne({
+    $or: [{ leader: userId }, { members: userId }],
+  });
+
+  const existingTeamWithName = await Team.findOne({
+    teamName: new RegExp(`^${teamData.teamName.trim()}$`, "i"),
+    _id: { $ne: team?._id },
+  });
+  if (existingTeamWithName) {
+    throw new ApiError(409, `Team name "${teamData.teamName}" is already registered by another team.`);
+  }
+
+  // Update profile & social fields of leader user
   const leaderUser = await User.findByIdAndUpdate(
     userId,
     {
@@ -76,18 +89,31 @@ export const submitFullRegistration = asyncHandler(async (req, res) => {
       collegeName: personal.collegeName || personal.college,
       department: personal.department,
       year: personal.year,
+      gender: personal.gender || "",
+      resumeUrl: personal.resumeUrl || personal.resume || "",
+      githubUrl: personal.githubUrl || personal.github || "",
+      linkedinUrl: personal.linkedinUrl || personal.linkedin || "",
+      portfolioUrl: personal.portfolioUrl || personal.portfolio || "",
     },
     { new: true }
   );
 
-  // Process team members and create/update User records for each
+  // Process team members and check for email conflicts across existing teams
   const memberUserIds = [userId];
   for (const m of memberList) {
     if (!m || (!m.email && !m.fullName)) continue;
     const memberEmail = (m.email || "").toLowerCase().trim();
     if (!memberEmail) continue;
 
+    // Check if member email belongs to another active team
     let memberUser = await User.findOne({ email: memberEmail });
+    if (memberUser && memberUser.team && team && memberUser.team.toString() !== team._id.toString()) {
+      throw new ApiError(
+        409,
+        `Member email "${memberEmail}" is already registered under another team.`
+      );
+    }
+
     if (!memberUser) {
       memberUser = await User.create({
         name: m.fullName || m.name || "Team Member",
@@ -97,6 +123,10 @@ export const submitFullRegistration = asyncHandler(async (req, res) => {
         collegeName: m.collegeName || m.college || leaderUser?.collegeName || "",
         department: m.department || "",
         year: m.year || "",
+        gender: m.gender || "",
+        githubUrl: m.githubUrl || m.github || "",
+        linkedinUrl: m.linkedinUrl || m.linkedin || "",
+        portfolioUrl: m.portfolioUrl || m.portfolio || "",
         role: "participant",
         status: "pending",
       });
@@ -109,6 +139,10 @@ export const submitFullRegistration = asyncHandler(async (req, res) => {
       }
       if (m.department) memberUser.department = m.department;
       if (m.year) memberUser.year = m.year;
+      if (m.gender) memberUser.gender = m.gender;
+      if (m.github || m.githubUrl) memberUser.githubUrl = m.githubUrl || m.github;
+      if (m.linkedin || m.linkedinUrl) memberUser.linkedinUrl = m.linkedinUrl || m.linkedin;
+      if (m.portfolio || m.portfolioUrl) memberUser.portfolioUrl = m.portfolioUrl || m.portfolio;
       await memberUser.save();
     }
 
@@ -117,20 +151,16 @@ export const submitFullRegistration = asyncHandler(async (req, res) => {
     }
   }
 
-  // Find or create Team for user
-  let team = await Team.findOne({
-    $or: [{ leader: userId }, { members: userId }],
-  });
-
+  // Create or update Team
   if (!team) {
     team = await Team.create({
-      teamName: teamData.teamName,
+      teamName: teamData.teamName.trim(),
       leader: userId,
       members: memberUserIds,
       currentStatus: "under_review",
     });
   } else {
-    team.teamName = teamData.teamName || team.teamName;
+    team.teamName = teamData.teamName.trim() || team.teamName;
     team.leader = userId;
     team.members = memberUserIds;
     team.currentStatus = "under_review";
@@ -139,6 +169,7 @@ export const submitFullRegistration = asyncHandler(async (req, res) => {
 
   // Update team reference on all users in team
   await User.updateMany({ _id: { $in: memberUserIds } }, { team: team._id });
+
 
   // Process uploaded files if any
   let pptFileMeta = projectData.pptFile || {};

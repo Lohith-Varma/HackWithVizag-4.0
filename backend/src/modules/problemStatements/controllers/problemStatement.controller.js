@@ -102,16 +102,57 @@ export const ensureSeedProblemStatements = async (eventId) => {
   }
 };
 
-export const getPublicProblemStatements = asyncHandler(async (_req, res) => {
+export const getPublicProblemStatements = asyncHandler(async (req, res) => {
   const activeEvent = await ensureActiveEvent();
   await ensureSeedProblemStatements(activeEvent._id);
 
-  const problemStatements = await ProblemStatement.find({
-    activeStatus: true,
-  }).sort({ displayOrder: 1, createdAt: 1 });
+  const { search, category, theme, difficulty, type, sort } = req.query;
+  const filter = { activeStatus: true };
+
+  if (category || theme) {
+    const targetTheme = category || theme;
+    filter.theme = new RegExp(targetTheme.trim().replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i");
+  }
+
+  if (difficulty) {
+    filter.difficulty = difficulty;
+  }
+
+  if (type) {
+    filter.type = type;
+  }
+
+  if (search && search.trim()) {
+    const regex = new RegExp(search.trim().replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i");
+    filter.$or = [
+      { code: regex },
+      { title: regex },
+      { theme: regex },
+      { problemStatement: regex },
+      { technologies: regex },
+    ];
+  }
+
+  let sortOption = { displayOrder: 1, createdAt: 1 };
+  if (sort === "newest") sortOption = { createdAt: -1 };
+  else if (sort === "title") sortOption = { title: 1 };
+  else if (sort === "code") sortOption = { code: 1 };
+
+  const problemStatements = await ProblemStatement.find(filter).sort(sortOption);
 
   return sendSuccess(res, 200, "Active problem statements fetched successfully", {
     problemStatements,
+  });
+});
+
+export const getProblemStatementById = asyncHandler(async (req, res) => {
+  const ps = await ProblemStatement.findById(req.params.id);
+  if (!ps) {
+    throw new ApiError(404, "Problem statement not found");
+  }
+
+  return sendSuccess(res, 200, "Problem statement fetched successfully", {
+    problemStatement: ps,
   });
 });
 
@@ -124,6 +165,7 @@ export const getAdminProblemStatements = asyncHandler(async (_req, res) => {
     problemStatements,
   });
 });
+
 
 export const createProblemStatement = asyncHandler(async (req, res) => {
   const activeEvent = await ensureActiveEvent();

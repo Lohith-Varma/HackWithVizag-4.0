@@ -3,6 +3,7 @@ import {
   createProblemStatement,
   deleteProblemStatement,
   getAdminProblemStatements,
+  getProblemStatementById,
   getPublicProblemStatements,
   reorderProblemStatements,
   updateProblemStatement,
@@ -13,6 +14,8 @@ const router = express.Router();
 
 // Public route to fetch problem statements for active event
 router.get("/", getPublicProblemStatements);
+router.get("/:id", getProblemStatementById);
+
 
 // Admin management routes
 router.use("/admin", authenticate, authorizeRoles("admin"));

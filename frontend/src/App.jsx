@@ -26,10 +26,21 @@ const routes = {
 };
 
 function getCurrentRoute() {
-  if (window.location.pathname.startsWith('/admin')) return 'admin';
-  if (window.location.hash.startsWith('#admin')) return 'admin';
+  const path = window.location.pathname.toLowerCase();
+  if (path.startsWith('/admin')) return 'admin';
+  if (path.startsWith('/registration')) return 'registration';
+  if (path.startsWith('/dashboard')) return 'dashboard';
+  if (path.startsWith('/auth')) return 'auth';
+
+  const hash = window.location.hash.toLowerCase();
+  if (hash.startsWith('#admin')) return 'admin';
+  if (hash.startsWith('#registration')) return 'registration';
+  if (hash.startsWith('#dashboard')) return 'dashboard';
+  if (hash.startsWith('#auth')) return 'auth';
+
   return routes[window.location.hash] || 'landing';
 }
+
 
 export default function App() {
   const [route, setRoute] = useState(getCurrentRoute);

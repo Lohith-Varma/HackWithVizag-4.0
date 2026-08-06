@@ -51,6 +51,31 @@ const userSchema = new mongoose.Schema(
       trim: true,
       default: "",
     },
+    gender: {
+      type: String,
+      trim: true,
+      default: "",
+    },
+    resumeUrl: {
+      type: String,
+      trim: true,
+      default: "",
+    },
+    githubUrl: {
+      type: String,
+      trim: true,
+      default: "",
+    },
+    linkedinUrl: {
+      type: String,
+      trim: true,
+      default: "",
+    },
+    portfolioUrl: {
+      type: String,
+      trim: true,
+      default: "",
+    },
     team: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Team",

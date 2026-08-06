@@ -10,10 +10,15 @@ const formatValidationError = (error) => {
   }
 
   if (error.code === 11000) {
-    return Object.keys(error.keyValue || {}).map((field) => ({
-      field,
-      message: `${field} already exists`,
-    }));
+    const keys = Object.keys(error.keyValue || error.keyPattern || {});
+    const fieldName = keys.length ? keys[0] : "Field";
+    const formattedField = fieldName.replace(/([A-Z])/g, " $1").toLowerCase();
+    return [
+      {
+        field: fieldName,
+        message: `Registration conflict: ${formattedField} is already registered.`,
+      },
+    ];
   }
 
   if (error.name === "MulterError") {
@@ -33,13 +38,27 @@ export const notFoundHandler = (req, _res, next) => {
 };
 
 export const errorHandler = (error, _req, res, _next) => {
-  const statusCode = error.name === "MulterError" ? 400 : error.statusCode || 500;
+  let statusCode = error.statusCode;
+
+  if (!statusCode) {
+    if (error.name === "MulterError") statusCode = 400;
+    else if (error.code === 11000) statusCode = 409;
+    else statusCode = 500;
+  }
+
   const errors = error.errors?.length ? error.errors : formatValidationError(error);
-  const message = statusCode === 500 ? "Internal server error" : error.message;
+  
+  let message = error.message;
+  if (error.code === 11000) {
+    message = "Registration conflict: Record or email already exists.";
+  } else if (statusCode === 500 && process.env.NODE_ENV === "production") {
+    message = "Internal server error";
+  }
 
   if (statusCode === 500) {
-    console.error(error);
+    console.error("Unhandled Server Error:", error);
   }
 
   return sendError(res, statusCode, message, errors);
 };
+

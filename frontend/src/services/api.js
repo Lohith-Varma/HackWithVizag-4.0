@@ -102,14 +102,25 @@ export const api = {
     });
   },
 
+  async deleteEventConfig(id) {
+    return request(`/event/admin/${id}`, {
+      method: 'DELETE',
+    });
+  },
+
   // Problem Statements APIs
-  async getProblemStatements() {
-    return request('/problem-statements');
+  async getProblemStatements(params) {
+    return request('/problem-statements', { params });
+  },
+
+  async getProblemStatement(id) {
+    return request(`/problem-statements/${id}`);
   },
 
   async getAdminProblemStatements() {
     return request('/problem-statements/admin');
   },
+
 
   async createProblemStatement(payload) {
     return request('/problem-statements/admin', {
@@ -272,9 +283,34 @@ export const api = {
     });
   },
 
+  async updateAdminTeamDetails(id, payload) {
+    return request(`/admin/team/${id}`, {
+      method: 'PUT',
+      body: payload,
+    });
+  },
+
+  async deleteAdminTeam(id) {
+    return request(`/admin/team/${id}`, {
+      method: 'DELETE',
+    });
+  },
+
+  async sendAdminTeamEmail(id, payload) {
+    return request(`/admin/team/${id}/email`, {
+      method: 'POST',
+      body: payload,
+    });
+  },
+
+  async downloadAdminTeamSubmission(id) {
+    return request(`/admin/team/${id}/download`);
+  },
+
   async getAdminAnalytics() {
     return request('/admin/analytics');
   },
+
 
   async exportAdminData(params) {
     return downloadFile('/admin/export', params);

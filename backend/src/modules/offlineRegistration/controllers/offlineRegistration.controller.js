@@ -41,10 +41,14 @@ export const saveOfflineRegistration = asyncHandler(async (req, res) => {
 
 export const completeOfflineRegistration = asyncHandler(async (req, res) => {
   const teamId = req.team?._id || req.params.teamId;
+  const existing = await OfflineRegistration.findOne({ team: teamId });
+  const confCode = existing?.confirmationCode || `HWV-OFF-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
+
   const offlineRegistration = await OfflineRegistration.findOneAndUpdate(
     { team: teamId },
     {
       registrationCompleted: true,
+      confirmationCode: confCode,
       "payment.status": "completed",
     },
     {
@@ -52,6 +56,7 @@ export const completeOfflineRegistration = asyncHandler(async (req, res) => {
       runValidators: true,
     }
   ).populate("team");
+
 
   if (!offlineRegistration) {
     throw new ApiError(404, "Offline registration not found");

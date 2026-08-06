@@ -31,11 +31,29 @@ const allowedOrigins = (process.env.CLIENT_URL || "http://localhost:5173")
   .map((origin) => origin.trim())
   .filter(Boolean);
 
-app.use(helmet());
+// Simple NoSQL Injection Sanitizer
+const sanitizeInput = (obj) => {
+  if (!obj || typeof obj !== "object") return obj;
+  for (const key in obj) {
+    if (key.startsWith("$") || key.includes(".")) {
+      delete obj[key];
+    } else if (typeof obj[key] === "object") {
+      sanitizeInput(obj[key]);
+    }
+  }
+  return obj;
+};
+
+app.use(
+  helmet({
+    crossOriginResourcePolicy: { policy: "cross-origin" },
+  })
+);
+
 app.use(
   cors({
     origin(origin, callback) {
-      if (!origin || allowedOrigins.includes(origin)) {
+      if (!origin || allowedOrigins.includes(origin) || allowedOrigins.includes("*")) {
         return callback(null, true);
       }
 
@@ -44,10 +62,18 @@ app.use(
     credentials: true,
   })
 );
+
 app.use(express.json({ limit: "50mb" }));
 app.use(express.urlencoded({ extended: true, limit: "50mb" }));
+app.use((req, _res, next) => {
+  if (req.body) sanitizeInput(req.body);
+  if (req.query) sanitizeInput(req.query);
+  if (req.params) sanitizeInput(req.params);
+  next();
+});
 app.use(cookieParser());
 app.use(morgan(process.env.NODE_ENV === "production" ? "combined" : "dev"));
+
 
 app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
 

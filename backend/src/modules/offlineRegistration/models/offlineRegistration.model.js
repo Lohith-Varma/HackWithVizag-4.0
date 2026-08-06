@@ -34,6 +34,11 @@ const offlineRegistrationSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    confirmationCode: {
+      type: String,
+      trim: true,
+      default: "",
+    },
     payment: {
       amount: {
         type: Number,

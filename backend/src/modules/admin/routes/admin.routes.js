@@ -3,6 +3,8 @@ import { authenticate, authorizeRoles } from "../../../middleware/auth.middlewar
 import { validateRequest } from "../../../middleware/validateRequest.middleware.js";
 import { sendSuccess } from "../../../utils/apiResponse.js";
 import {
+  deleteTeam,
+  downloadTeamSubmission,
   exportAdminData,
   getAnalytics,
   getAdminOverview,
@@ -11,6 +13,8 @@ import {
   listSubmissions,
   listTeams,
   listUsers,
+  sendTeamEmail,
+  updateAdminTeamDetails,
   updateTeamRemarks,
   updateTeamStatus,
   updateUserStatus,
@@ -36,6 +40,10 @@ router.get("/overview", getAdminOverview);
 router.get("/users", listUsers);
 router.get("/teams", listTeamsValidation, validateRequest, listTeams);
 router.get("/team/:id", teamIdValidation, validateRequest, getTeamDetails);
+router.put("/team/:id", teamIdValidation, validateRequest, updateAdminTeamDetails);
+router.delete("/team/:id", teamIdValidation, validateRequest, deleteTeam);
+router.post("/team/:id/email", teamIdValidation, validateRequest, sendTeamEmail);
+router.get("/team/:id/download", teamIdValidation, validateRequest, downloadTeamSubmission);
 router.get("/submissions", listSubmissionsValidation, validateRequest, listSubmissions);
 router.get("/analytics", getAnalytics);
 router.get("/export", exportValidation, validateRequest, exportAdminData);
@@ -51,3 +59,4 @@ router.patch(
 router.patch("/users/:userId/status", updateUserStatusValidation, validateRequest, updateUserStatus);
 
 export default router;
+

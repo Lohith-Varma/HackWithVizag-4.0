@@ -61,6 +61,40 @@ export default function StepPersonal({ data, errors, onChange, onFileChange }) {
         </label>
 
         <label className="field">
+          <span>Gender</span>
+          <select value={data.gender || ''} onChange={update('gender')}>
+            <option value="">Select gender</option>
+            <option value="Male">Male</option>
+            <option value="Female">Female</option>
+            <option value="Other">Other / Prefer not to say</option>
+          </select>
+        </label>
+
+        <label className="field">
+          <span>Resume URL (Optional)</span>
+          <input value={data.resumeUrl || data.resume || ''} onChange={update('resumeUrl')} placeholder="https://drive.google.com/..." />
+          {errors.resumeUrl && <small>{errors.resumeUrl}</small>}
+        </label>
+
+        <label className="field">
+          <span>GitHub Profile</span>
+          <input value={data.githubUrl || data.github || ''} onChange={update('githubUrl')} placeholder="https://github.com/username" />
+          {errors.githubUrl && <small>{errors.githubUrl}</small>}
+        </label>
+
+        <label className="field">
+          <span>LinkedIn Profile</span>
+          <input value={data.linkedinUrl || data.linkedin || ''} onChange={update('linkedinUrl')} placeholder="https://linkedin.com/in/username" />
+          {errors.linkedinUrl && <small>{errors.linkedinUrl}</small>}
+        </label>
+
+        <label className="field">
+          <span>Portfolio / Website</span>
+          <input value={data.portfolioUrl || data.portfolio || ''} onChange={update('portfolioUrl')} placeholder="https://yourportfolio.dev" />
+          {errors.portfolioUrl && <small>{errors.portfolioUrl}</small>}
+        </label>
+
+        <label className="field">
           <span>City *</span>
           <input value={data.city} onChange={update('city')} placeholder="Visakhapatnam" />
           {errors.city && <small>{errors.city}</small>}

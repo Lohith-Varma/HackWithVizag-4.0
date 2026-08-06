@@ -194,13 +194,57 @@ async function runEndToEndVerification() {
     user: { id: new mongoose.Types.ObjectId().toString(), role: "admin" },
     params: { id: teamId },
     body: {
-      status: "selected",
+      status: "approved",
       remarks: "Outstanding technical abstract and team setup. Approved for offline round.",
     },
   };
 
   const adminRes = await execHandler(updateTeamStatus, adminReq);
   console.log(`-> [ADMIN REVIEW PASS] Team Status Updated to "${adminRes.payload.data.team.status}"`);
+
+  // Test Duplicate Registration Conflict Handling
+  console.log("\n[5b/6] Verifying Duplicate Team Name & Email Conflict Prevention...");
+  const duplicateReq = {
+    user: {
+      id: new mongoose.Types.ObjectId().toString(),
+      _id: new mongoose.Types.ObjectId(),
+      name: "Different Leader",
+    },
+    body: {
+      payload: JSON.stringify({
+        personal: {
+          fullName: "Different Leader",
+          email: `different_${uniqueTimestamp}@hackwithvizag.test`,
+          phone: "9111111111",
+          collegeName: "NSRIT Visakhapatnam",
+          department: "Computer Science",
+          year: "4th Year",
+        },
+        team: {
+          teamName: mockReq.body.payload ? JSON.parse(mockReq.body.payload).team.teamName : `Vizag Tech Innovators ${uniqueTimestamp.toString().slice(-4)}`,
+          members: [],
+        },
+        project: {
+          title: "Duplicate Team Test Project Title Here",
+          problemStatementId: targetPs._id.toString(),
+          problemCode: targetPs.code,
+          theme: targetPs.theme,
+          problemStatement: targetPs.problemStatement,
+          problemType: targetPs.type,
+          abstract: "Our solution utilizes computer vision and machine learning to optimize cargo container flow at Vizag Port. It reduces port congestion and demurrage delays significantly while automating crane scheduling.",
+        },
+      }),
+    },
+    files: {},
+  };
+
+  try {
+    await execHandler(submitFullRegistration, duplicateReq);
+    console.error("[FAIL] Duplicate team name did not throw Conflict error!");
+    process.exit(1);
+  } catch (err) {
+    console.log(`-> [DUPLICATE CONFLICT PASS] Correctly rejected duplicate registration: ${err.message}`);
+  }
 
   // Test Offline Registration Workflow
   console.log("\n[6/6] Verifying Offline Registration Eligibility & Completion...");
@@ -233,6 +277,7 @@ async function runEndToEndVerification() {
   console.log("=======================================================");
   process.exit(0);
 }
+
 
 runEndToEndVerification().catch((err) => {
   console.error("Verification process crashed:", err);

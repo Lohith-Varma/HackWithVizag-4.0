@@ -1,6 +1,7 @@
 import express from "express";
 import {
   createEvent,
+  deleteEvent,
   getActiveEvent,
   getAdminEvents,
   setActiveEvent,
@@ -18,6 +19,8 @@ router.use("/admin", authenticate, authorizeRoles("admin"));
 router.get("/admin", getAdminEvents);
 router.post("/admin", createEvent);
 router.put("/admin/:id", updateEvent);
+router.delete("/admin/:id", deleteEvent);
 router.patch("/admin/:id/active", setActiveEvent);
 
 export default router;
+

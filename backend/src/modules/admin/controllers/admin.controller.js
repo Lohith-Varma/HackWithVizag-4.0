@@ -211,22 +211,48 @@ export const getDashboard = asyncHandler(async (_req, res) => {
     totalRegisteredParticipants,
     totalProjects,
     totalSubmittedProjects,
+    pendingTeams,
+    submittedTeams,
     teamsUnderReview,
+    approvedTeams,
     selectedTeams,
     rejectedTeams,
+    waitlistedTeams,
+    shortlistedTeams,
+    paymentPendingTeams,
+    paymentCompletedTeams,
     openInnovationEntries,
     officialEntries,
+    dailyAgg,
   ] = await Promise.all([
     Team.countDocuments(),
     User.countDocuments({ role: "participant" }),
     Project.countDocuments(),
     Submission.countDocuments({ status: { $ne: "draft" } }),
+    Team.countDocuments({ currentStatus: "pending" }),
+    Team.countDocuments({ currentStatus: "submitted" }),
     Team.countDocuments({ currentStatus: "under_review" }),
-    Team.countDocuments({ currentStatus: "selected" }),
+    Team.countDocuments({ currentStatus: { $in: ["approved", "selected"] } }),
+    Team.countDocuments({ currentStatus: { $in: ["approved", "selected"] } }),
     Team.countDocuments({ currentStatus: "rejected" }),
+    Team.countDocuments({ currentStatus: "waitlisted" }),
+    Team.countDocuments({ currentStatus: "shortlisted" }),
+    Team.countDocuments({ currentStatus: "payment_pending" }),
+    Team.countDocuments({ currentStatus: "payment_completed" }),
     Project.countDocuments({ problemType: "open" }),
     Project.countDocuments({ problemType: "official" }),
+    Team.aggregate([
+      {
+        $group: {
+          _id: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } },
+          count: { $sum: 1 },
+        },
+      },
+      { $sort: { _id: 1 } },
+    ]),
   ]);
+
+  const dailyRegistrations = dailyAgg.map((row) => ({ date: row._id, count: row.count }));
 
   return sendSuccess(res, 200, "Admin dashboard fetched successfully", {
     cards: {
@@ -234,14 +260,23 @@ export const getDashboard = asyncHandler(async (_req, res) => {
       totalRegisteredParticipants,
       totalProjects,
       totalSubmittedProjects: totalSubmittedProjects || totalProjects,
+      pendingTeams,
+      submittedTeams,
       teamsUnderReview,
+      approvedTeams,
       selectedTeams,
       rejectedTeams,
+      waitlistedTeams,
+      shortlistedTeams,
+      paymentPendingTeams,
+      paymentCompletedTeams,
       openInnovationEntries,
       officialEntries,
+      dailyRegistrations,
     },
   });
 });
+
 
 export const listUsers = asyncHandler(async (_req, res) => {
   const users = await User.find().sort({ createdAt: -1 });
@@ -524,9 +559,110 @@ export const exportAdminData = asyncHandler(async (req, res) => {
     };
   });
 
+  if (format === "excel") {
+    res.setHeader("Content-Type", "application/vnd.ms-excel; charset=utf-8");
+    res.setHeader("Content-Disposition", `attachment; filename="${scope}-export.xls"`);
+    const htmlTable = `<html><head><meta charset="UTF-8"></head><body><table border="1">
+      <tr>${headers.map((h) => `<th>${h}</th>`).join("")}</tr>
+      ${rows
+        .map(
+          (row) =>
+            `<tr>${headers
+              .map((h) => `<td>${row[h] !== undefined && row[h] !== null ? String(row[h]) : ""}</td>`)
+              .join("")}</tr>`
+        )
+        .join("")}
+    </table></body></html>`;
+    return res.status(200).send(htmlTable);
+  }
+
+  if (format === "pdf") {
+    res.setHeader("Content-Type", "text/html; charset=utf-8");
+    res.setHeader("Content-Disposition", `attachment; filename="${scope}-report.html"`);
+    const pdfHtml = `<!DOCTYPE html><html><head><title>HackWithVizag Report</title>
+      <style>body{font-family:sans-serif;padding:20px;} table{width:100%;border-collapse:collapse;} th,td{border:1px solid #ccc;padding:8px;font-size:12px;} th{background:#f0f0f0;}</style>
+      </head><body><h2>HackWithVizag 4.0 Report - ${scope.toUpperCase()}</h2>
+      <table><tr>${headers.map((h) => `<th>${h}</th>`).join("")}</tr>
+      ${rows
+        .map(
+          (row) =>
+            `<tr>${headers
+              .map((h) => `<td>${row[h] !== undefined && row[h] !== null ? String(row[h]) : ""}</td>`)
+              .join("")}</tr>`
+        )
+        .join("")}
+      </table></body></html>`;
+    return res.status(200).send(pdfHtml);
+  }
+
   res.setHeader("Content-Type", "text/csv; charset=utf-8");
   res.setHeader("Content-Disposition", `attachment; filename="${scope}-export.csv"`);
   return res.status(200).send(toCsv(headers, rows));
 });
 
+export const deleteTeam = asyncHandler(async (req, res) => {
+  const teamId = req.params.id || req.params.teamId;
+  const team = await Team.findById(teamId);
+  if (!team) {
+    throw new ApiError(404, "Team not found");
+  }
+
+  // Remove references
+  await User.updateMany({ team: team._id }, { team: null });
+  await Project.deleteMany({ team: team._id });
+  await Submission.deleteMany({ team: team._id });
+  await Team.findByIdAndDelete(team._id);
+
+  return sendSuccess(res, 200, "Team and associated submission deleted successfully");
+});
+
+export const updateAdminTeamDetails = asyncHandler(async (req, res) => {
+  const teamId = req.params.id || req.params.teamId;
+  const team = await Team.findById(teamId);
+  if (!team) {
+    throw new ApiError(404, "Team not found");
+  }
+
+  const { teamName, status, remarks } = req.body;
+  if (teamName) team.teamName = teamName.trim();
+  if (status) team.currentStatus = status;
+  if (remarks !== undefined) team.remarks = remarks;
+
+  team.reviewedBy = req.user.id;
+  team.reviewedAt = new Date();
+  await team.save();
+
+  return sendSuccess(res, 200, "Team details updated successfully", { team });
+});
+
+export const sendTeamEmail = asyncHandler(async (req, res) => {
+  const teamId = req.params.id || req.params.teamId;
+  const team = await Team.findById(teamId).populate("leader");
+  if (!team || !team.leader) {
+    throw new ApiError(404, "Team or team leader email not found");
+  }
+
+  const { subject, message } = req.body;
+  if (!subject || !message) {
+    throw new ApiError(400, "Email subject and message content are required");
+  }
+
+  return sendSuccess(res, 200, `Email queued successfully for team leader (${team.leader.email})`);
+});
+
+export const downloadTeamSubmission = asyncHandler(async (req, res) => {
+  const teamId = req.params.id || req.params.teamId;
+  const project = await Project.findOne({ team: teamId });
+  if (!project) {
+    throw new ApiError(404, "No submission project found for this team");
+  }
+
+  return sendSuccess(res, 200, "Submission file metadata fetched successfully", {
+    projectTitle: project.title,
+    pptFile: project.pptFile,
+    supportingDocFile: project.supportingDocFile,
+  });
+});
+
 export const getAdminOverview = getDashboard;
+

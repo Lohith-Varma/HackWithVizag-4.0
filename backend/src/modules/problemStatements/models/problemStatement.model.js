@@ -37,6 +37,31 @@ const problemStatementSchema = new mongoose.Schema(
       required: [true, "Online round requirements are required"],
       trim: true,
     },
+    difficulty: {
+      type: String,
+      enum: ["Easy", "Medium", "Hard", "Advanced"],
+      default: "Medium",
+      index: true,
+    },
+    technologies: {
+      type: [String],
+      default: [],
+    },
+    organization: {
+      type: String,
+      trim: true,
+      default: "HackWithVizag Team",
+    },
+    imageUrl: {
+      type: String,
+      trim: true,
+      default: "",
+    },
+    attachmentUrl: {
+      type: String,
+      trim: true,
+      default: "",
+    },
     type: {
       type: String,
       enum: ["official", "open"],

@@ -42,23 +42,47 @@ import Toast from '../components/Toast/Toast';
 import { api } from '../services/api';
 import './AdminPortal.css';
 
-const statusOptions = ['pending', 'under_review', 'selected', 'rejected'];
+const statusOptions = [
+  'pending',
+  'submitted',
+  'under_review',
+  'approved',
+  'selected',
+  'rejected',
+  'waitlisted',
+  'shortlisted',
+  'payment_pending',
+  'payment_completed',
+];
 
 const statusLabels = {
   pending: 'Pending',
+  submitted: 'Submitted',
   under_review: 'Under Review',
+  approved: 'Approved',
   selected: 'Selected',
   rejected: 'Rejected',
+  waitlisted: 'Waitlisted',
+  shortlisted: 'Shortlisted',
+  payment_pending: 'Payment Pending',
+  payment_completed: 'Payment Completed',
   draft: 'Draft',
 };
 
 const statusColors = {
   pending: 'gray',
+  submitted: 'blue',
   under_review: 'amber',
+  approved: 'green',
   selected: 'green',
   rejected: 'red',
+  waitlisted: 'purple',
+  shortlisted: 'emerald',
+  payment_pending: 'amber',
+  payment_completed: 'indigo',
   draft: 'gray',
 };
+
 
 const navItems = [
   { id: 'dashboard', label: 'Dashboard', icon: FiGrid },
@@ -477,23 +501,16 @@ export default function AdminPortal() {
     if (targetTeam) openTeamDetails(targetTeam.id || targetTeam._id);
   };
 
-  const handleExportCSV = async () => {
+  const handleExportData = async (format = 'csv') => {
     try {
-      setToast({ type: 'info', message: 'Preparing CSV export download...' });
-      const blob = await api.exportAdminData();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `HackWithVizag_Submissions_${new Date().toISOString().split('T')[0]}.csv`;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      window.URL.revokeObjectURL(url);
-      setToast({ type: 'success', message: 'CSV downloaded successfully.' });
-    } catch {
-      setToast({ type: 'error', message: 'Failed to download CSV export.' });
+      setToast({ type: 'info', message: `Preparing ${format.toUpperCase()} export download...` });
+      await api.exportAdminData({ format, status: filters.status });
+      setToast({ type: 'success', message: `${format.toUpperCase()} exported successfully.` });
+    } catch (err) {
+      setToast({ type: 'error', message: err.message || `Failed to download ${format.toUpperCase()} export.` });
     }
   };
+
 
   const handleFilterChip = (statusVal) => {
     setFilters((prev) => ({ ...prev, status: prev.status === statusVal ? '' : statusVal, page: 1 }));
@@ -727,13 +744,20 @@ export default function AdminPortal() {
                 <h2>Dashboard Home</h2>
               </div>
               <div className="header-actions-row">
-                <button type="button" className="secondary-action" onClick={handleExportCSV}>
-                  <FiDownload /> Export CSV Data
+                <button type="button" className="secondary-action" onClick={() => handleExportData('csv')}>
+                  <FiDownload /> Export CSV
+                </button>
+                <button type="button" className="secondary-action" onClick={() => handleExportData('excel')}>
+                  <FiDownload /> Export Excel
+                </button>
+                <button type="button" className="secondary-action" onClick={() => handleExportData('pdf')}>
+                  <FiDownload /> Export PDF
                 </button>
                 <button type="button" className="primary-action" onClick={() => setActiveView('review')}>
                   <FiSliders /> Launch Review Workspace →
                 </button>
               </div>
+
             </div>
 
             {/* KPI Cards */}
