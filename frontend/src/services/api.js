@@ -4,7 +4,7 @@ const resolveApiBaseUrl = () => {
   const base = API_BASE_URL.replace(/\/$/, '');
   if (/^https?:\/\//i.test(base)) return base;
 
-  const origin = typeof window === 'undefined' ? 'http://localhost:5000' : window.location.origin;
+  const origin = typeof window === 'undefined' ? 'https://hackwithvizag-4-0.onrender.com' : window.location.origin;
   if (!base) return origin;
 
   return `${origin}${base.startsWith('/') ? base : `/${base}`}`;
