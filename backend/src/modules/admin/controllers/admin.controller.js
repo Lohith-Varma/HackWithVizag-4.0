@@ -181,7 +181,9 @@ const updateReviewState = async (teamId, adminId, { status, remarks }) => {
     team.remarks = remarks;
   }
 
-  team.reviewedBy = adminId;
+  if (adminId && mongoose.Types.ObjectId.isValid(adminId)) {
+    team.reviewedBy = adminId;
+  }
   team.reviewedAt = new Date();
   await team.save();
 

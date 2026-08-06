@@ -218,7 +218,7 @@ export const submitFullRegistration = asyncHandler(async (req, res) => {
   return sendSuccess(res, 201, "Registration and project submitted successfully", {
     registrationId: regId,
     status: "under_review",
-    submissionDate: project.submittedAt.toISOString(),
+    submissionDate: (project?.submittedAt || new Date()).toISOString(),
     submission,
   });
 });

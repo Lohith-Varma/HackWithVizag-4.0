@@ -134,22 +134,38 @@ export const createProblemStatement = asyncHandler(async (req, res) => {
         .map((s) => s.trim())
         .filter(Boolean);
 
-  const ps = await ProblemStatement.create({
+  const payload = {
     ...req.body,
+    theme: req.body.theme || req.body.category || "General",
+    problemStatement: req.body.problemStatement || req.body.description || "",
+    onlineRoundRequirements: req.body.onlineRoundRequirements || req.body.onlineRequirements || "Technical presentation and prototype demo.",
+    type: req.body.type || (req.body.isCustomIdea ? "open" : "official"),
     objectives,
     eventId: activeEvent._id,
-  });
+  };
+
+  const ps = await ProblemStatement.create(payload);
 
   return sendSuccess(res, 201, "Problem statement created successfully", { problemStatement: ps });
 });
 
 export const updateProblemStatement = asyncHandler(async (req, res) => {
   const updateData = { ...req.body };
-  if (updateData.objectives && typeof updateData.objectives === "string") {
-    updateData.objectives = updateData.objectives
-      .split("\n")
-      .map((s) => s.trim())
-      .filter(Boolean);
+  if (updateData.objectives) {
+    updateData.objectives = Array.isArray(updateData.objectives)
+      ? updateData.objectives
+      : String(updateData.objectives)
+          .split("\n")
+          .map((s) => s.trim())
+          .filter(Boolean);
+  }
+  if (updateData.category && !updateData.theme) updateData.theme = updateData.category;
+  if (updateData.description && !updateData.problemStatement) updateData.problemStatement = updateData.description;
+  if (updateData.onlineRequirements && !updateData.onlineRoundRequirements) {
+    updateData.onlineRoundRequirements = updateData.onlineRequirements;
+  }
+  if (updateData.isCustomIdea !== undefined && !updateData.type) {
+    updateData.type = updateData.isCustomIdea ? "open" : "official";
   }
 
   const ps = await ProblemStatement.findByIdAndUpdate(req.params.id, updateData, {

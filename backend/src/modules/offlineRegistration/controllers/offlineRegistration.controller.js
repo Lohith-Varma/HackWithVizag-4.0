@@ -11,19 +11,21 @@ export const getOfflineRegistrationEligibility = asyncHandler(async (req, res) =
 });
 
 export const getOfflineRegistration = asyncHandler(async (req, res) => {
-  const offlineRegistration = await OfflineRegistration.findOne({ team: req.team._id }).populate("team");
+  const teamId = req.team?._id || req.params.teamId;
+  const offlineRegistration = await OfflineRegistration.findOne({ team: teamId }).populate("team");
 
   return sendSuccess(res, 200, "Offline registration fetched successfully", { offlineRegistration });
 });
 
 export const saveOfflineRegistration = asyncHandler(async (req, res) => {
+  const teamId = req.team?._id || req.params.teamId;
   const offlineRegistration = await OfflineRegistration.findOneAndUpdate(
-    { team: req.team._id },
+    { team: teamId },
     {
-      team: req.team._id,
-      contactName: req.body.contactName,
-      contactPhone: req.body.contactPhone,
-      arrivalDate: req.body.arrivalDate || null,
+      team: teamId,
+      contactName: req.body.contactName || req.body.emergencyContactName,
+      contactPhone: req.body.contactPhone || req.body.emergencyContactPhone,
+      arrivalDate: req.body.arrivalDate || req.body.arrivalDateTime || null,
       accommodationRequired: Boolean(req.body.accommodationRequired),
     },
     {
@@ -38,8 +40,9 @@ export const saveOfflineRegistration = asyncHandler(async (req, res) => {
 });
 
 export const completeOfflineRegistration = asyncHandler(async (req, res) => {
+  const teamId = req.team?._id || req.params.teamId;
   const offlineRegistration = await OfflineRegistration.findOneAndUpdate(
-    { team: req.team._id },
+    { team: teamId },
     {
       registrationCompleted: true,
       "payment.status": "completed",

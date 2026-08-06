@@ -1,42 +1,65 @@
 :root {
-  /* Colors */
-  --color-bg: #080B17;
-  --color-bg-darker: #05070f;
-  --color-primary: #5B5FFF;
-  --color-secondary: #7B61FF;
-  --color-accent: #00D4FF;
-  --color-text: #FFFFFF;
-  --color-text-secondary: #A8B2D1;
+  /* Core Color Palette */
+  --color-bg: #070913;
+  --color-bg-darker: #04050b;
+  --color-bg-surface: #0e1227;
+  --color-bg-card: rgba(16, 22, 47, 0.6);
+  --color-bg-card-hover: rgba(26, 34, 69, 0.7);
+  
+  /* Primary & Accent Colors */
+  --color-primary: #6366f1;
+  --color-primary-hover: #4f46e5;
+  --color-primary-light: rgba(99, 102, 241, 0.15);
+  --color-secondary: #8b5cf6;
+  --color-accent: #06b6d4;
+  --color-accent-light: rgba(6, 182, 212, 0.15);
+  --color-cyan: #38bdf8;
+  --color-emerald: #10b981;
+  --color-amber: #f59e0b;
+  --color-rose: #ef4444;
+  
+  /* Text Colors */
+  --color-text: #f8fafc;
+  --color-text-secondary: #94a3b8;
+  --color-text-muted: #64748b;
   
   /* Glassmorphism Presets */
-  --card-bg: rgba(255, 255, 255, 0.03);
-  --card-bg-hover: rgba(255, 255, 255, 0.06);
+  --card-bg: rgba(15, 23, 42, 0.55);
+  --card-bg-hover: rgba(30, 41, 59, 0.65);
   --card-border: rgba(255, 255, 255, 0.08);
-  --card-border-hover: rgba(255, 255, 255, 0.15);
-  --glass-navbar: rgba(8, 11, 23, 0.7);
+  --card-border-hover: rgba(99, 102, 241, 0.35);
+  --glass-navbar: rgba(7, 9, 19, 0.8);
+  --glass-backdrop: blur(16px);
   
   /* Gradients */
-  --gradient-purple-blue: linear-gradient(135deg, var(--color-primary) 0%, var(--color-secondary) 100%);
-  --gradient-blue-cyan: linear-gradient(135deg, var(--color-secondary) 0%, var(--color-accent) 100%);
-  --gradient-text: linear-gradient(135deg, #FFFFFF 0%, #A8B2D1 100%);
-  --gradient-glow: linear-gradient(135deg, var(--color-primary), var(--color-accent));
+  --gradient-purple-blue: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #06b6d4 100%);
+  --gradient-blue-cyan: linear-gradient(135deg, #38bdf8 0%, #06b6d4 100%);
+  --gradient-gold: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%);
+  --gradient-text: linear-gradient(135deg, #ffffff 0%, #cbd5e1 100%);
+  --gradient-primary-glow: linear-gradient(135deg, rgba(99, 102, 241, 0.3), rgba(6, 182, 212, 0.2));
+  --gradient-dark-card: linear-gradient(180deg, rgba(30, 41, 59, 0.4) 0%, rgba(15, 23, 42, 0.6) 100%);
   
   /* Fonts */
-  --font-heading: 'Poppins', sans-serif;
-  --font-body: 'Inter', sans-serif;
+  --font-heading: 'Outfit', 'Poppins', system-ui, -apple-system, sans-serif;
+  --font-body: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
   
   /* Shadows & Glows */
-  --shadow-sm: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-  --shadow-md: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-  --shadow-lg: 0 20px 25px -5px rgba(0, 0, 0, 0.15), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-  --glow-primary: 0 0 20px rgba(91, 95, 255, 0.35);
-  --glow-accent: 0 0 20px rgba(0, 212, 255, 0.35);
-  --glow-card: 0 10px 30px -10px rgba(91, 95, 255, 0.15);
-
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.2);
+  --shadow-md: 0 8px 24px -4px rgba(0, 0, 0, 0.3);
+  --shadow-lg: 0 16px 40px -8px rgba(0, 0, 0, 0.4);
+  --glow-primary: 0 0 25px rgba(99, 102, 241, 0.35);
+  --glow-accent: 0 0 25px rgba(6, 182, 212, 0.35);
+  --glow-card: 0 12px 36px -8px rgba(99, 102, 241, 0.18);
+  
   /* Spacing */
-  --section-padding: 10rem 2rem;
-  --section-padding-mobile: 6rem 1.5rem;
-  --max-content-width: 1300px;
+  --section-padding: 7rem 2rem;
+  --section-padding-mobile: 4.5rem 1.25rem;
+  --max-content-width: 1280px;
+  --radius-sm: 8px;
+  --radius-md: 14px;
+  --radius-lg: 20px;
+  --radius-xl: 28px;
 }
 
 @media (max-width: 768px) {

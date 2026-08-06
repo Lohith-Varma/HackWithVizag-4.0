@@ -104,11 +104,11 @@ export default function Rewards() {
               <h5>Certificates</h5>
               {/* <p>Official digital credentials backed by Vizag Tech Hub & partners.</p> */}
             </div>
-            {/* <div className="benefit-item-card">
+            <div className="benefit-item-card">
               <FiZap className="benefit-icon" />
-              <h5>Mentorship</h5>
-              <p>1-on-1 architecture feedback rounds with senior engineers.</p>
-            </div> */}
+              <h5>Connections</h5>
+              {/* <p>1-on-1 architecture feedback rounds with senior engineers.</p> */}
+            </div>
             <div className="benefit-item-card">
               <FiGift className="benefit-icon" />
               <h5>Swag & Kits</h5>
