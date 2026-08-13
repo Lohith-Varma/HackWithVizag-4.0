@@ -104,10 +104,10 @@ export default function Contact() {
                 <span className="coord-role">Faculty Coordinator</span>
                 <h4 className="coord-name">Dr. V. Sreerama Murthy</h4>
                 <p className="coord-desc">Associate Professor, Department of CSE</p>
-                <div className="coord-contact-item">
+                {/* <div className="coord-contact-item">
                   <FiPhone size={14} />
                   <a href="tel:+919701254792">+91 97012 54792</a>
-                </div>
+                </div> */}
               </div>
 
               <div className="coord-card">
