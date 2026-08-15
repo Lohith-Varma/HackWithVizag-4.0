@@ -8,7 +8,7 @@ import Eligibility from './components/Eligibility/Eligibility';
 import Rules from './components/Rules/Rules';
 import Judging from './components/Judging/Judging';
 import Rewards from './components/Rewards/Rewards';
-import Sponsors from './components/Sponsors/Sponsors';
+// import Sponsors from './components/Sponsors/Sponsors';
 import FAQ from './components/FAQ/FAQ';
 import Contact from './components/Contact/Contact';
 import Footer from './components/Footer/Footer';
@@ -102,7 +102,7 @@ export default function App() {
           <Rewards />
 
           {/* Grayscale hover logo cloud */}
-          <Sponsors />
+          {/* <Sponsors /> */}
 
           {/* Frequently Asked Questions accordion */}
           <FAQ />
