@@ -15,26 +15,47 @@ import Footer from './components/Footer/Footer';
 import Auth from './pages/Auth';
 import AdminPortal from './pages/AdminPortal';
 import Dashboard from './pages/Dashboard';
-import Registration from './pages/Registration';
+// import Registration from './pages/Registration'; // Kept ready for official launch
+import RegistrationSoon from './pages/RegistrationSoon';
 import './App.css';
 
 const routes = {
   '#auth': 'auth',
   '#dashboard': 'dashboard',
-  '#registration': 'registration',
+  '#registration': 'registration-soon',
+  '#register': 'registration-soon',
+  '#register-soon': 'registration-soon',
+  '#registration-soon': 'registration-soon',
+  '#coming-soon': 'registration-soon',
   '#admin': 'admin',
 };
 
 function getCurrentRoute() {
   const path = window.location.pathname.toLowerCase();
   if (path.startsWith('/admin')) return 'admin';
-  if (path.startsWith('/registration')) return 'registration';
+  if (
+    path.startsWith('/registration-soon') ||
+    path.startsWith('/register-soon') ||
+    path.startsWith('/coming-soon') ||
+    path.startsWith('/register') ||
+    path.startsWith('/registration')
+  ) {
+    return 'registration-soon';
+  }
   if (path.startsWith('/dashboard')) return 'dashboard';
   if (path.startsWith('/auth')) return 'auth';
 
   const hash = window.location.hash.toLowerCase();
   if (hash.startsWith('#admin')) return 'admin';
-  if (hash.startsWith('#registration')) return 'registration';
+  if (
+    hash.startsWith('#registration-soon') ||
+    hash.startsWith('#register-soon') ||
+    hash.startsWith('#coming-soon') ||
+    hash.startsWith('#register') ||
+    hash.startsWith('#registration')
+  ) {
+    return 'registration-soon';
+  }
   if (hash.startsWith('#dashboard')) return 'dashboard';
   if (hash.startsWith('#auth')) return 'auth';
 
@@ -71,7 +92,7 @@ export default function App() {
     if (route === 'admin') return <AdminPortal />;
     if (route === 'auth') return <Auth />;
     if (route === 'dashboard') return <Dashboard />;
-    if (route === 'registration') return <Registration />;
+    if (route === 'registration-soon' || route === 'registration') return <RegistrationSoon />;
 
     return (
       <>

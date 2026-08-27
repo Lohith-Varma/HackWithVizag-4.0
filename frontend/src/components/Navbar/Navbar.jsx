@@ -53,7 +53,15 @@ export default function Navbar() {
     e.preventDefault();
     setIsMobileMenuOpen(false);
 
-    if (href === '#auth' || href === '#dashboard' || href === '#registration') {
+    if (
+      href === '#auth' ||
+      href === '#dashboard' ||
+      href === '#registration' ||
+      href === '#register' ||
+      href === '#register-soon' ||
+      href === '#registration-soon' ||
+      href === '#coming-soon'
+    ) {
       window.location.hash = href;
       return;
     }
@@ -109,7 +117,7 @@ export default function Navbar() {
           </ul>
 
           <div className="navbar-actions">
-            <a href="#auth" className="btn-register" onClick={(e) => handleLinkClick(e, '#auth')}>
+            <a href="#register" className="btn-register" onClick={(e) => handleLinkClick(e, '#register')}>
               Register Now
             </a>
             <button className="hamburger" onClick={toggleMobileMenu} aria-label="Toggle Menu">
@@ -147,9 +155,9 @@ export default function Navbar() {
               })}
               <li style={{ marginTop: '1.5rem', width: '100%', textAlign: 'center' }}>
                 <a
-                  href="#auth"
+                  href="#register"
                   className="mobile-btn-register"
-                  onClick={(e) => handleLinkClick(e, '#auth')}
+                  onClick={(e) => handleLinkClick(e, '#register')}
                 >
                   Register Now
                 </a>

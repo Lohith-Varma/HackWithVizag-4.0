@@ -180,12 +180,12 @@ export default function Hero() {
               </div>
             )}
             <div className="registration-deadline">
-              Registration closes on <strong>{regDeadline}</strong>
+              Registrations <strong>Opening Very Soon</strong> • Expected Target: <strong>{regDeadline}</strong>
             </div>
           </motion.div>
 
           <motion.div variants={itemVariants} className="hero-ctas">
-            <a href="#auth" className="btn-hero-primary">
+            <a href="#register" className="btn-hero-primary">
               Register Now <FiArrowRight />
             </a>
             <a

@@ -37,6 +37,7 @@ import {
   FiFilter,
   FiFolder,
   FiExternalLink,
+  FiBell,
 } from 'react-icons/fi';
 import Toast from '../components/Toast/Toast';
 import { api } from '../services/api';
@@ -88,6 +89,7 @@ const navItems = [
   { id: 'dashboard', label: 'Dashboard', icon: FiGrid },
   { id: 'review', label: 'Review Queue', icon: FiSliders },
   { id: 'teams', label: 'All Teams', icon: FiUsers },
+  { id: 'leads', label: 'Notification Leads', icon: FiBell },
   { id: 'problemStatements', label: 'Problem Statements', icon: FiLayers },
   { id: 'eventConfig', label: 'Event Config', icon: FiCalendar },
   { id: 'analytics', label: 'Analytics', icon: FiBarChart2 },
@@ -416,6 +418,45 @@ export default function AdminPortal() {
     }
   }, []);
 
+  const [leads, setLeads] = useState([]);
+  const [leadsSearch, setLeadsSearch] = useState('');
+  const [isLeadsLoading, setIsLeadsLoading] = useState(false);
+
+  const loadNotificationLeads = useCallback(async () => {
+    setIsLeadsLoading(true);
+    try {
+      const res = await api.getNotificationLeads({ search: leadsSearch });
+      setLeads(res.leads || []);
+    } catch {
+      try {
+        const local = JSON.parse(localStorage.getItem('hwv.notify_list') || '[]');
+        setLeads(local);
+      } catch {
+        setLeads([]);
+      }
+    } finally {
+      setIsLeadsLoading(false);
+    }
+  }, [leadsSearch]);
+
+  const handleExportLeads = async () => {
+    try {
+      await api.exportNotificationLeads();
+      setToast({ type: 'success', message: 'Notification leads downloaded.' });
+    } catch {
+      const csvContent = "data:text/csv;charset=utf-8," 
+        + ["Name,Email,Registered At"].concat(leads.map(l => `"${l.name || ''}","${l.email}","${l.createdAt || l.date || ''}"`)).join("\n");
+      const encodedUri = encodeURI(csvContent);
+      const link = document.createElement("a");
+      link.setAttribute("href", encodedUri);
+      link.setAttribute("download", "notification_leads.csv");
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      setToast({ type: 'success', message: 'Notification leads exported.' });
+    }
+  };
+
   useEffect(() => {
     api.getAdminProfile()
       .then((result) => {
@@ -441,8 +482,10 @@ export default function AdminPortal() {
       loadEventConfig();
     } else if (activeView === 'problemStatements') {
       loadProblemStatements();
+    } else if (activeView === 'leads') {
+      loadNotificationLeads();
     }
-  }, [user, activeView, loadTeams, loadAnalytics, loadEventConfig, loadProblemStatements]);
+  }, [user, activeView, loadTeams, loadAnalytics, loadEventConfig, loadProblemStatements, loadNotificationLeads]);
 
   const openTeamDetails = async (id) => {
     if (!id) return;
@@ -1303,6 +1346,102 @@ export default function AdminPortal() {
                   </div>
                 </div>
               ))}
+            </div>
+          </div>
+        )}
+
+        {/* NOTIFICATION LEADS VIEW */}
+        {activeView === 'leads' && (
+          <div className="admin-subview-container">
+            <div className="workspace-header">
+              <div>
+                <span className="section-subtitle">Pre-Registration Audience</span>
+                <h2>Notification Leads ({leads.length})</h2>
+              </div>
+              <div className="header-actions-row">
+                <button type="button" className="secondary-action" onClick={handleExportLeads}>
+                  <FiDownload /> Export CSV
+                </button>
+                <button type="button" className="secondary-action" onClick={loadNotificationLeads}>
+                  <FiRefreshCw /> Refresh
+                </button>
+              </div>
+            </div>
+
+            <div className="leads-search-bar mt-3" style={{ maxWidth: '400px' }}>
+              <div className="search-box" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'rgba(15,23,42,0.6)', padding: '0.6rem 1rem', borderRadius: '8px', border: '1px solid var(--card-border)' }}>
+                <FiSearch />
+                <input
+                  type="text"
+                  placeholder="Search by name or email..."
+                  value={leadsSearch}
+                  onChange={(e) => setLeadsSearch(e.target.value)}
+                  style={{ background: 'transparent', border: 'none', color: '#fff', outline: 'none', width: '100%' }}
+                />
+              </div>
+            </div>
+
+            <div className="dash-card mt-4" style={{ padding: '0', overflow: 'hidden' }}>
+              <div className="table-responsive">
+                <table className="admin-table" style={{ width: '100%', borderCollapse: 'collapse' }}>
+                  <thead>
+                    <tr style={{ background: 'rgba(255,255,255,0.03)', textAlign: 'left' }}>
+                      <th style={{ padding: '1rem' }}>#</th>
+                      <th style={{ padding: '1rem' }}>Name / Team Lead</th>
+                      <th style={{ padding: '1rem' }}>Email Address</th>
+                      <th style={{ padding: '1rem' }}>Subscribed Date</th>
+                      <th style={{ padding: '1rem', textAlign: 'right' }}>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {leads.length === 0 ? (
+                      <tr>
+                        <td colSpan={5} style={{ textAlign: 'center', padding: '3rem', color: 'var(--color-text-secondary)' }}>
+                          {isLeadsLoading ? 'Loading leads from database...' : 'No pre-registration notification leads recorded yet.'}
+                        </td>
+                      </tr>
+                    ) : (
+                      leads.map((lead, idx) => (
+                        <tr key={lead._id || `lead-${idx}`} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                          <td style={{ padding: '1rem' }}>{idx + 1}</td>
+                          <td style={{ padding: '1rem' }}><strong>{lead.name || 'Not provided'}</strong></td>
+                          <td style={{ padding: '1rem' }}>
+                            <a href={`mailto:${lead.email}`} style={{ color: 'var(--color-accent)', textDecoration: 'none' }}>
+                              {lead.email}
+                            </a>
+                          </td>
+                          <td style={{ padding: '1rem', color: 'var(--color-text-secondary)' }}>
+                            {lead.createdAt || lead.date ? new Date(lead.createdAt || lead.date).toLocaleString('en-IN') : 'Just now'}
+                          </td>
+                          <td style={{ padding: '1rem', textAlign: 'right' }}>
+                            {lead._id && (
+                              <button
+                                type="button"
+                                className="icon-action-btn"
+                                style={{ background: 'rgba(239,68,68,0.1)', color: '#ef4444', border: 'none', padding: '0.4rem', borderRadius: '6px', cursor: 'pointer' }}
+                                title="Delete lead"
+                                onClick={async () => {
+                                  if (window.confirm(`Remove ${lead.email} from notification list?`)) {
+                                    try {
+                                      await api.deleteNotificationLead(lead._id);
+                                      loadNotificationLeads();
+                                      setToast({ type: 'success', message: 'Lead removed.' });
+                                    } catch (err) {
+                                      setToast({ type: 'error', message: err.message || 'Failed to delete' });
+                                    }
+                                  }
+                                }}
+                              >
+                                <FiTrash2 />
+                              </button>
+                            )}
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
         )}

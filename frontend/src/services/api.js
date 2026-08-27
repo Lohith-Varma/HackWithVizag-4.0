@@ -344,4 +344,25 @@ export const api = {
       body: payload,
     });
   },
+
+  async subscribeNotification(payload) {
+    return request('/inquiry/notify', {
+      method: 'POST',
+      body: payload,
+    });
+  },
+
+  async getNotificationLeads(params) {
+    return request('/admin/leads', { params });
+  },
+
+  async exportNotificationLeads() {
+    return downloadFile('/admin/leads/export');
+  },
+
+  async deleteNotificationLead(id) {
+    return request(`/admin/leads/${id}`, {
+      method: 'DELETE',
+    });
+  },
 };
