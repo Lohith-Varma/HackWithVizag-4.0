@@ -57,20 +57,20 @@ export default function About() {
 
   const whyParticipate = [
     {
-      title: "Real-world Problems",
-      desc: "Work on pressing regional and global issues related to coastal security, tourism, and marine preservation."
+      title: "Solve Real-World Problems",
+      desc: "Work on challenges that go beyond the classroom. Turn your ideas into practical solutions for real problems faced by communities, industries, and society."
     },
     {
-      title: "Exceptional Mentorship",
-      desc: "Get 1-on-1 guidance from principal architects at Microsoft, tech leads at Devfolio, and ocean research directors."
+      title: "Build Your Network",
+      desc: "Meet talented students, developers, mentors, industry professionals, and fellow innovators. Build connections that can open doors to internships, careers, collaborations, and future opportunities."
     },
     {
-      title: "Networking & Careers",
-      desc: "Connect with sponsors and partner organizations offering direct recruitment paths and incubation credits."
+      title: "Teamwork & Collaboration",
+      desc: "Hackathons are about building together. Learn how to communicate, divide responsibilities, solve problems under pressure, and turn different ideas into one impactful solution."
     },
     {
-      title: "Premium Swags & Awards",
-      desc: "Take home official premium hoodies, high-value cloud credits, standard developer kits, and cash prizes."
+      title: "Win Prizes & Recognition",
+      desc: "Compete with the best, showcase your skills, and get rewarded for your innovation. Win exciting prizes, earn recognition, and take your project to the next level."
     }
   ];
 
@@ -85,7 +85,7 @@ export default function About() {
           <span className="section-subtitle">Introduction</span>
           <h2 className="section-title">Where Innovation Meets the Coast</h2>
           <p className="section-description">
-            Hack With Vizag 4.0 is a premier national-level hackathon designed to unite talented developers, designers, and entrepreneurs to solve critical challenges.
+            Hack With Vizag 4.0 is a premier national-level hackathon designed to unite talented developers, students, and innovators to solve critical challenges.
           </p>
         </div>
 

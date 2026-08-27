@@ -174,7 +174,7 @@ export const ELIGIBILITY_DATA = [
   {
     id: 'elig-5',
     title: 'Individual Registrations',
-    desc: 'Individuals must form or join a team of at least 2 members before the registration closes.',
+    desc: 'Individuals must form or join a team of at least 3 members before the registration closes.',
     icon: 'FiFileText'
   },
   {
@@ -189,7 +189,7 @@ export const RULES_DATA = [
   {
     id: 'rule-1',
     title: 'Team Formation & College Mix',
-    content: 'A team must have a minimum of 2 and a maximum of 4 members. Interdisciplinary and inter-college team formations are permitted, provided all participants have valid student IDs.'
+    content: 'A team must have a minimum of 3 and a maximum of 4 members. Cross-college team formations are not permitted, but Inter-disciplinary teams are allowed, provided all participants have valid student IDs.'
   },
   {
     id: 'rule-2',
@@ -204,7 +204,7 @@ export const RULES_DATA = [
   {
     id: 'rule-4',
     title: 'Submission Guidelines',
-    content: 'All teams must push code repositories to GitHub and host their working prototypes (if applicable). Code commits must be regular during the hacking period. Submission links will be hosted on Devfolio/custom submission form.'
+    content: 'All teams must push code repositories to GitHub and host their working prototypes (if applicable). Code commits must be regular during the hacking period.'
   },
   {
     id: 'rule-5',
@@ -325,26 +325,26 @@ export const FAQ_DATA = [
   {
     id: 'faq-2',
     question: 'Can members of a team belong to different colleges?',
-    answer: 'Yes, cross-college teams are completely allowed and encouraged. All team members must provide their respective valid college ID cards during registrations.'
+    answer: 'No, cross-college teams are not permitted. All team members must be from the same college.'
   },
   {
     id: 'faq-3',
     question: 'Is there a registration fee for Hack With Vizag-4.0?',
-    answer: 'No, registration is completely free. We do not charge anything for either the online screening phase or the offline hackathon rounds.'
+    answer: 'Online participation is completely free. Shortlisted participants who qualify for the offline hackathon will be charged ₹500/- per participant for the offline round.'
   },
   {
     id: 'faq-4',
     question: 'Can we change our team members after registering?',
-    answer: 'You can change your team members until the registration closing date (August 15, 2026). Once the deadline is past, changes to team structure are only permitted under emergency situations, and only with the consent of the organizers.'
+    answer: 'Team members cannot be changed after the team has been submitted. Please ensure all team member details are correct before completing your registration.'
   },
   {
     id: 'faq-5',
     question: 'Is the hackathon fully online or offline?',
-    answer: 'The screening phase (PPT submission and review) is fully online. The final shortlisted top teams will participate in a physical, 36-hour non-stop offline hackathon held at the Vizag Convention Centre.'
+    answer: 'The screening phase (PPT submission and review) is fully online. The final shortlisted top teams will participate in a physical, 36-hour non-stop offline hackathon held at NSRIT College campus.'
   },
   {
     id: 'faq-6',
     question: 'What happens after the PPT screening phase?',
-    answer: 'Once the PPT screening is complete, the shortlisted teams will be officially announced on our website and notified via email. They will receive detailed travel instructions, NOC templates, and registration links for the physical event.'
+    answer: 'Once the PPT screening is complete, the shortlisted teams will be officially announced on our website and notified via email.'
   }
 ];

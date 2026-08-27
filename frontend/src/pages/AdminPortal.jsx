@@ -122,7 +122,7 @@ const buildAssetUrl = (url) => {
 };
 
 function AdminLogin({ onLogin, onToast }) {
-  const [form, setForm] = useState({ email: 'hackwithivzag@nsrit.edu.in', password: '' });
+  const [form, setForm] = useState({ email: 'hackwithvizag@nsrit.edu.in', password: '' });
   const [errors, setErrors] = useState({});
   const [isLoading, setIsLoading] = useState(false);
 

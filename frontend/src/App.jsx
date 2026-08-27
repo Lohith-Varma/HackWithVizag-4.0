@@ -102,7 +102,7 @@ export default function App() {
           <Rewards />
 
           {/* Grayscale hover logo cloud */}
-          {/* <Sponsors /> */}
+          {/* <Sponsors />   */}
 
           {/* Frequently Asked Questions accordion */}
           <FAQ />

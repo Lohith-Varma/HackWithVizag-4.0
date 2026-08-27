@@ -53,10 +53,10 @@ export default function Footer() {
               Empowering student innovators, coders, and designers from across the country to build technologies that matter. Joined by leading mentors and sponsors.
             </p>
             <div className="footer-social-row">
-              <a href="#" aria-label="Twitter"><FaTwitter /></a>
-              <a href="#" aria-label="Instagram"><FaInstagram /></a>
-              <a href="#" aria-label="GitHub"><FaGithub /></a>
-              <a href="#" aria-label="LinkedIn"><FaLinkedin /></a>
+              <a href="https://x.com/NSRAJUINSTITUT2" aria-label="Twitter"><FaTwitter /></a>
+              <a href="https://www.instagram.com/nsrit_college/" aria-label="Instagram"><FaInstagram /></a>
+              {/* <a href="#" aria-label="GitHub"><FaGithub /></a> */}
+              <a href="https://www.linkedin.com/school/nsrit-autonomous/" aria-label="LinkedIn"><FaLinkedin /></a>
             </div>
           </div>
 

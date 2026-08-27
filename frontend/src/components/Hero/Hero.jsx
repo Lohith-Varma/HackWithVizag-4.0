@@ -146,7 +146,7 @@ export default function Hero() {
               <div>
                 <span className="meta-label">Registration Fee</span>
                 <span className="meta-value">
-                  {eventConfig?.registrationFee ? `₹${eventConfig.registrationFee}` : 'Free'}
+                  {eventConfig?.registrationFee ? `₹${eventConfig.registrationFee}` : '₹500/- per participant'}
                 </span>
               </div>
             </div>
