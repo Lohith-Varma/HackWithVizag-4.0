@@ -1,3 +1,4 @@
+import mongoose from "mongoose";
 import ProblemStatement from "../models/problemStatement.model.js";
 import { ensureActiveEvent } from "../../events/controllers/event.controller.js";
 import { asyncHandler } from "../../../utils/asyncHandler.js";
@@ -146,7 +147,16 @@ export const getPublicProblemStatements = asyncHandler(async (req, res) => {
 });
 
 export const getProblemStatementById = asyncHandler(async (req, res) => {
-  const ps = await ProblemStatement.findById(req.params.id);
+  const { id } = req.params;
+  let ps = null;
+
+  if (mongoose.Types.ObjectId.isValid(id)) {
+    ps = await ProblemStatement.findById(id);
+  }
+  if (!ps) {
+    ps = await ProblemStatement.findOne({ code: id });
+  }
+
   if (!ps) {
     throw new ApiError(404, "Problem statement not found");
   }
@@ -192,6 +202,11 @@ export const createProblemStatement = asyncHandler(async (req, res) => {
 });
 
 export const updateProblemStatement = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    throw new ApiError(400, "Invalid problem statement ID");
+  }
+
   const updateData = { ...req.body };
   if (updateData.objectives) {
     updateData.objectives = Array.isArray(updateData.objectives)
@@ -210,7 +225,7 @@ export const updateProblemStatement = asyncHandler(async (req, res) => {
     updateData.type = updateData.isCustomIdea ? "open" : "official";
   }
 
-  const ps = await ProblemStatement.findByIdAndUpdate(req.params.id, updateData, {
+  const ps = await ProblemStatement.findByIdAndUpdate(id, updateData, {
     new: true,
     runValidators: true,
   });
@@ -223,7 +238,12 @@ export const updateProblemStatement = asyncHandler(async (req, res) => {
 });
 
 export const deleteProblemStatement = asyncHandler(async (req, res) => {
-  const ps = await ProblemStatement.findByIdAndDelete(req.params.id);
+  const { id } = req.params;
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    throw new ApiError(400, "Invalid problem statement ID");
+  }
+
+  const ps = await ProblemStatement.findByIdAndDelete(id);
   if (!ps) {
     throw new ApiError(404, "Problem statement not found");
   }

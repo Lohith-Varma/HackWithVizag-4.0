@@ -30,6 +30,15 @@ const formatValidationError = (error) => {
     ];
   }
 
+  if (error.name === "CastError") {
+    return [
+      {
+        field: error.path || "id",
+        message: `Invalid format for ${error.path || "id"}: ${error.value}`,
+      },
+    ];
+  }
+
   return [];
 };
 
@@ -42,6 +51,7 @@ export const errorHandler = (error, _req, res, _next) => {
 
   if (!statusCode) {
     if (error.name === "MulterError") statusCode = 400;
+    else if (error.name === "CastError") statusCode = 400;
     else if (error.code === 11000) statusCode = 409;
     else statusCode = 500;
   }
@@ -49,7 +59,9 @@ export const errorHandler = (error, _req, res, _next) => {
   const errors = error.errors?.length ? error.errors : formatValidationError(error);
   
   let message = error.message;
-  if (error.code === 11000) {
+  if (error.name === "CastError") {
+    message = `Invalid ${error.path || "identifier"} format`;
+  } else if (error.code === 11000) {
     message = "Registration conflict: Record or email already exists.";
   } else if (statusCode === 500 && process.env.NODE_ENV === "production") {
     message = "Internal server error";
