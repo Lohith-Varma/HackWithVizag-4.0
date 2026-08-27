@@ -18,6 +18,9 @@ import {
   updateTeamRemarks,
   updateTeamStatus,
   updateUserStatus,
+  listNotificationLeads,
+  exportNotificationLeads,
+  deleteNotificationLead,
 } from "../controllers/admin.controller.js";
 import {
   exportValidation,
@@ -57,6 +60,9 @@ router.patch(
   updateTeamStatus
 );
 router.patch("/users/:userId/status", updateUserStatusValidation, validateRequest, updateUserStatus);
+router.get("/leads", listNotificationLeads);
+router.get("/leads/export", exportNotificationLeads);
+router.delete("/leads/:id", deleteNotificationLead);
 
 export default router;
 

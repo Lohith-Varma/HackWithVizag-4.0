@@ -4,6 +4,7 @@ import Project from "../../projects/models/project.model.js";
 import Submission from "../../submissions/models/submission.model.js";
 import Team from "../../teams/models/team.model.js";
 import ProblemStatement from "../../problemStatements/models/problemStatement.model.js";
+import RegistrationLead from "../../inquiries/models/registrationLead.model.js";
 import { asyncHandler } from "../../../utils/asyncHandler.js";
 import ApiError from "../../../utils/apiError.js";
 import { sendSuccess } from "../../../utils/apiResponse.js";
@@ -664,5 +665,63 @@ export const downloadTeamSubmission = asyncHandler(async (req, res) => {
   });
 });
 
+export const listNotificationLeads = asyncHandler(async (req, res) => {
+  const page = toInt(req.query.page, 1, 1, 1000);
+  const limit = toInt(req.query.limit, 100, 1, 500);
+  const search = (req.query.search || "").trim();
+
+  const query = {};
+  if (search) {
+    const rx = new RegExp(escapeRegex(search), "i");
+    query.$or = [{ name: rx }, { email: rx }];
+  }
+
+  const [leads, total] = await Promise.all([
+    RegistrationLead.find(query)
+      .sort({ createdAt: -1 })
+      .skip((page - 1) * limit)
+      .limit(limit),
+    RegistrationLead.countDocuments(query),
+  ]);
+
+  return sendSuccess(res, 200, "Notification leads fetched successfully", {
+    leads,
+    pagination: {
+      page,
+      limit,
+      total,
+      pages: Math.ceil(total / limit) || 1,
+    },
+  });
+});
+
+export const exportNotificationLeads = asyncHandler(async (_req, res) => {
+  const leads = await RegistrationLead.find().sort({ createdAt: -1 });
+
+  const headers = ["Name", "Email", "Source", "Registered At"];
+  const rows = leads.map((lead) => ({
+    Name: lead.name || "N/A",
+    Email: lead.email,
+    Source: lead.source || "Website",
+    "Registered At": lead.createdAt
+      ? new Date(lead.createdAt).toLocaleString("en-IN")
+      : "",
+  }));
+
+  res.setHeader("Content-Type", "text/csv; charset=utf-8");
+  res.setHeader("Content-Disposition", 'attachment; filename="notification-leads.csv"');
+  return res.status(200).send(toCsv(headers, rows));
+});
+
+export const deleteNotificationLead = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const deleted = await RegistrationLead.findByIdAndDelete(id);
+  if (!deleted) {
+    throw new ApiError(404, "Notification lead not found");
+  }
+  return sendSuccess(res, 200, "Notification lead removed successfully");
+});
+
 export const getAdminOverview = getDashboard;
+
 
