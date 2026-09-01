@@ -1,4 +1,4 @@
-import { getProfile, loginUser, registerUser } from "../services/auth.service.js";
+import { getProfile, loginUser, registerUser, updateUserProfile, changeUserPassword } from "../services/auth.service.js";
 import { sendSuccess } from "../../../utils/apiResponse.js";
 
 const cookieOptions = () => {
@@ -64,3 +64,26 @@ export const profile = async (req, res, next) => {
     return next(error);
   }
 };
+
+export const updateProfile = async (req, res, next) => {
+  try {
+    const user = await updateUserProfile(req.user.id, req.body);
+
+    return sendSuccess(res, 200, "Profile updated successfully", {
+      user,
+    });
+  } catch (error) {
+    return next(error);
+  }
+};
+
+export const changePassword = async (req, res, next) => {
+  try {
+    const result = await changeUserPassword(req.user.id, req.body);
+
+    return sendSuccess(res, 200, result.message || "Password changed successfully");
+  } catch (error) {
+    return next(error);
+  }
+};
+

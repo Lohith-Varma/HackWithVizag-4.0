@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { login, logout, profile, register } from "../controllers/auth.controller.js";
+import { login, logout, profile, register, updateProfile, changePassword } from "../controllers/auth.controller.js";
 import { authenticate } from "../../../middleware/auth.middleware.js";
 import { validateRequest } from "../../../middleware/validateRequest.middleware.js";
 import { sendSuccess } from "../../../utils/apiResponse.js";
@@ -12,5 +12,8 @@ router.post("/register", registerValidation, validateRequest, register);
 router.post("/login", loginValidation, validateRequest, login);
 router.post("/logout", logout);
 router.get("/profile", authenticate, profile);
+router.put("/profile", authenticate, updateProfile);
+router.post("/change-password", authenticate, changePassword);
 
 export default router;
+

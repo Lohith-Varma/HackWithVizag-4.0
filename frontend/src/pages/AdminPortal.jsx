@@ -212,9 +212,22 @@ function MetricCard({ label, value, icon: Icon }) {
   );
 }
 
+const getInitialViewFromHash = () => {
+  const hash = window.location.hash.toLowerCase();
+  if (hash.includes('event-config') || hash.includes('eventconfig')) return 'eventConfig';
+  if (hash.includes('analytics')) return 'analytics';
+  if (hash.includes('settings')) return 'settings';
+  if (hash.includes('problem-statements') || hash.includes('problemstatements')) return 'problemStatements';
+  if (hash.includes('leads') || hash.includes('notifications')) return 'leads';
+  if (hash.includes('teams')) return 'teams';
+  if (hash.includes('dashboard')) return 'dashboard';
+  if (hash.includes('review')) return 'review';
+  return 'dashboard';
+};
+
 export default function AdminPortal() {
   const [user, setUser] = useState(null);
-  const [activeView, setActiveView] = useState('review');
+  const [activeView, setActiveView] = useState(getInitialViewFromHash);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [isFocusMode, setIsFocusMode] = useState(false);
 
@@ -246,6 +259,23 @@ export default function AdminPortal() {
   const [eventConfig, setEventConfig] = useState(null);
   const [isSavingConfig, setIsSavingConfig] = useState(false);
 
+  // Settings State
+  const [settingsTab, setSettingsTab] = useState('profile'); // 'profile' | 'security' | 'event'
+  const [profileForm, setProfileForm] = useState({
+    name: '',
+    phone: '',
+    college: '',
+    department: '',
+    year: '',
+  });
+  const [passwordForm, setPasswordForm] = useState({
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: '',
+  });
+  const [isSavingProfile, setIsSavingProfile] = useState(false);
+  const [isSavingPassword, setIsSavingPassword] = useState(false);
+
   // Problem Statements Management State
   const [problemStatements, setProblemStatements] = useState([]);
   const [editingPs, setEditingPs] = useState(null);
@@ -263,6 +293,7 @@ export default function AdminPortal() {
 
   const openCreatePsModal = () => {
     setEditingPs(null);
+
     setPsForm({
       code: '',
       title: '',
@@ -478,7 +509,7 @@ export default function AdminPortal() {
       loadTeams();
     } else if (activeView === 'analytics') {
       loadAnalytics();
-    } else if (activeView === 'eventConfig') {
+    } else if (activeView === 'eventConfig' || activeView === 'settings') {
       loadEventConfig();
     } else if (activeView === 'problemStatements') {
       loadProblemStatements();
@@ -667,6 +698,96 @@ export default function AdminPortal() {
     }
   };
 
+  const handleSwitchView = (viewId) => {
+    setActiveView(viewId);
+    const slugMap = {
+      eventConfig: 'event-config',
+      problemStatements: 'problem-statements',
+      leads: 'leads',
+      analytics: 'analytics',
+      settings: 'settings',
+      dashboard: 'dashboard',
+      teams: 'teams',
+      review: 'review',
+    };
+    const slug = slugMap[viewId] || viewId;
+    window.location.hash = `#admin/${slug}`;
+    if (['review', 'teams', 'screening', 'selected', 'rejected', 'submissions'].includes(viewId)) {
+      loadTeams();
+    }
+  };
+
+  useEffect(() => {
+    const handleHashChange = () => {
+      const hash = window.location.hash.toLowerCase();
+      if (hash.startsWith('#admin')) {
+        const nextView = getInitialViewFromHash();
+        setActiveView(nextView);
+      }
+    };
+    window.addEventListener('hashchange', handleHashChange);
+    return () => window.removeEventListener('hashchange', handleHashChange);
+  }, []);
+
+  useEffect(() => {
+    if (user) {
+      setProfileForm({
+        name: user.name || '',
+        phone: user.phone || '',
+        college: user.collegeName || user.college || '',
+        department: user.department || '',
+        year: user.year || '',
+      });
+    }
+  }, [user]);
+
+  const handleSaveProfile = async (e) => {
+    e.preventDefault();
+    if (!profileForm.name.trim()) {
+      setToast({ type: 'error', message: 'Admin name cannot be empty.' });
+      return;
+    }
+    setIsSavingProfile(true);
+    try {
+      const res = await api.updateProfile(profileForm);
+      setUser(res.user);
+      setToast({ type: 'success', message: 'Admin profile updated successfully!' });
+    } catch (err) {
+      setToast({ type: 'error', message: err.message || 'Failed to update profile.' });
+    } finally {
+      setIsSavingProfile(false);
+    }
+  };
+
+  const handleChangePassword = async (e) => {
+    e.preventDefault();
+    if (!passwordForm.currentPassword) {
+      setToast({ type: 'error', message: 'Current password is required.' });
+      return;
+    }
+    if (!passwordForm.newPassword || passwordForm.newPassword.length < 8) {
+      setToast({ type: 'error', message: 'New password must be at least 8 characters.' });
+      return;
+    }
+    if (passwordForm.newPassword !== passwordForm.confirmPassword) {
+      setToast({ type: 'error', message: 'New password and confirmation do not match.' });
+      return;
+    }
+    setIsSavingPassword(true);
+    try {
+      await api.changePassword({
+        currentPassword: passwordForm.currentPassword,
+        newPassword: passwordForm.newPassword,
+      });
+      setPasswordForm({ currentPassword: '', newPassword: '', confirmPassword: '' });
+      setToast({ type: 'success', message: 'Admin password changed successfully!' });
+    } catch (err) {
+      setToast({ type: 'error', message: err.message || 'Failed to change password.' });
+    } finally {
+      setIsSavingPassword(false);
+    }
+  };
+
   const saveEventConfig = async (e) => {
     e.preventDefault();
     if (!eventConfig?._id) return;
@@ -681,8 +802,6 @@ export default function AdminPortal() {
     }
   };
 
-
-
   const toggleSelected = (id) => {
     setSelectedIds((current) => (
       current.includes(id) ? current.filter((item) => item !== id) : [...current, id]
@@ -695,6 +814,7 @@ export default function AdminPortal() {
       return ids.every((id) => current.includes(id)) ? [] : ids;
     });
   };
+
 
   if (isChecking) {
     return (
@@ -744,12 +864,7 @@ export default function AdminPortal() {
                   key={item.id}
                   type="button"
                   className={`nav-item-btn ${isActive ? 'active' : ''}`}
-                  onClick={() => {
-                    setActiveView(item.id);
-                    if (['review', 'teams', 'screening', 'selected', 'rejected', 'submissions'].includes(item.id)) {
-                      loadTeams();
-                    }
-                  }}
+                  onClick={() => handleSwitchView(item.id)}
                   title={item.label}
                 >
                   <ItemIcon className="nav-icon" />
@@ -1015,14 +1130,14 @@ export default function AdminPortal() {
                   <div className="inspection-section-header">
                     <div className="overview-title-group">
                       <div className="overview-code-badge">
-                        {selectedTeam.project?.problemCode || 'OPEN-TRACK'}
+                        {selectedTeam.project?.problemCode || selectedTeam.problemCode || 'OPEN-TRACK'}
                       </div>
                       <div>
                         <h2 className="overview-project-title">
-                          {selectedTeam.project?.title || 'Untitled Proposal'}
+                          {selectedTeam.project?.title || selectedTeam.projectTitle || 'Untitled Proposal'}
                         </h2>
                         <p className="overview-team-line">
-                          Team: <strong>{selectedTeam.teamName}</strong> ({selectedTeam.leader?.name || 'Leader'} • {selectedTeam.leader?.college || 'College'})
+                          Team: <strong>{selectedTeam.teamName}</strong> • Reg ID: <span className="font-mono font-bold text-accent">{selectedTeam.registrationId || selectedTeam.id}</span>
                         </p>
                       </div>
                     </div>
@@ -1032,19 +1147,33 @@ export default function AdminPortal() {
                         {statusLabels[selectedTeam.status] || selectedTeam.status}
                       </span>
                       <small className="date-tag">
-                        {formatDate(selectedTeam.submittedAt || selectedTeam.createdAt)}
+                        Submitted: {formatDate(selectedTeam.submissionDate || selectedTeam.submittedAt || selectedTeam.createdAt)}
                       </small>
                     </div>
                   </div>
 
                   {/* Section 2: Abstract Reader */}
                   <div className="inspection-block abstract-reader-block">
-                    <h3 className="block-label">Project Abstract & Proposal</h3>
+                    <div className="flex justify-between items-center mb-2">
+                      <h3 className="block-label" style={{ margin: 0 }}>Project Abstract & Proposal</h3>
+                      {selectedTeam.project?.abstract && (
+                        <span className="text-dim font-sm">
+                          {selectedTeam.project.abstract.trim().split(/\s+/).filter(Boolean).length} Words
+                        </span>
+                      )}
+                    </div>
                     <div className="abstract-reading-container">
                       <p className="abstract-paragraph">
                         {selectedTeam.project?.abstract || 'No abstract text entered for this proposal.'}
                       </p>
                     </div>
+
+                    {selectedTeam.project?.problemStatement && (
+                      <div className="mt-3 p-3 rounded bg-black/20 border border-white/10">
+                        <strong className="text-accent text-sm block mb-1">Problem Statement:</strong>
+                        <p className="text-sm text-dim">{selectedTeam.project.problemStatement}</p>
+                      </div>
+                    )}
 
                     <div className="tech-stack-row mt-3">
                       <strong>Technology Stack:</strong>
@@ -1057,45 +1186,87 @@ export default function AdminPortal() {
                     <h3 className="block-label">Supporting Material & Attachments</h3>
                     
                     <div className="attachments-buttons-grid">
-                      {selectedTeam.project?.pptFile?.url && (
-                        <button
-                          type="button"
-                          className="attachment-btn"
-                          onClick={() => setActiveEmbed('ppt')}
-                        >
-                          <FiFileText /> View PPT Deck ({selectedTeam.project.pptFile.originalName || 'Presentation'})
-                        </button>
+                      {selectedTeam.project?.pptFile?.url ? (
+                        <div className="flex gap-2">
+                          <button
+                            type="button"
+                            className="attachment-btn"
+                            onClick={() => setActiveEmbed('ppt')}
+                          >
+                            <FiFileText /> View PPT ({selectedTeam.project.pptFile.originalName || 'Presentation'})
+                          </button>
+                          <a
+                            href={buildAssetUrl(selectedTeam.project.pptFile.url)}
+                            download={selectedTeam.project.pptFile.originalName || 'presentation.ppt'}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="attachment-btn"
+                            title="Download Presentation"
+                            style={{ padding: '0.6rem 0.85rem' }}
+                          >
+                            <FiDownload />
+                          </a>
+                        </div>
+                      ) : (
+                        <span className="attachment-btn disabled" style={{ opacity: 0.6 }}>
+                          <FiFileText /> PPT Not Uploaded
+                        </span>
                       )}
 
-                      {selectedTeam.project?.supportingDocFile?.url && (
-                        <button
-                          type="button"
-                          className="attachment-btn"
-                          onClick={() => setActiveEmbed('doc')}
-                        >
-                          <FiDownload /> Supporting Document
-                        </button>
+                      {selectedTeam.project?.supportingDocFile?.url ? (
+                        <div className="flex gap-2">
+                          <button
+                            type="button"
+                            className="attachment-btn"
+                            onClick={() => setActiveEmbed('doc')}
+                          >
+                            <FiFileText /> View Doc ({selectedTeam.project.supportingDocFile.originalName || 'SupportingDoc'})
+                          </button>
+                          <a
+                            href={buildAssetUrl(selectedTeam.project.supportingDocFile.url)}
+                            download={selectedTeam.project.supportingDocFile.originalName || 'supporting-doc.pdf'}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="attachment-btn"
+                            title="Download Supporting Document"
+                            style={{ padding: '0.6rem 0.85rem' }}
+                          >
+                            <FiDownload />
+                          </a>
+                        </div>
+                      ) : (
+                        <span className="attachment-btn disabled" style={{ opacity: 0.6 }}>
+                          <FiDownload /> No Supporting Doc
+                        </span>
                       )}
 
-                      {selectedTeam.project?.demoVideoUrl && (
+                      {selectedTeam.project?.demoVideoUrl ? (
                         <button
                           type="button"
                           className="attachment-btn video-btn"
                           onClick={() => setActiveEmbed('video')}
                         >
-                          <FiVideo /> Watch Demo Video
+                          <FiVideo /> Watch Video
                         </button>
+                      ) : (
+                        <span className="attachment-btn disabled" style={{ opacity: 0.6 }}>
+                          <FiVideo /> No Video Provided
+                        </span>
                       )}
 
-                      {selectedTeam.project?.githubRepository && (
+                      {selectedTeam.project?.githubRepository ? (
                         <a
                           href={selectedTeam.project.githubRepository}
                           target="_blank"
                           rel="noreferrer"
                           className="attachment-btn repo-btn"
                         >
-                          <FiExternalLink /> Open GitHub Repository
+                          <FiExternalLink /> GitHub Repo
                         </a>
+                      ) : (
+                        <span className="attachment-btn disabled" style={{ opacity: 0.6 }}>
+                          <FiExternalLink /> No Repo Provided
+                        </span>
                       )}
                     </div>
 
@@ -1133,7 +1304,7 @@ export default function AdminPortal() {
                           {activeEmbed === 'video' && (
                             <div className="video-wrapper">
                               <iframe
-                                src={selectedTeam.project?.demoVideoUrl}
+                                src={selectedTeam.project?.demoVideoUrl?.includes('youtu') ? selectedTeam.project.demoVideoUrl.replace('watch?v=', 'embed/').replace('youtu.be/', 'www.youtube.com/embed/') : selectedTeam.project?.demoVideoUrl}
                                 title="Video Demo"
                                 className="media-iframe"
                                 allowFullScreen
@@ -1145,28 +1316,59 @@ export default function AdminPortal() {
                     )}
                   </div>
 
-                  {/* Section 4: Team Roster */}
-                  <div className="inspection-block team-roster-block">
-                    <h3 className="block-label">Team Members ({1 + (selectedTeam.members?.length || 0)})</h3>
-                    
-                    <div className="roster-grid">
-                      <div className="roster-card leader-card">
-                        <div className="role-tag">Team Leader</div>
-                        <strong>{selectedTeam.leader?.name || 'Leader Name'}</strong>
-                        <p>{selectedTeam.leader?.email} • {selectedTeam.leader?.phone}</p>
-                        <small>{selectedTeam.leader?.college} ({selectedTeam.leader?.department})</small>
-                      </div>
+                  {/* Section 4: Complete Team Roster */}
+                  {(() => {
+                    const leaderId = selectedTeam.leader?._id?.toString() || selectedTeam.leader?.toString() || selectedTeam.leader?.id;
+                    const membersList = (selectedTeam.members || []).map((m) => {
+                      const mId = m._id?.toString() || m.id || m.toString();
+                      const isLeader = mId === leaderId || m.email === selectedTeam.leader?.email;
+                      return {
+                        ...m,
+                        isLeader,
+                        role: isLeader ? 'Team Leader' : 'Team Member',
+                      };
+                    });
+                    if (selectedTeam.leader && !membersList.some((m) => m.isLeader || m.email === selectedTeam.leader?.email)) {
+                      membersList.unshift({
+                        ...selectedTeam.leader,
+                        isLeader: true,
+                        role: 'Team Leader',
+                      });
+                    }
 
-                      {selectedTeam.members?.map((m, idx) => (
-                        <div key={idx} className="roster-card">
-                          <div className="role-tag">Member #{idx + 2}</div>
-                          <strong>{m.name}</strong>
-                          <p>{m.email} • {m.phone}</p>
-                          <small>{m.college || selectedTeam.leader?.college} ({m.department})</small>
+                    return (
+                      <div className="inspection-block team-roster-block">
+                        <h3 className="block-label">Complete Team Members ({membersList.length})</h3>
+                        
+                        <div className="roster-grid">
+                          {membersList.map((m, idx) => (
+                            <div key={m._id || m.id || idx} className={`roster-card ${m.isLeader ? 'leader-card' : ''}`}>
+                              <div className="role-tag">
+                                {m.isLeader ? '👑 Team Leader' : `👤 Member #${idx + 1}`}
+                              </div>
+                              <strong>{m.name || 'Participant'}</strong>
+                              <p>
+                                <a href={`mailto:${m.email}`} className="text-dim hover:text-white">{m.email || 'No email'}</a>
+                                {' • '}
+                                <a href={`tel:${m.phone}`} className="text-dim hover:text-white">{m.phone || 'No phone'}</a>
+                              </p>
+                              <small>
+                                {m.collegeName || m.college || 'College Not Set'} ({m.department || 'Dept Not Set'} • {m.year || 'Year Not Set'})
+                              </small>
+                              {(m.githubUrl || m.linkedinUrl || m.resumeUrl || m.portfolioUrl) && (
+                                <div className="member-socials-row mt-2">
+                                  {m.githubUrl && <a href={m.githubUrl} target="_blank" rel="noreferrer" className="social-icon-btn" title="GitHub"><FiExternalLink /> GitHub</a>}
+                                  {m.linkedinUrl && <a href={m.linkedinUrl} target="_blank" rel="noreferrer" className="social-icon-btn" title="LinkedIn"><FiExternalLink /> LinkedIn</a>}
+                                  {m.resumeUrl && <a href={m.resumeUrl} target="_blank" rel="noreferrer" className="social-icon-btn" title="Resume"><FiFileText /> Resume</a>}
+                                </div>
+                              )}
+                            </div>
+                          ))}
                         </div>
-                      ))}
-                    </div>
-                  </div>
+                      </div>
+                    );
+                  })()}
+
 
                   {/* Section 5: Review Form & Decision Controls */}
                   <div className="inspection-block review-decision-block">
@@ -1445,6 +1647,779 @@ export default function AdminPortal() {
             </div>
           </div>
         )}
+
+        {/* EVENT CONFIGURATION VIEW */}
+        {activeView === 'eventConfig' && (
+          <div className="admin-subview-container">
+            <div className="workspace-header">
+              <div>
+                <span className="section-subtitle">Event Lifecycle & Configuration</span>
+                <h2>Event Configuration</h2>
+              </div>
+              <div className="header-actions-row">
+                <button type="button" className="secondary-action" onClick={loadEventConfig} disabled={isSavingConfig}>
+                  <FiRefreshCw /> Reload
+                </button>
+                <button type="button" className="primary-action" onClick={saveEventConfig} disabled={isSavingConfig}>
+                  <FiSave /> {isSavingConfig ? 'Saving...' : 'Save Changes'}
+                </button>
+              </div>
+            </div>
+
+            {eventConfig ? (
+              <form onSubmit={saveEventConfig} className="event-config-container mt-4">
+                {/* Section 1: General Event Info */}
+                <div className="config-section-card">
+                  <div className="config-section-header">
+                    <h3><FiCalendar /> General Event Details</h3>
+                    <span className="status-pill status-pill-green">
+                      {eventConfig.eventStatus || 'Published'}
+                    </span>
+                  </div>
+                  <div className="config-grid">
+                    <label className="field">
+                      <span>Event Name *</span>
+                      <input
+                        required
+                        value={eventConfig.eventName || ''}
+                        onChange={(e) => setEventConfig({ ...eventConfig, eventName: e.target.value })}
+                        placeholder="e.g. Hack With Vizag 4.0"
+                      />
+                    </label>
+                    <label className="field">
+                      <span>Event Edition / Year *</span>
+                      <input
+                        required
+                        value={eventConfig.eventYear || ''}
+                        onChange={(e) => setEventConfig({ ...eventConfig, eventYear: e.target.value })}
+                        placeholder="e.g. 2026"
+                      />
+                    </label>
+                    <label className="field span-2">
+                      <span>Event Theme / Motto</span>
+                      <input
+                        value={eventConfig.theme || ''}
+                        onChange={(e) => setEventConfig({ ...eventConfig, theme: e.target.value })}
+                        placeholder="e.g. Innovation for Coastal Infrastructure & AI"
+                      />
+                    </label>
+                    <label className="field span-2">
+                      <span>Event Venue & Location</span>
+                      <input
+                        value={eventConfig.venue || ''}
+                        onChange={(e) => setEventConfig({ ...eventConfig, venue: e.target.value })}
+                        placeholder="e.g. NSRIT Campus Auditorium, Visakhapatnam"
+                      />
+                    </label>
+                    <label className="field span-2">
+                      <span>Event Description</span>
+                      <textarea
+                        rows={3}
+                        value={eventConfig.description || ''}
+                        onChange={(e) => setEventConfig({ ...eventConfig, description: e.target.value })}
+                        placeholder="Event overview and mission statement..."
+                      />
+                    </label>
+                  </div>
+                </div>
+
+                {/* Section 2: Milestone Dates & Timeline */}
+                <div className="config-section-card">
+                  <div className="config-section-header">
+                    <h3><FiClock /> Milestone Dates & Deadlines</h3>
+                  </div>
+                  <div className="config-grid">
+                    <label className="field">
+                      <span>Registration Start Date</span>
+                      <input
+                        type="date"
+                        value={eventConfig.registrationStartDate ? new Date(eventConfig.registrationStartDate).toISOString().split('T')[0] : ''}
+                        onChange={(e) => setEventConfig({ ...eventConfig, registrationStartDate: e.target.value ? new Date(e.target.value) : null })}
+                      />
+                    </label>
+                    <label className="field">
+                      <span>Registration End Date</span>
+                      <input
+                        type="date"
+                        value={eventConfig.registrationEndDate ? new Date(eventConfig.registrationEndDate).toISOString().split('T')[0] : ''}
+                        onChange={(e) => setEventConfig({ ...eventConfig, registrationEndDate: e.target.value ? new Date(e.target.value) : null })}
+                      />
+                    </label>
+                    <label className="field">
+                      <span>Online Submission Deadline</span>
+                      <input
+                        type="date"
+                        value={eventConfig.onlineSubmissionDeadline ? new Date(eventConfig.onlineSubmissionDeadline).toISOString().split('T')[0] : ''}
+                        onChange={(e) => setEventConfig({ ...eventConfig, onlineSubmissionDeadline: e.target.value ? new Date(e.target.value) : null })}
+                      />
+                    </label>
+                    <label className="field">
+                      <span>Screening Results Announcement</span>
+                      <input
+                        type="date"
+                        value={eventConfig.screeningResultDate ? new Date(eventConfig.screeningResultDate).toISOString().split('T')[0] : ''}
+                        onChange={(e) => setEventConfig({ ...eventConfig, screeningResultDate: e.target.value ? new Date(e.target.value) : null })}
+                      />
+                    </label>
+                    <label className="field">
+                      <span>Offline Registration Opens</span>
+                      <input
+                        type="date"
+                        value={eventConfig.offlineRegistrationStartDate ? new Date(eventConfig.offlineRegistrationStartDate).toISOString().split('T')[0] : ''}
+                        onChange={(e) => setEventConfig({ ...eventConfig, offlineRegistrationStartDate: e.target.value ? new Date(e.target.value) : null })}
+                      />
+                    </label>
+                    <label className="field">
+                      <span>Offline Registration Closes</span>
+                      <input
+                        type="date"
+                        value={eventConfig.offlineRegistrationEndDate ? new Date(eventConfig.offlineRegistrationEndDate).toISOString().split('T')[0] : ''}
+                        onChange={(e) => setEventConfig({ ...eventConfig, offlineRegistrationEndDate: e.target.value ? new Date(e.target.value) : null })}
+                      />
+                    </label>
+                    <label className="field">
+                      <span>Grand Finale Hackathon Date</span>
+                      <input
+                        type="date"
+                        value={eventConfig.hackathonDate ? new Date(eventConfig.hackathonDate).toISOString().split('T')[0] : ''}
+                        onChange={(e) => setEventConfig({ ...eventConfig, hackathonDate: e.target.value ? new Date(e.target.value) : null })}
+                      />
+                    </label>
+                  </div>
+                </div>
+
+                {/* Section 3: Team Sizes & Deliverable Limits */}
+                <div className="config-section-card">
+                  <div className="config-section-header">
+                    <h3><FiUsers /> Team Sizes & Deliverable Limits</h3>
+                  </div>
+                  <div className="config-grid triple-col">
+                    <label className="field">
+                      <span>Min Team Size (Members)</span>
+                      <input
+                        type="number"
+                        min={1}
+                        max={10}
+                        value={eventConfig.minTeamSize ?? 1}
+                        onChange={(e) => setEventConfig({ ...eventConfig, minTeamSize: Number(e.target.value) })}
+                      />
+                    </label>
+                    <label className="field">
+                      <span>Max Team Size (Members)</span>
+                      <input
+                        type="number"
+                        min={1}
+                        max={10}
+                        value={eventConfig.maxTeamSize ?? 4}
+                        onChange={(e) => setEventConfig({ ...eventConfig, maxTeamSize: Number(e.target.value) })}
+                      />
+                    </label>
+                    <label className="field">
+                      <span>Registration Fee (INR)</span>
+                      <input
+                        type="number"
+                        min={0}
+                        value={eventConfig.registrationFee ?? 0}
+                        onChange={(e) => setEventConfig({ ...eventConfig, registrationFee: Number(e.target.value) })}
+                      />
+                    </label>
+                    <label className="field">
+                      <span>Min Abstract Words</span>
+                      <input
+                        type="number"
+                        min={10}
+                        value={eventConfig.minAbstractWords ?? 50}
+                        onChange={(e) => setEventConfig({ ...eventConfig, minAbstractWords: Number(e.target.value) })}
+                      />
+                    </label>
+                    <label className="field">
+                      <span>Max Abstract Words</span>
+                      <input
+                        type="number"
+                        min={50}
+                        value={eventConfig.maxAbstractWords ?? 500}
+                        onChange={(e) => setEventConfig({ ...eventConfig, maxAbstractWords: Number(e.target.value) })}
+                      />
+                    </label>
+                    <label className="field">
+                      <span>Max PPT Deck Size (MB)</span>
+                      <input
+                        type="number"
+                        min={1}
+                        max={100}
+                        value={eventConfig.maxPptSizeMb ?? 15}
+                        onChange={(e) => setEventConfig({ ...eventConfig, maxPptSizeMb: Number(e.target.value) })}
+                      />
+                    </label>
+                  </div>
+                </div>
+
+                {/* Section 4: Status & Prize Pool */}
+                <div className="config-section-card">
+                  <div className="config-section-header">
+                    <h3><FiShield /> Status & Prize Pool</h3>
+                  </div>
+                  <div className="config-grid">
+                    <label className="field">
+                      <span>Lifecycle Status</span>
+                      <select
+                        value={eventConfig.eventStatus || 'Published'}
+                        onChange={(e) => setEventConfig({ ...eventConfig, eventStatus: e.target.value })}
+                      >
+                        <option value="Draft">Draft</option>
+                        <option value="Published">Published (Live)</option>
+                        <option value="Closed">Closed</option>
+                      </select>
+                    </label>
+                    <label className="field checkbox-field" style={{ alignSelf: 'center', marginTop: '1.2rem' }}>
+                      <input
+                        type="checkbox"
+                        checked={eventConfig.activeEvent !== false}
+                        onChange={(e) => setEventConfig({ ...eventConfig, activeEvent: e.target.checked })}
+                      />
+                      <span>Active Hackathon Event</span>
+                    </label>
+                    <label className="field">
+                      <span>Total Prize Pool</span>
+                      <input
+                        value={eventConfig.prizePool?.total || ''}
+                        onChange={(e) => setEventConfig({
+                          ...eventConfig,
+                          prizePool: { ...(eventConfig.prizePool || {}), total: e.target.value },
+                        })}
+                        placeholder="e.g. INR 1,50,000+"
+                      />
+                    </label>
+                    <label className="field">
+                      <span>First Prize</span>
+                      <input
+                        value={eventConfig.prizePool?.firstPrize || ''}
+                        onChange={(e) => setEventConfig({
+                          ...eventConfig,
+                          prizePool: { ...(eventConfig.prizePool || {}), firstPrize: e.target.value },
+                        })}
+                        placeholder="e.g. INR 75,000"
+                      />
+                    </label>
+                  </div>
+                </div>
+
+                {/* Section 5: Organizer Contact Info */}
+                <div className="config-section-card">
+                  <div className="config-section-header">
+                    <h3><FiMail /> Organizer & Support Contact</h3>
+                  </div>
+                  <div className="config-grid">
+                    <label className="field">
+                      <span>Contact Email</span>
+                      <input
+                        type="email"
+                        value={eventConfig.contactInfo?.email || ''}
+                        onChange={(e) => setEventConfig({
+                          ...eventConfig,
+                          contactInfo: { ...(eventConfig.contactInfo || {}), email: e.target.value },
+                        })}
+                        placeholder="hackwithvizag@nsrit.edu.in"
+                      />
+                    </label>
+                    <label className="field">
+                      <span>Contact Phone</span>
+                      <input
+                        type="tel"
+                        value={eventConfig.contactInfo?.phone || ''}
+                        onChange={(e) => setEventConfig({
+                          ...eventConfig,
+                          contactInfo: { ...(eventConfig.contactInfo || {}), phone: e.target.value },
+                        })}
+                        placeholder="+91 91234 56789"
+                      />
+                    </label>
+                    <label className="field span-2">
+                      <span>Campus Address</span>
+                      <input
+                        value={eventConfig.contactInfo?.address || ''}
+                        onChange={(e) => setEventConfig({
+                          ...eventConfig,
+                          contactInfo: { ...(eventConfig.contactInfo || {}), address: e.target.value },
+                        })}
+                        placeholder="NSRIT Campus, Sontyam, Visakhapatnam"
+                      />
+                    </label>
+                  </div>
+                </div>
+
+                <div className="config-actions-bar">
+                  <button type="button" className="secondary-action" onClick={loadEventConfig} disabled={isSavingConfig}>
+                    Discard Unsaved
+                  </button>
+                  <button type="submit" className="primary-action" disabled={isSavingConfig}>
+                    <FiSave /> {isSavingConfig ? 'Saving Changes...' : 'Save Event Configuration'}
+                  </button>
+                </div>
+              </form>
+            ) : (
+              <div className="admin-loading-screen mt-4">
+                <div className="loading-spinner" />
+                <p>Loading event configuration...</p>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ANALYTICS VIEW */}
+        {activeView === 'analytics' && (
+          <div className="admin-subview-container">
+            <div className="workspace-header">
+              <div>
+                <span className="section-subtitle">Real-Time Intelligence</span>
+                <h2>Platform Analytics</h2>
+              </div>
+              <div className="header-actions-row">
+                <button type="button" className="secondary-action" onClick={() => handleExportData('csv')}>
+                  <FiDownload /> Export CSV
+                </button>
+                <button type="button" className="secondary-action" onClick={loadAnalytics} disabled={isLoading}>
+                  <FiRefreshCw className={isLoading ? 'animate-spin' : ''} /> Refresh
+                </button>
+              </div>
+            </div>
+
+            {isLoading && !analytics ? (
+              <div className="admin-loading-screen mt-4">
+                <div className="loading-spinner" />
+                <p>Calculating database aggregations...</p>
+              </div>
+            ) : !analytics || analytics.summary?.totalTeams === 0 ? (
+              <div className="dash-card empty-analytics-box mt-4">
+                <FiBarChart2 className="empty-analytics-icon" />
+                <h3>No registration data available yet.</h3>
+                <p className="text-dim">When participants register teams and submit proposals, live analytics and charts will populate here automatically.</p>
+                <button type="button" className="primary-action mt-3" onClick={loadAnalytics}>
+                  <FiRefreshCw /> Check Again
+                </button>
+              </div>
+            ) : (
+              <div className="analytics-view-container mt-4">
+                {/* KPI Cards Row */}
+                <div className="analytics-kpi-row">
+                  <div className="kpi-card shadow-glow">
+                    <div className="kpi-icon-box blue"><FiUsers /></div>
+                    <div className="kpi-data">
+                      <span className="kpi-label">Total Teams</span>
+                      <strong className="kpi-val">{analytics.summary.totalTeams}</strong>
+                    </div>
+                  </div>
+                  <div className="kpi-card">
+                    <div className="kpi-icon-box green"><FiUsers /></div>
+                    <div className="kpi-data">
+                      <span className="kpi-label">Total Participants</span>
+                      <strong className="kpi-val">{analytics.summary.totalParticipants}</strong>
+                    </div>
+                  </div>
+                  <div className="kpi-card">
+                    <div className="kpi-icon-box cyan"><FiLayers /></div>
+                    <div className="kpi-data">
+                      <span className="kpi-label">Colleges Represented</span>
+                      <strong className="kpi-val">{analytics.summary.totalColleges}</strong>
+                    </div>
+                  </div>
+                  <div className="kpi-card">
+                    <div className="kpi-icon-box indigo"><FiFileText /></div>
+                    <div className="kpi-data">
+                      <span className="kpi-label">Submitted Proposals</span>
+                      <strong className="kpi-val">{analytics.summary.totalProjects}</strong>
+                    </div>
+                  </div>
+                  <div className="kpi-card">
+                    <div className="kpi-icon-box amber"><FiClock /></div>
+                    <div className="kpi-data">
+                      <span className="kpi-label">Under Review</span>
+                      <strong className="kpi-val">{analytics.summary.pendingReviews}</strong>
+                    </div>
+                  </div>
+                  <div className="kpi-card">
+                    <div className="kpi-icon-box green"><FiCheckCircle /></div>
+                    <div className="kpi-data">
+                      <span className="kpi-label">Selected Teams</span>
+                      <strong className="kpi-val">{analytics.summary.selectedTeams}</strong>
+                    </div>
+                  </div>
+                  <div className="kpi-card">
+                    <div className="kpi-icon-box red"><FiXCircle /></div>
+                    <div className="kpi-data">
+                      <span className="kpi-label">Rejected Teams</span>
+                      <strong className="kpi-val">{analytics.summary.rejectedTeams}</strong>
+                    </div>
+                  </div>
+                  <div className="kpi-card">
+                    <div className="kpi-icon-box purple"><FiActivity /></div>
+                    <div className="kpi-data">
+                      <span className="kpi-label">Acceptance Rate</span>
+                      <strong className="kpi-val">{analytics.summary.selectionPercentage}%</strong>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Track / Problem Statement Breakdown Table */}
+                <div className="dash-card">
+                  <div className="config-section-header">
+                    <h3><FiLayers /> Problem Statement & Track Distribution</h3>
+                    <span className="text-dim font-sm">
+                      Official Tracks: <strong>{analytics.summary.officialProblemCount}</strong> • Open Innovation: <strong>{analytics.summary.openInnovationCount}</strong>
+                    </span>
+                  </div>
+
+                  <div className="table-responsive mt-3">
+                    <table className="admin-table" style={{ width: '100%', borderCollapse: 'collapse' }}>
+                      <thead>
+                        <tr style={{ background: 'rgba(255,255,255,0.03)', textAlign: 'left' }}>
+                          <th style={{ padding: '0.85rem 1rem' }}>Track Code</th>
+                          <th style={{ padding: '0.85rem 1rem' }}>Problem Statement Title</th>
+                          <th style={{ padding: '0.85rem 1rem' }}>Category / Theme</th>
+                          <th style={{ padding: '0.85rem 1rem' }}>Track Type</th>
+                          <th style={{ padding: '0.85rem 1rem', textAlign: 'right' }}>Teams</th>
+                          <th style={{ padding: '0.85rem 1rem', textAlign: 'right' }}>Share</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {analytics.charts?.problemStatementStats && analytics.charts.problemStatementStats.length > 0 ? (
+                          analytics.charts.problemStatementStats.map((ps) => (
+                            <tr key={ps.id || ps.code} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                              <td style={{ padding: '0.85rem 1rem' }}>
+                                <span className="ps-code">{ps.code}</span>
+                              </td>
+                              <td style={{ padding: '0.85rem 1rem' }}>
+                                <strong>{ps.title}</strong>
+                              </td>
+                              <td style={{ padding: '0.85rem 1rem', color: 'var(--color-text-secondary)' }}>
+                                {ps.theme}
+                              </td>
+                              <td style={{ padding: '0.85rem 1rem' }}>
+                                <span className={`ps-type-badge ${ps.type === 'open' ? 'open-tag' : ''}`}>
+                                  {ps.type === 'open' ? 'Open Track' : 'Official'}
+                                </span>
+                              </td>
+                              <td style={{ padding: '0.85rem 1rem', textAlign: 'right', fontWeight: 'bold' }}>
+                                {ps.count}
+                              </td>
+                              <td style={{ padding: '0.85rem 1rem', textAlign: 'right' }}>
+                                <span className="stat-badge-percent">{ps.percentage}%</span>
+                              </td>
+                            </tr>
+                          ))
+                        ) : (
+                          <tr>
+                            <td colSpan={6} style={{ textAlign: 'center', padding: '2rem', color: 'var(--color-text-secondary)' }}>
+                              No problem statement statistics available.
+                            </td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                {/* 2-Column Analytics Distribution Grid */}
+                <div className="analytics-grid-two-col">
+                  {/* Colleges Breakdown */}
+                  <div className="dash-card">
+                    <div className="config-section-header">
+                      <h3><FiUsers /> Top Participating Institutions</h3>
+                    </div>
+                    <div className="distribution-list">
+                      {analytics.charts?.collegeWiseRegistrationCount && analytics.charts.collegeWiseRegistrationCount.length > 0 ? (
+                        analytics.charts.collegeWiseRegistrationCount.slice(0, 8).map((item, idx) => {
+                          const maxCount = analytics.charts.collegeWiseRegistrationCount[0]?.count || 1;
+                          const pct = Math.round((item.count / maxCount) * 100);
+                          return (
+                            <div key={idx} className="distribution-item">
+                              <div className="dist-info-row">
+                                <span className="truncate-text" style={{ maxWidth: '75%' }}>{item.label}</span>
+                                <strong>{item.count} {item.count === 1 ? 'student' : 'students'}</strong>
+                              </div>
+                              <div className="dist-bar-track">
+                                <div className="dist-bar-fill cyan" style={{ width: `${pct}%` }} />
+                              </div>
+                            </div>
+                          );
+                        })
+                      ) : (
+                        <p className="text-dim font-sm">No college participation data yet.</p>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Department / Branch Breakdown */}
+                  <div className="dash-card">
+                    <div className="config-section-header">
+                      <h3><FiLayers /> Branch & Department Distribution</h3>
+                    </div>
+                    <div className="distribution-list">
+                      {analytics.charts?.departmentWiseRegistrationCount && analytics.charts.departmentWiseRegistrationCount.length > 0 ? (
+                        analytics.charts.departmentWiseRegistrationCount.slice(0, 8).map((item, idx) => {
+                          const maxCount = analytics.charts.departmentWiseRegistrationCount[0]?.count || 1;
+                          const pct = Math.round((item.count / maxCount) * 100);
+                          return (
+                            <div key={idx} className="distribution-item">
+                              <div className="dist-info-row">
+                                <span className="truncate-text" style={{ maxWidth: '75%' }}>{item.label}</span>
+                                <strong>{item.count}</strong>
+                              </div>
+                              <div className="dist-bar-track">
+                                <div className="dist-bar-fill green" style={{ width: `${pct}%` }} />
+                              </div>
+                            </div>
+                          );
+                        })
+                      ) : (
+                        <p className="text-dim font-sm">No department data yet.</p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* SETTINGS VIEW */}
+        {activeView === 'settings' && (
+          <div className="admin-subview-container">
+            <div className="workspace-header">
+              <div>
+                <span className="section-subtitle">Admin Account & Platform Preferences</span>
+                <h2>Settings</h2>
+              </div>
+            </div>
+
+            {/* Settings Navigation Tabs */}
+            <div className="settings-tabs-row mt-3">
+              <button
+                type="button"
+                className={`settings-tab-btn ${settingsTab === 'profile' ? 'active' : ''}`}
+                onClick={() => setSettingsTab('profile')}
+              >
+                <FiUsers /> Admin Profile
+              </button>
+              <button
+                type="button"
+                className={`settings-tab-btn ${settingsTab === 'security' ? 'active' : ''}`}
+                onClick={() => setSettingsTab('security')}
+              >
+                <FiLock /> Security & Password
+              </button>
+              <button
+                type="button"
+                className={`settings-tab-btn ${settingsTab === 'event' ? 'active' : ''}`}
+                onClick={() => setSettingsTab('event')}
+              >
+                <FiSliders /> Registration Preferences
+              </button>
+            </div>
+
+            <div className="settings-view-container mt-4">
+              {/* Tab 1: Admin Profile */}
+              {settingsTab === 'profile' && (
+                <div className="dash-card">
+                  <div className="config-section-header">
+                    <h3><FiUsers /> Admin Profile Information</h3>
+                    <span className="status-pill status-pill-green">Admin Role</span>
+                  </div>
+
+                  <form onSubmit={handleSaveProfile} className="profile-card-content mt-3">
+                    <div className="profile-avatar-box">
+                      {profileForm.name ? profileForm.name[0].toUpperCase() : 'A'}
+                    </div>
+
+                    <div className="profile-form-area form-grid compact">
+                      <label className="field">
+                        <span>Full Name *</span>
+                        <input
+                          required
+                          value={profileForm.name}
+                          onChange={(e) => setProfileForm({ ...profileForm, name: e.target.value })}
+                          placeholder="Admin full name"
+                        />
+                      </label>
+
+                      <label className="field">
+                        <span>Email Address (Read-Only)</span>
+                        <input
+                          type="email"
+                          value={user?.email || ''}
+                          disabled
+                          style={{ opacity: 0.7, cursor: 'not-allowed' }}
+                        />
+                        <small className="text-dim">Admin email is managed centrally.</small>
+                      </label>
+
+                      <label className="field">
+                        <span>Contact Phone</span>
+                        <input
+                          type="tel"
+                          value={profileForm.phone}
+                          onChange={(e) => setProfileForm({ ...profileForm, phone: e.target.value })}
+                          placeholder="+91 98765 43210"
+                        />
+                      </label>
+
+                      <label className="field">
+                        <span>Institution / College</span>
+                        <input
+                          value={profileForm.college}
+                          onChange={(e) => setProfileForm({ ...profileForm, college: e.target.value })}
+                          placeholder="e.g. NSRIT Visakhapatnam"
+                        />
+                      </label>
+
+                      <label className="field">
+                        <span>Department / Division</span>
+                        <input
+                          value={profileForm.department}
+                          onChange={(e) => setProfileForm({ ...profileForm, department: e.target.value })}
+                          placeholder="e.g. Computer Science Engineering"
+                        />
+                      </label>
+
+                      <label className="field">
+                        <span>Designation / Role</span>
+                        <input
+                          value={profileForm.year}
+                          onChange={(e) => setProfileForm({ ...profileForm, year: e.target.value })}
+                          placeholder="e.g. Hackathon Lead Organizer"
+                        />
+                      </label>
+
+                      <div className="span-2 mt-2 flex justify-end">
+                        <button type="submit" className="primary-action" disabled={isSavingProfile}>
+                          <FiSave /> {isSavingProfile ? 'Updating Profile...' : 'Save Profile Changes'}
+                        </button>
+                      </div>
+                    </div>
+                  </form>
+                </div>
+              )}
+
+              {/* Tab 2: Security & Password */}
+              {settingsTab === 'security' && (
+                <div className="dash-card">
+                  <div className="config-section-header">
+                    <h3><FiLock /> Change Admin Password</h3>
+                  </div>
+
+                  <form onSubmit={handleChangePassword} className="form-grid compact mt-3" style={{ maxWidth: '560px' }}>
+                    <label className="field span-2">
+                      <span>Current Password *</span>
+                      <input
+                        required
+                        type="password"
+                        value={passwordForm.currentPassword}
+                        onChange={(e) => setPasswordForm({ ...passwordForm, currentPassword: e.target.value })}
+                        placeholder="Enter current password"
+                      />
+                    </label>
+
+                    <label className="field span-2">
+                      <span>New Password (Min 8 characters) *</span>
+                      <input
+                        required
+                        type="password"
+                        value={passwordForm.newPassword}
+                        onChange={(e) => setPasswordForm({ ...passwordForm, newPassword: e.target.value })}
+                        placeholder="Enter new strong password"
+                      />
+                    </label>
+
+                    <label className="field span-2">
+                      <span>Confirm New Password *</span>
+                      <input
+                        required
+                        type="password"
+                        value={passwordForm.confirmPassword}
+                        onChange={(e) => setPasswordForm({ ...passwordForm, confirmPassword: e.target.value })}
+                        placeholder="Re-enter new password"
+                      />
+                    </label>
+
+                    <div className="span-2 mt-2 flex justify-end">
+                      <button type="submit" className="primary-action" disabled={isSavingPassword}>
+                        <FiLock /> {isSavingPassword ? 'Updating Password...' : 'Update Password'}
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              )}
+
+              {/* Tab 3: Registration Preferences */}
+              {settingsTab === 'event' && (
+                <div className="dash-card">
+                  <div className="config-section-header">
+                    <h3><FiSliders /> Registration & Platform Controls</h3>
+                  </div>
+
+                  {eventConfig ? (
+                    <form onSubmit={saveEventConfig} className="form-grid compact mt-3">
+                      <label className="field">
+                        <span>Registration Status</span>
+                        <select
+                          value={eventConfig.eventStatus || 'Published'}
+                          onChange={(e) => setEventConfig({ ...eventConfig, eventStatus: e.target.value })}
+                        >
+                          <option value="Published">Open / Live (Accepting Registrations)</option>
+                          <option value="Draft">Draft (Registrations Soon)</option>
+                          <option value="Closed">Closed</option>
+                        </select>
+                      </label>
+
+                      <label className="field">
+                        <span>Active Event</span>
+                        <select
+                          value={eventConfig.activeEvent !== false ? 'true' : 'false'}
+                          onChange={(e) => setEventConfig({ ...eventConfig, activeEvent: e.target.value === 'true' })}
+                        >
+                          <option value="true">Active Event</option>
+                          <option value="false">Inactive / Archived</option>
+                        </select>
+                      </label>
+
+                      <label className="field">
+                        <span>Minimum Team Size</span>
+                        <input
+                          type="number"
+                          min={1}
+                          max={10}
+                          value={eventConfig.minTeamSize ?? 1}
+                          onChange={(e) => setEventConfig({ ...eventConfig, minTeamSize: Number(e.target.value) })}
+                        />
+                      </label>
+
+                      <label className="field">
+                        <span>Maximum Team Size</span>
+                        <input
+                          type="number"
+                          min={1}
+                          max={10}
+                          value={eventConfig.maxTeamSize ?? 4}
+                          onChange={(e) => setEventConfig({ ...eventConfig, maxTeamSize: Number(e.target.value) })}
+                        />
+                      </label>
+
+                      <div className="span-2 mt-2 flex justify-end">
+                        <button type="submit" className="primary-action" disabled={isSavingConfig}>
+                          <FiSave /> {isSavingConfig ? 'Saving...' : 'Save Registration Settings'}
+                        </button>
+                      </div>
+                    </form>
+                  ) : (
+                    <p className="text-dim">Loading configuration settings...</p>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
 
         {/* PROBLEM STATEMENT CREATE/EDIT MODAL */}
         {isPsModalOpen && (

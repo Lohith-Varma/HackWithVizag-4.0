@@ -1,14 +1,39 @@
 import mongoose from "mongoose";
 import User from "../../auth/models/user.model.js";
 import Team from "../models/team.model.js";
+import Project from "../../projects/models/project.model.js";
+import Submission from "../../submissions/models/submission.model.js";
 import ApiError from "../../../utils/apiError.js";
 
+const userFields = "name email phone role status college collegeName department year gender resumeUrl githubUrl linkedinUrl portfolioUrl profilePhoto createdAt";
+
 export const getUserTeam = async (userId) => {
-  return Team.findOne({
+  const team = await Team.findOne({
     $or: [{ leader: userId }, { members: userId }],
   })
-    .populate("leader", "name email phone role status college collegeName department year")
-    .populate("members", "name email phone role status college collegeName department year");
+    .populate("leader", userFields)
+    .populate("members", userFields)
+    .populate("reviewedBy", "name email");
+
+  if (!team) {
+    return { team: null, project: null, submission: null, registrationId: null };
+  }
+
+  const [project, submission] = await Promise.all([
+    Project.findOne({ team: team._id }).populate("problemStatementId"),
+    Submission.findOne({ team: team._id }),
+  ]);
+
+  const registrationId = submission
+    ? `HWV-2026-${submission._id.toString().slice(-6).toUpperCase()}`
+    : `HWV-2026-${team._id.toString().slice(-6).toUpperCase()}`;
+
+  return {
+    team,
+    project,
+    submission,
+    registrationId,
+  };
 };
 
 export const createTeamForUser = async (userId, { teamName }) => {
@@ -26,7 +51,7 @@ export const createTeamForUser = async (userId, { teamName }) => {
     members: [userId],
   });
 
-  return team.populate("leader members", "name email phone role status");
+  return team.populate("leader members", userFields);
 };
 
 export const addMemberToTeam = async (teamId, leaderId, { email }) => {
@@ -72,21 +97,46 @@ export const addMemberToTeam = async (teamId, leaderId, { email }) => {
     await team.save();
   }
 
-  return team.populate("leader members", "name email phone role status");
+  return team.populate("leader members", userFields);
 };
 
-export const getTeamById = async (teamId) => {
+export const getTeamById = async (teamId, requestingUser = null) => {
   if (!mongoose.Types.ObjectId.isValid(teamId)) {
     throw new ApiError(400, "Invalid team id");
   }
 
   const team = await Team.findById(teamId)
-    .populate("leader", "name email phone role status college collegeName department year")
-    .populate("members", "name email phone role status college collegeName department year");
+    .populate("leader", userFields)
+    .populate("members", userFields)
+    .populate("reviewedBy", "name email");
 
   if (!team) {
     throw new ApiError(404, "Team not found");
   }
 
-  return team;
+  // Security Access Control: Verify ownership if participant
+  if (requestingUser && requestingUser.role !== "admin") {
+    const isLeader = team.leader?._id?.toString() === requestingUser.id || team.leader?.toString() === requestingUser.id;
+    const isMember = Array.isArray(team.members) && team.members.some((m) => (m._id || m).toString() === requestingUser.id);
+    if (!isLeader && !isMember) {
+      throw new ApiError(403, "You do not have permission to view this team's details");
+    }
+  }
+
+  const [project, submission] = await Promise.all([
+    Project.findOne({ team: team._id }).populate("problemStatementId"),
+    Submission.findOne({ team: team._id }),
+  ]);
+
+  const registrationId = submission
+    ? `HWV-2026-${submission._id.toString().slice(-6).toUpperCase()}`
+    : `HWV-2026-${team._id.toString().slice(-6).toUpperCase()}`;
+
+  return {
+    team,
+    project,
+    submission,
+    registrationId,
+  };
 };
+

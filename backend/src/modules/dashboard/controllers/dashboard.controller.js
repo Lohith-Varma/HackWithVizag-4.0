@@ -10,12 +10,14 @@ import { getDashboard as getAdminDashboardData } from "../../admin/controllers/a
 export const getParticipantDashboard = asyncHandler(async (req, res) => {
   const userId = req.user.id;
 
+  const userFields = "name email phone role status college collegeName department year gender resumeUrl githubUrl linkedinUrl portfolioUrl profilePhoto createdAt";
+
   const [user, activeEvent, team] = await Promise.all([
     User.findById(userId).select("-password"),
     Event.findOne({ activeEvent: true }),
     Team.findOne({ $or: [{ leader: userId }, { members: userId }] })
-      .populate("leader", "name email phone college collegeName department year")
-      .populate("members", "name email phone college collegeName department year")
+      .populate("leader", userFields)
+      .populate("members", userFields)
       .populate("reviewedBy", "name email"),
   ]);
 

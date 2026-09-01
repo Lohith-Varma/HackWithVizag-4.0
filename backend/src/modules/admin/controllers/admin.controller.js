@@ -36,32 +36,46 @@ const getPrimaryCollege = (team) =>
 const getPrimaryDepartment = (team) =>
   team.leader?.department || team.members?.find((member) => member.department)?.department || "";
 
+const adminUserFields = "name email phone role status college collegeName department year gender resumeUrl githubUrl linkedinUrl portfolioUrl profilePhoto createdAt";
+
 const teamPopulate = [
-  { path: "leader", select: "name email phone role status college collegeName department year" },
-  { path: "members", select: "name email phone role status college collegeName department year" },
+  { path: "leader", select: adminUserFields },
+  { path: "members", select: adminUserFields },
   { path: "reviewedBy", select: "name email role" },
 ];
 
-const normalizeTeam = ({ team, project = null, submission = null } = {}) => ({
-  id: team._id.toString(),
-  _id: team._id.toString(),
-  teamName: team.teamName,
-  leader: team.leader,
-  members: team.members || [],
-  memberCount: team.members?.length || 0,
-  college: getPrimaryCollege(team),
-  department: getPrimaryDepartment(team),
-  status: formatStatus(team.currentStatus),
-  currentStatus: formatStatus(team.currentStatus),
-  remarks: team.remarks || "",
-  reviewedBy: team.reviewedBy,
-  reviewedAt: team.reviewedAt,
-  submissionDate: submission?.finalSubmittedAt || project?.submittedAt || project?.createdAt || team.createdAt,
-  project,
-  submission,
-  createdAt: team.createdAt,
-  updatedAt: team.updatedAt,
-});
+const normalizeTeam = ({ team, project = null, submission = null } = {}) => {
+  const regId = submission
+    ? `HWV-2026-${submission._id.toString().slice(-6).toUpperCase()}`
+    : `HWV-2026-${team._id.toString().slice(-6).toUpperCase()}`;
+
+  return {
+    id: team._id.toString(),
+    _id: team._id.toString(),
+    registrationId: regId,
+    teamName: team.teamName,
+    leader: team.leader,
+    members: team.members || [],
+    memberCount: team.members?.length || 0,
+    college: getPrimaryCollege(team),
+    department: getPrimaryDepartment(team),
+    status: formatStatus(team.currentStatus),
+    currentStatus: formatStatus(team.currentStatus),
+    remarks: team.remarks || "",
+    reviewedBy: team.reviewedBy,
+    reviewedAt: team.reviewedAt,
+    submissionDate: submission?.finalSubmittedAt || project?.submittedAt || project?.createdAt || team.createdAt,
+    projectTitle: project?.title || "",
+    problemCode: project?.problemCode || project?.problemStatementId?.code || (project?.problemType === "open" ? "Open Innovation" : "Track Not Set"),
+    theme: project?.theme || project?.problemStatementId?.theme || "",
+    problemType: project?.problemType || "official",
+    project,
+    submission,
+    createdAt: team.createdAt,
+    updatedAt: team.updatedAt,
+  };
+};
+
 
 const buildTeamQuery = async ({ search, status, college, department, theme, problemStatement, isOpenInnovation }) => {
   const query = {};
@@ -320,11 +334,12 @@ export const listTeams = asyncHandler(async (req, res) => {
 });
 
 export const getTeamDetails = asyncHandler(async (req, res) => {
-  if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+  const teamId = req.params.id || req.params.teamId;
+  if (!mongoose.Types.ObjectId.isValid(teamId)) {
     throw new ApiError(400, "Invalid team id");
   }
 
-  const team = await Team.findById(req.params.id).populate(teamPopulate);
+  const team = await Team.findById(teamId).populate(teamPopulate);
 
   if (!team) {
     throw new ApiError(404, "Team not found");
@@ -453,10 +468,12 @@ export const getAnalytics = asyncHandler(async (_req, res) => {
     rejectedTeams,
     openInnovationCount,
     officialProblemCount,
+    allProblemStatements,
     collegeWiseRegistrationCount,
     departmentWiseRegistrationCount,
     themeWiseRegistrationCount,
     problemStatementWiseCount,
+    statusWiseAggregation,
   ] = await Promise.all([
     Team.countDocuments(),
     User.countDocuments({ role: "participant" }),
@@ -466,14 +483,71 @@ export const getAnalytics = asyncHandler(async (_req, res) => {
     Team.countDocuments({ currentStatus: "rejected" }),
     Project.countDocuments({ problemType: "open" }),
     Project.countDocuments({ problemType: "official" }),
+    ProblemStatement.find().sort({ displayOrder: 1, createdAt: 1 }),
     countByFirstAvailable(User, ["collegeName", "college"], { role: "participant" }),
     countBy(User, "department", { role: "participant" }),
     countBy(Project, "theme"),
     countBy(Project, "problemCode"),
+    Team.aggregate([
+      {
+        $group: {
+          _id: { $ifNull: ["$currentStatus", "draft"] },
+          count: { $sum: 1 },
+        },
+      },
+      { $sort: { count: -1 } },
+    ]),
   ]);
+
+  // Build a lookup map of problemCode -> count from Project aggregation
+  const projectCodeCountMap = new Map();
+  problemStatementWiseCount.forEach((item) => {
+    if (item.label && item.label !== "Not specified") {
+      projectCodeCountMap.set(item.label.toUpperCase().trim(), item.count);
+    }
+  });
+
+  // Cross-reference all registered problem statements from DB
+  const problemStatementStats = allProblemStatements.map((ps) => {
+    const codeKey = (ps.code || "").toUpperCase().trim();
+    const count = projectCodeCountMap.get(codeKey) || 0;
+    return {
+      id: ps._id,
+      code: ps.code,
+      title: ps.title,
+      theme: ps.theme || ps.category || "General",
+      type: ps.type || (ps.isCustomIdea ? "open" : "official"),
+      activeStatus: ps.activeStatus !== false,
+      count,
+      percentage: totalProjects ? Number(((count / totalProjects) * 100).toFixed(1)) : 0,
+    };
+  });
+
+  // If there are open innovation projects, ensure an Open Innovation aggregate entry exists
+  if (openInnovationCount > 0) {
+    const openAlreadyInList = problemStatementStats.some((ps) => ps.type === "open");
+    if (!openAlreadyInList) {
+      problemStatementStats.push({
+        id: "open-innovation",
+        code: "OPEN-TRACK",
+        title: "Open Innovation / Custom Idea",
+        theme: "Open Innovation",
+        type: "open",
+        activeStatus: true,
+        count: openInnovationCount,
+        percentage: totalProjects ? Number(((openInnovationCount / totalProjects) * 100).toFixed(1)) : 0,
+      });
+    }
+  }
 
   const selectionPercentage = totalTeams ? Number(((selectedTeams / totalTeams) * 100).toFixed(2)) : 0;
   const totalColleges = collegeWiseRegistrationCount.filter((row) => row.label !== "Not specified").length;
+
+  const statusDistribution = statusWiseAggregation.map((row) => ({
+    status: row._id,
+    count: row.count,
+    percentage: totalTeams ? Number(((row.count / totalTeams) * 100).toFixed(1)) : 0,
+  }));
 
   return sendSuccess(res, 200, "Admin analytics fetched successfully", {
     summary: {
@@ -493,9 +567,12 @@ export const getAnalytics = asyncHandler(async (_req, res) => {
       departmentWiseRegistrationCount,
       themeWiseRegistrationCount,
       problemStatementWiseCount,
+      problemStatementStats,
+      statusDistribution,
     },
   });
 });
+
 
 const toCsv = (headers, rows) => {
   const escape = (value) => {

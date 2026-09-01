@@ -17,9 +17,18 @@ import {
   FiCheck,
   FiMapPin,
   FiVideo,
+  FiCopy,
+  FiMail,
+  FiPhone,
+  FiGithub,
+  FiLinkedin,
+  FiGlobe,
+  FiEye,
+  FiLayers,
+  FiUser,
 } from 'react-icons/fi';
 import Toast from '../components/Toast/Toast';
-import { api } from '../services/api';
+import { api, buildAssetUrl } from '../services/api';
 import {
   clearCurrentUser,
   loadCurrentUser,
@@ -53,8 +62,8 @@ const STATUS_CONFIGS = {
     badgeIcon: FiCheckCircle,
     title: 'Your Submission Has Been Received',
     description: 'Your project details and presentation have been recorded. Screening will begin shortly.',
-    actionLabel: 'View Submission Details',
-    actionModal: 'submission',
+    actionLabel: 'Jump to Team Details',
+    actionTarget: 'team-details-section',
     themeClass: 'status-card-submitted',
   },
   under_review: {
@@ -63,8 +72,8 @@ const STATUS_CONFIGS = {
     badgeIcon: FiClock,
     title: 'Submission Currently Under Review',
     description: 'The screening committee is evaluating your project proposal against the judging criteria.',
-    actionLabel: 'View Submission Details',
-    actionModal: 'submission',
+    actionLabel: 'Jump to Team Details',
+    actionTarget: 'team-details-section',
     themeClass: 'status-card-review',
   },
   selected: {
@@ -89,6 +98,13 @@ const STATUS_CONFIGS = {
   },
 };
 
+const safeDisplay = (value, fallback = 'Not provided') => {
+  if (value === undefined || value === null || String(value).trim() === '') {
+    return fallback;
+  }
+  return String(value);
+};
+
 export default function Dashboard() {
   const currentUser = loadCurrentUser();
   const draft = loadDraftRegistration();
@@ -101,8 +117,9 @@ export default function Dashboard() {
   const [isSubmittingOffline, setIsSubmittingOffline] = useState(false);
   const [toast, setToast] = useState(null);
 
-  // Active Modals
-  const [activeModal, setActiveModal] = useState(null); // 'team' | 'announcements' | 'submission' | null
+  // Active Preview & Modals
+  const [activePreview, setActivePreview] = useState(null); // { type: 'ppt' | 'doc' | 'video' | 'abstract', url?: string, title?: string, content?: string } | null
+  const [activeModal, setActiveModal] = useState(null); // 'announcements' | null
 
   const fetchDashboard = async () => {
     try {
@@ -133,44 +150,132 @@ export default function Dashboard() {
   const currentStage = dashboardData?.timelineStage || (submission ? 'Under Review' : 'Draft');
   const rawStatus = team?.currentStatus || submission?.status || 'draft';
   const status = rawStatus.toLowerCase().replace(' ', '_');
-  const registrationId = dashboardData?.registrationId || 'HWV-2026-PENDING';
+  const registrationId = dashboardData?.registrationId || (submission ? `HWV-2026-${submission._id.toString().slice(-6).toUpperCase()}` : 'HWV-2026-PENDING');
 
-  const registrationData = {
-    personal: {
-      fullName: user.name || draft.personal?.fullName || '',
-      email: user.email || draft.personal?.email || '',
-      phone: user.phone || draft.personal?.phone || '',
-      collegeName: user.college || user.collegeName || draft.personal?.collegeName || '',
-      department: user.department || draft.personal?.department || '',
-      year: user.year || draft.personal?.year || '',
-    },
-    team: {
-      teamName: team?.teamName || draft.team?.teamName || '',
-      teamLeader: team?.leader?.name || draft.team?.teamLeader || user.name || '',
-      members: team?.members ? team.members.slice(1).map((m) => ({
-        fullName: m.name,
-        email: m.email,
-        phone: m.phone,
-        college: m.college || m.collegeName,
-        department: m.department,
-        year: m.year,
-      })) : (draft.team?.members || []),
-    },
-    project: {
-      problemCode: project?.problemCode || draft.project?.problemCode || '',
-      problemType: project?.problemType || draft.project?.problemType || 'official',
-      title: project?.title || draft.project?.title || '',
-      theme: project?.theme || draft.project?.theme || '',
-      problemStatement: project?.problemStatement || draft.project?.problemStatement || '',
-      abstract: project?.abstract || draft.project?.abstract || '',
-      technologyStack: project?.technologyStack || draft.project?.technologyStack || '',
-      githubRepository: project?.githubRepository || draft.project?.githubRepository || '',
-      demoVideoUrl: project?.demoVideoUrl || draft.project?.demoVideoUrl || '',
-    },
-    uploads: {
-      pptFile: project?.pptFile?.url ? { name: project.pptFile.originalName || 'Presentation.ppt', size: project.pptFile.size } : draft.uploads?.pptFile,
-      supportingDocFile: project?.supportingDocFile?.url ? { name: project.supportingDocFile.originalName || 'Doc.pdf', size: project.supportingDocFile.size } : draft.uploads?.supportingDocFile,
-    },
+  // Build complete team members array
+  const allTeamMembers = (() => {
+    if (team?.members && team.members.length > 0) {
+      const leaderId = team.leader?._id?.toString() || team.leader?.toString();
+      return team.members.map((m) => {
+        const mId = m._id?.toString() || m.toString();
+        const isLeader = mId === leaderId || m.email === team.leader?.email;
+        return {
+          id: mId,
+          isLeader,
+          role: isLeader ? 'Team Leader' : 'Team Member',
+          name: m.name || (isLeader ? team.leader?.name : 'Participant'),
+          email: m.email || (isLeader ? team.leader?.email : ''),
+          phone: m.phone || (isLeader ? team.leader?.phone : ''),
+          college: m.collegeName || m.college || (isLeader ? (team.leader?.collegeName || team.leader?.college) : ''),
+          department: m.department || (isLeader ? team.leader?.department : ''),
+          year: m.year || (isLeader ? team.leader?.year : ''),
+          gender: m.gender || '',
+          githubUrl: m.githubUrl || '',
+          linkedinUrl: m.linkedinUrl || '',
+          portfolioUrl: m.portfolioUrl || '',
+          resumeUrl: m.resumeUrl || '',
+        };
+      });
+    }
+
+    // Fallback from draft
+    const membersList = [];
+    const leaderName = draft.team?.teamLeader || draft.personal?.fullName || user.name || 'Team Leader';
+    membersList.push({
+      id: 'leader',
+      isLeader: true,
+      role: 'Team Leader',
+      name: leaderName,
+      email: draft.personal?.email || user.email || '',
+      phone: draft.personal?.phone || user.phone || '',
+      college: draft.personal?.collegeName || user.collegeName || user.college || '',
+      department: draft.personal?.department || user.department || '',
+      year: draft.personal?.year || user.year || '',
+      gender: draft.personal?.gender || '',
+      githubUrl: draft.personal?.githubUrl || '',
+      linkedinUrl: draft.personal?.linkedinUrl || '',
+      portfolioUrl: draft.personal?.portfolioUrl || '',
+      resumeUrl: draft.personal?.resumeUrl || '',
+    });
+
+    if (draft.team?.members && Array.isArray(draft.team.members)) {
+      draft.team.members.forEach((m, idx) => {
+        if (m.fullName || m.email) {
+          membersList.push({
+            id: `member-${idx}`,
+            isLeader: false,
+            role: 'Team Member',
+            name: m.fullName || `Member ${idx + 2}`,
+            email: m.email || '',
+            phone: m.phone || '',
+            college: m.college || draft.personal?.collegeName || '',
+            department: m.department || '',
+            year: m.year || '',
+            gender: m.gender || '',
+            githubUrl: m.githubUrl || '',
+            linkedinUrl: m.linkedinUrl || '',
+            portfolioUrl: m.portfolioUrl || '',
+            resumeUrl: m.resumeUrl || '',
+          });
+        }
+      });
+    }
+
+    return membersList;
+  })();
+
+  const projectDetails = {
+    title: project?.title || draft.project?.title || '',
+    problemCode: project?.problemCode || project?.problemStatementId?.code || draft.project?.problemCode || '',
+    problemType: project?.problemType || draft.project?.problemType || 'official',
+    theme: project?.theme || project?.problemStatementId?.theme || draft.project?.theme || '',
+    problemStatement: project?.problemStatement || project?.problemStatementId?.problemStatement || draft.project?.problemStatement || '',
+    abstract: project?.abstract || draft.project?.abstract || '',
+    technologyStack: project?.technologyStack || draft.project?.technologyStack || '',
+    githubRepository: project?.githubRepository || draft.project?.githubRepository || '',
+    demoVideoUrl: project?.demoVideoUrl || draft.project?.demoVideoUrl || '',
+    pptFile: project?.pptFile?.url
+      ? {
+          url: project.pptFile.url,
+          name: project.pptFile.originalName || 'Presentation.ppt',
+          size: project.pptFile.size,
+        }
+      : draft.uploads?.pptFile
+      ? {
+          url: '',
+          name: draft.uploads.pptFile.name || 'Presentation.ppt',
+          size: draft.uploads.pptFile.size,
+        }
+      : null,
+    supportingDocFile: project?.supportingDocFile?.url
+      ? {
+          url: project.supportingDocFile.url,
+          name: project.supportingDocFile.originalName || 'SupportingDoc.pdf',
+          size: project.supportingDocFile.size,
+        }
+      : draft.uploads?.supportingDocFile
+      ? {
+          url: '',
+          name: draft.uploads.supportingDocFile.name || 'SupportingDoc.pdf',
+          size: draft.uploads.supportingDocFile.size,
+        }
+      : null,
+  };
+
+  const teamName = team?.teamName || draft.team?.teamName || 'My Team';
+  const submissionTimestamp = submission?.finalSubmittedAt || project?.submittedAt;
+  const formattedSubmissionDate = submissionTimestamp
+    ? new Date(submissionTimestamp).toLocaleString('en-IN', {
+        dateStyle: 'medium',
+        timeStyle: 'short',
+      })
+    : 'In Draft';
+
+  const handleCopyRegId = () => {
+    if (registrationId && registrationId !== 'HWV-2026-PENDING') {
+      navigator.clipboard.writeText(registrationId);
+      setToast({ type: 'success', message: 'Registration ID copied to clipboard!' });
+    }
   };
 
   const handleOfflineSubmit = async (e) => {
@@ -220,8 +325,6 @@ export default function Dashboard() {
   const handlePrimaryActionClick = () => {
     if (statusConfig.actionRoute) {
       window.location.hash = statusConfig.actionRoute;
-    } else if (statusConfig.actionModal) {
-      setActiveModal(statusConfig.actionModal);
     } else if (statusConfig.actionTarget) {
       const el = document.getElementById(statusConfig.actionTarget);
       if (el) el.scrollIntoView({ behavior: 'smooth' });
@@ -234,7 +337,7 @@ export default function Dashboard() {
     {
       id: '1',
       title: 'Hack With Vizag 4.0 Registration Live',
-      content: 'Complete all 5 steps of the application wizard before the deadline.',
+      content: 'Complete all steps of the application wizard before the deadline.',
       date: '2026-08-01',
     },
     {
@@ -259,6 +362,24 @@ export default function Dashboard() {
     { label: 'Hackathon Grand Event', date: 'Sept 25-26, 2026', icon: FiCalendar, status: 'event' },
   ];
 
+  const getYoutubeEmbedUrl = (url) => {
+    if (!url) return '';
+    try {
+      let videoId = '';
+      if (url.includes('youtu.be/')) {
+        videoId = url.split('youtu.be/')[1]?.split(/[?#]/)[0];
+      } else if (url.includes('youtube.com/watch')) {
+        const urlObj = new URL(url);
+        videoId = urlObj.searchParams.get('v');
+      } else if (url.includes('youtube.com/embed/')) {
+        return url;
+      }
+      return videoId ? `https://www.youtube.com/embed/${videoId}` : url;
+    } catch {
+      return url;
+    }
+  };
+
   return (
     <main className="portal-page participant-dashboard-page">
       <section className="portal-shell dashboard-shell">
@@ -267,10 +388,10 @@ export default function Dashboard() {
         <div className="dash-top-bar">
           <div className="welcome-group">
             <h1 className="welcome-title">
-              Welcome back, {registrationData.personal.fullName || 'Participant'} 👋
+              Welcome back, {safeDisplay(user.name || currentUser?.name, 'Participant')} 👋
             </h1>
             <p className="team-subtitle">
-              Team: <strong>{registrationData.team.teamName || 'Individual / Pending Team'}</strong>
+              Team: <strong>{teamName}</strong>
             </p>
           </div>
 
@@ -279,11 +400,14 @@ export default function Dashboard() {
               <BadgeIcon className="badge-pill-icon" />
               <span>{statusConfig.badgeLabel}</span>
             </div>
-            <small className="reg-id-text">ID: {registrationId}</small>
+            <div className="reg-id-badge" onClick={handleCopyRegId} title="Click to copy ID" style={{ cursor: 'pointer' }}>
+              <span>ID: {registrationId}</span>
+              <FiCopy size={14} />
+            </div>
           </div>
         </div>
 
-        {/* PRIMARY ACTION CARD (Largest focal card) */}
+        {/* PRIMARY ACTION CARD */}
         <div className={`primary-focal-card ${statusConfig.themeClass}`}>
           <div className="focal-card-glow" />
           <div className="focal-card-content">
@@ -292,7 +416,7 @@ export default function Dashboard() {
                 <BadgeIcon />
               </div>
               <span className={`focal-tag tag-${statusConfig.badgeColor}`}>
-                Current Priority
+                Current Status
               </span>
             </div>
 
@@ -311,7 +435,7 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* REGISTRATION TIMELINE (Stage Roadmap) */}
+        {/* REGISTRATION TIMELINE */}
         <div className="dash-card timeline-stage-card">
           <div className="card-top-header">
             <h3 className="card-heading">Registration Timeline</h3>
@@ -342,151 +466,395 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* SECONDARY INFORMATION GRID */}
-        <div className="dash-secondary-grid">
+        {/* ====================================================================
+            MAIN TEAM DETAILS & INFORMATION SECTION (Fulfills Req #2)
+           ==================================================================== */}
+        <div id="team-details-section" className="team-details-section">
           
-          {/* PROJECT SUMMARY CARD */}
-          <div className="dash-card compact-summary-card">
-            <div className="card-top-header">
-              <h3 className="card-heading">Project Summary</h3>
-              <button
-                type="button"
-                className="btn-link-action"
-                onClick={() => setActiveModal('submission')}
-              >
-                View Proposal <FiExternalLink />
-              </button>
+          {/* 1. TEAM & PROBLEM STATEMENT OVERVIEW CARD */}
+          <div className="team-overview-card">
+            <div className="section-head-row">
+              <div className="section-title-group">
+                <h3><FiLayers /> Team Information & Track</h3>
+              </div>
+              <span className={`status-pill status-pill-${statusConfig.badgeColor}`}>
+                {statusConfig.badgeLabel}
+              </span>
             </div>
 
-            <div className="compact-project-info">
-              <h4 className="project-title-text">{registrationData.project.title || 'Untitled Project Draft'}</h4>
+            <div className="team-info-grid">
+              <div className="info-item-box">
+                <span className="info-label">Team Name</span>
+                <strong className="info-value">{teamName}</strong>
+              </div>
+
+              <div className="info-item-box">
+                <span className="info-label">Registration ID</span>
+                <div className="info-value reg-id-badge" onClick={handleCopyRegId} title="Copy ID" style={{ cursor: 'pointer' }}>
+                  {registrationId} <FiCopy size={13} />
+                </div>
+              </div>
+
+              <div className="info-item-box">
+                <span className="info-label">Problem Statement Code</span>
+                <strong className="info-value">{safeDisplay(projectDetails.problemCode, 'Track Not Selected')}</strong>
+              </div>
+
+              <div className="info-item-box">
+                <span className="info-label">Track Category / Theme</span>
+                <strong className="info-value">{safeDisplay(projectDetails.theme, 'Open Innovation')}</strong>
+              </div>
+
+              <div className="info-item-box">
+                <span className="info-label">Track Type</span>
+                <strong className="info-value">
+                  {projectDetails.problemType === 'open' ? 'Open Innovation' : 'Official Challenge Track'}
+                </strong>
+              </div>
+
+              <div className="info-item-box">
+                <span className="info-label">Submission Status</span>
+                <strong className="info-value text-capitalize">
+                  {safeDisplay(submission?.status || team?.currentStatus || 'Draft')}
+                </strong>
+              </div>
+
+              <div className="info-item-box">
+                <span className="info-label">Submitted On</span>
+                <strong className="info-value">{formattedSubmissionDate}</strong>
+              </div>
+
+              <div className="info-item-box">
+                <span className="info-label">Total Team Size</span>
+                <strong className="info-value">{allTeamMembers.length} Members</strong>
+              </div>
+            </div>
+
+            {projectDetails.problemStatement && (
+              <div className="abstract-full-box mt-3">
+                <span className="info-label">Problem Statement Description</span>
+                <p className="mt-1">{projectDetails.problemStatement}</p>
+              </div>
+            )}
+          </div>
+
+          {/* 2. COMPLETE TEAM MEMBERS ROSTER TABLE (Req #2B) */}
+          <div className="team-overview-card">
+            <div className="section-head-row">
+              <div className="section-title-group">
+                <h3><FiUsers /> Team Members ({allTeamMembers.length})</h3>
+              </div>
+              <span className="text-dim font-sm">
+                Showing all registered members of this team
+              </span>
+            </div>
+
+            <div className="team-members-wrapper">
+              <table className="team-table">
+                <thead>
+                  <tr>
+                    <th>Role</th>
+                    <th>Member Name</th>
+                    <th>Email Address</th>
+                    <th>Phone Number</th>
+                    <th>College / Institution</th>
+                    <th>Branch / Year</th>
+                    <th>Profiles / Links</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {allTeamMembers.map((member, idx) => (
+                    <tr key={member.id || idx}>
+                      <td>
+                        <span className={`role-pill ${member.isLeader ? 'role-leader' : 'role-member'}`}>
+                          {member.isLeader ? '👑 Team Leader' : '👤 Member'}
+                        </span>
+                      </td>
+                      <td>
+                        <div className="member-name-cell">
+                          <span className="member-name-text">{safeDisplay(member.name, 'Participant')}</span>
+                          {member.gender && <small className="text-dim">Gender: {member.gender}</small>}
+                        </div>
+                      </td>
+                      <td>
+                        {member.email ? (
+                          <a href={`mailto:${member.email}`} className="member-email-link">
+                            <FiMail /> {member.email}
+                          </a>
+                        ) : (
+                          <span className="text-dim">Not provided</span>
+                        )}
+                      </td>
+                      <td>
+                        {member.phone ? (
+                          <a href={`tel:${member.phone}`} className="member-phone-link">
+                            <FiPhone /> {member.phone}
+                          </a>
+                        ) : (
+                          <span className="text-dim">Not provided</span>
+                        )}
+                      </td>
+                      <td>
+                        <strong>{safeDisplay(member.college, 'Not provided')}</strong>
+                      </td>
+                      <td>
+                        <span>
+                          {safeDisplay(member.department, 'Dept Not Set')} • {safeDisplay(member.year, 'Year Not Set')}
+                        </span>
+                      </td>
+                      <td>
+                        <div className="member-socials-row">
+                          {member.githubUrl && (
+                            <a href={member.githubUrl} target="_blank" rel="noreferrer" className="social-icon-btn" title="GitHub">
+                              <FiGithub />
+                            </a>
+                          )}
+                          {member.linkedinUrl && (
+                            <a href={member.linkedinUrl} target="_blank" rel="noreferrer" className="social-icon-btn" title="LinkedIn">
+                              <FiLinkedin />
+                            </a>
+                          )}
+                          {member.portfolioUrl && (
+                            <a href={member.portfolioUrl} target="_blank" rel="noreferrer" className="social-icon-btn" title="Portfolio">
+                              <FiGlobe />
+                            </a>
+                          )}
+                          {member.resumeUrl && (
+                            <a href={member.resumeUrl} target="_blank" rel="noreferrer" className="social-icon-btn" title="Resume">
+                              <FiFileText />
+                            </a>
+                          )}
+                          {!member.githubUrl && !member.linkedinUrl && !member.portfolioUrl && !member.resumeUrl && (
+                            <span className="text-dim font-sm">None</span>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* 3. SUBMITTED DOCUMENTS & ASSETS (Req #2C) */}
+          <div className="team-overview-card">
+            <div className="section-head-row">
+              <div className="section-title-group">
+                <h3><FiFileText /> Submitted Documents & Project Media</h3>
+              </div>
+              <span className="text-dim font-sm">
+                View or download your uploaded project materials
+              </span>
+            </div>
+
+            {/* Project Title & Tech Stack */}
+            <div className="compact-project-info mb-4">
+              <h4 className="project-title-text" style={{ fontSize: '1.2rem', marginBottom: '0.4rem' }}>
+                {safeDisplay(projectDetails.title, 'Untitled Project Submission')}
+              </h4>
               <p className="project-track-text">
-                Track: <strong>{registrationData.project.problemCode || 'Open Innovation'}</strong> ({registrationData.project.theme || 'General Theme'})
+                Technology Stack: <strong>{safeDisplay(projectDetails.technologyStack, 'Not specified')}</strong>
               </p>
-
-              <div className="submission-meta-row">
-                <span className="meta-time">
-                  <FiClock /> Submitted: {submission?.finalSubmittedAt ? new Date(submission.finalSubmittedAt).toLocaleDateString('en-IN', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Drafting'}
-                </span>
-              </div>
             </div>
 
-            {/* Compact Checklist */}
-            <div className="project-checklist">
-              <div className={`check-item ${registrationData.project.abstract ? 'valid' : 'missing'}`}>
-                {registrationData.project.abstract ? <FiCheckCircle /> : <FiX />}
-                <span>{registrationData.project.abstract ? 'Abstract Submitted' : 'Abstract Missing'}</span>
-              </div>
-
-              <div className={`check-item ${registrationData.uploads.pptFile ? 'valid' : 'missing'}`}>
-                {registrationData.uploads.pptFile ? <FiCheckCircle /> : <FiX />}
-                <span>{registrationData.uploads.pptFile ? 'PPT Presentation Uploaded' : 'PPT File Missing'}</span>
-              </div>
-
-              <div className={`check-item ${registrationData.uploads.supportingDocFile ? 'valid' : 'optional'}`}>
-                {registrationData.uploads.supportingDocFile ? <FiCheckCircle /> : <FiInfo />}
-                <span>{registrationData.uploads.supportingDocFile ? 'Supporting Document Attached' : 'Supporting Doc (Optional)'}</span>
-              </div>
-
-              <div className={`check-item ${registrationData.project.demoVideoUrl ? 'valid' : 'optional'}`}>
-                {registrationData.project.demoVideoUrl ? <FiCheckCircle /> : <FiVideo />}
-                <span>{registrationData.project.demoVideoUrl ? 'Demo Video Link Added' : 'Demo Video (Optional)'}</span>
-              </div>
-            </div>
-          </div>
-
-          {/* TEAM SUMMARY CARD */}
-          <div className="dash-card compact-summary-card">
-            <div className="card-top-header">
-              <h3 className="card-heading">Team Roster</h3>
-              <button
-                type="button"
-                className="btn-link-action"
-                onClick={() => setActiveModal('team')}
-              >
-                View Full Team ({1 + (registrationData.team.members?.length || 0)}) <FiUsers />
-              </button>
-            </div>
-
-            <div className="team-brief-box">
-              <div className="brief-row">
-                <span>Team Name</span>
-                <strong>{registrationData.team.teamName || 'Not Set'}</strong>
-              </div>
-              <div className="brief-row">
-                <span>Team Leader</span>
-                <strong>{registrationData.team.teamLeader || 'Pending Leader'}</strong>
-              </div>
-              <div className="brief-row">
-                <span>Total Members</span>
-                <strong>{1 + (registrationData.team.members?.length || 0)} Members</strong>
-              </div>
-            </div>
-
-            <div className="team-quick-members">
-              <div className="member-pill leader-pill">
-                👑 {registrationData.team.teamLeader || 'Leader'} (Leader)
-              </div>
-              {registrationData.team.members?.slice(0, 2).map((m, idx) => (
-                <div key={idx} className="member-pill">
-                  👤 {m.fullName}
-                </div>
-              ))}
-              {registrationData.team.members?.length > 2 && (
-                <div className="member-pill overflow-pill">
-                  +{registrationData.team.members.length - 2} more members
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* ANNOUNCEMENTS CARD */}
-          <div className="dash-card announcements-compact-card">
-            <div className="card-top-header">
-              <h3 className="card-heading">Latest Announcements</h3>
-              <button
-                type="button"
-                className="btn-link-action"
-                onClick={() => setActiveModal('announcements')}
-              >
-                View All <FiArrowRight />
-              </button>
-            </div>
-
-            <div className="compact-announcements-list">
-              {latestAnnouncements.map((item) => (
-                <div key={item.id} className="compact-announce-item">
-                  <div className="announce-title-row">
-                    <strong>{item.title}</strong>
-                    <span className="announce-date">{new Date(item.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
+            <div className="documents-section-grid">
+              
+              {/* Card 1: Project Abstract */}
+              <div className="doc-asset-card">
+                <div className="doc-top-info">
+                  <div className="doc-icon-box doc-abstract">
+                    <FiFileText />
                   </div>
-                  <p className="announce-text">{item.content}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* UPCOMING DATES CARD */}
-          <div className="dash-card key-dates-card">
-            <div className="card-top-header">
-              <h3 className="card-heading">Upcoming Dates</h3>
-            </div>
-
-            <div className="dates-list">
-              {upcomingDates.map((item, idx) => {
-                const ItemIcon = item.icon;
-                return (
-                  <div key={idx} className={`date-item ${item.status}`}>
-                    <div className="date-icon-box">
-                      <ItemIcon />
-                    </div>
-                    <div className="date-info">
-                      <strong>{item.label}</strong>
-                      <span>{item.date}</span>
-                    </div>
+                  <div className="doc-meta-box">
+                    <h4>Project Abstract</h4>
+                    <p>{projectDetails.abstract ? `${projectDetails.abstract.trim().split(/\s+/).filter(Boolean).length} Words Submitted` : 'No abstract entered'}</p>
+                    <span className={`doc-status-tag ${projectDetails.abstract ? 'uploaded' : 'missing'}`}>
+                      {projectDetails.abstract ? '✓ Submitted' : 'Not submitted'}
+                    </span>
                   </div>
-                );
-              })}
+                </div>
+
+                <div className="doc-btn-group">
+                  <button
+                    type="button"
+                    className="btn-doc-action btn-doc-primary"
+                    disabled={!projectDetails.abstract}
+                    onClick={() => setActivePreview({
+                      type: 'abstract',
+                      title: 'Project Abstract',
+                      content: projectDetails.abstract,
+                    })}
+                  >
+                    <FiEye /> Read Abstract
+                  </button>
+                </div>
+              </div>
+
+              {/* Card 2: Presentation Deck (PPT) */}
+              <div className="doc-asset-card">
+                <div className="doc-top-info">
+                  <div className="doc-icon-box doc-ppt">
+                    <FiLayers />
+                  </div>
+                  <div className="doc-meta-box">
+                    <h4>Presentation Deck (PPT)</h4>
+                    <p>{projectDetails.pptFile ? `${projectDetails.pptFile.name} (${formatBytes(projectDetails.pptFile.size)})` : 'No presentation uploaded'}</p>
+                    <span className={`doc-status-tag ${projectDetails.pptFile ? 'uploaded' : 'missing'}`}>
+                      {projectDetails.pptFile ? '✓ Uploaded' : 'Not uploaded'}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="doc-btn-group">
+                  {projectDetails.pptFile?.url ? (
+                    <>
+                      <button
+                        type="button"
+                        className="btn-doc-action btn-doc-primary"
+                        onClick={() => setActivePreview({
+                          type: 'ppt',
+                          title: projectDetails.pptFile.name,
+                          url: buildAssetUrl(projectDetails.pptFile.url),
+                        })}
+                      >
+                        <FiEye /> View PPT
+                      </button>
+                      <a
+                        href={buildAssetUrl(projectDetails.pptFile.url)}
+                        download={projectDetails.pptFile.name}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="btn-doc-action btn-doc-secondary"
+                      >
+                        <FiDownload /> Download
+                      </a>
+                    </>
+                  ) : (
+                    <span className="text-dim font-sm" style={{ padding: '0.5rem 0' }}>Not uploaded</span>
+                  )}
+                </div>
+              </div>
+
+              {/* Card 3: Supporting Document */}
+              <div className="doc-asset-card">
+                <div className="doc-top-info">
+                  <div className="doc-icon-box">
+                    <FiDownload />
+                  </div>
+                  <div className="doc-meta-box">
+                    <h4>Supporting Document</h4>
+                    <p>{projectDetails.supportingDocFile ? `${projectDetails.supportingDocFile.name} (${formatBytes(projectDetails.supportingDocFile.size)})` : 'Optional documentation'}</p>
+                    <span className={`doc-status-tag ${projectDetails.supportingDocFile ? 'uploaded' : 'missing'}`}>
+                      {projectDetails.supportingDocFile ? '✓ Attached' : 'Not uploaded'}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="doc-btn-group">
+                  {projectDetails.supportingDocFile?.url ? (
+                    <>
+                      <button
+                        type="button"
+                        className="btn-doc-action btn-doc-primary"
+                        onClick={() => setActivePreview({
+                          type: 'doc',
+                          title: projectDetails.supportingDocFile.name,
+                          url: buildAssetUrl(projectDetails.supportingDocFile.url),
+                        })}
+                      >
+                        <FiEye /> View Doc
+                      </button>
+                      <a
+                        href={buildAssetUrl(projectDetails.supportingDocFile.url)}
+                        download={projectDetails.supportingDocFile.name}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="btn-doc-action btn-doc-secondary"
+                      >
+                        <FiDownload /> Download
+                      </a>
+                    </>
+                  ) : (
+                    <span className="text-dim font-sm" style={{ padding: '0.5rem 0' }}>Not uploaded</span>
+                  )}
+                </div>
+              </div>
+
+              {/* Card 4: Demo Video */}
+              <div className="doc-asset-card">
+                <div className="doc-top-info">
+                  <div className="doc-icon-box doc-video">
+                    <FiVideo />
+                  </div>
+                  <div className="doc-meta-box">
+                    <h4>Demo Video</h4>
+                    <p>{projectDetails.demoVideoUrl ? safeDisplay(projectDetails.demoVideoUrl) : 'No video link provided'}</p>
+                    <span className={`doc-status-tag ${projectDetails.demoVideoUrl ? 'uploaded' : 'missing'}`}>
+                      {projectDetails.demoVideoUrl ? '✓ Link Added' : 'No video link provided'}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="doc-btn-group">
+                  {projectDetails.demoVideoUrl ? (
+                    <>
+                      <button
+                        type="button"
+                        className="btn-doc-action btn-doc-primary"
+                        onClick={() => setActivePreview({
+                          type: 'video',
+                          title: 'Demo Video',
+                          url: getYoutubeEmbedUrl(projectDetails.demoVideoUrl),
+                        })}
+                      >
+                        <FiEye /> Watch Video
+                      </button>
+                      <a
+                        href={projectDetails.demoVideoUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="btn-doc-action btn-doc-secondary"
+                      >
+                        <FiExternalLink /> Open
+                      </a>
+                    </>
+                  ) : (
+                    <span className="text-dim font-sm" style={{ padding: '0.5rem 0' }}>No video link provided</span>
+                  )}
+                </div>
+              </div>
+
+              {/* Card 5: GitHub Repository */}
+              <div className="doc-asset-card">
+                <div className="doc-top-info">
+                  <div className="doc-icon-box doc-github">
+                    <FiGithub />
+                  </div>
+                  <div className="doc-meta-box">
+                    <h4>GitHub Repository</h4>
+                    <p>{projectDetails.githubRepository ? safeDisplay(projectDetails.githubRepository) : 'Not provided'}</p>
+                    <span className={`doc-status-tag ${projectDetails.githubRepository ? 'uploaded' : 'missing'}`}>
+                      {projectDetails.githubRepository ? '✓ Linked' : 'Not provided'}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="doc-btn-group">
+                  {projectDetails.githubRepository ? (
+                    <a
+                      href={projectDetails.githubRepository}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="btn-doc-action btn-doc-primary"
+                    >
+                      <FiExternalLink /> Open GitHub Repo
+                    </a>
+                  ) : (
+                    <span className="text-dim font-sm" style={{ padding: '0.5rem 0' }}>Not provided</span>
+                  )}
+                </div>
+              </div>
+
             </div>
           </div>
 
@@ -566,16 +934,61 @@ export default function Dashboard() {
           </div>
         )}
 
-        {/* QUICK ACTIONS BAR */}
-        <div className="quick-actions-bar">
-          <button
-            type="button"
-            className="quick-btn"
-            onClick={() => setActiveModal('submission')}
-          >
-            <FiFileText /> View Submission Proposal
-          </button>
+        {/* SIDEBAR WIDGETS: Announcements & Upcoming Dates */}
+        <div className="dash-secondary-grid mt-4">
+          {/* ANNOUNCEMENTS CARD */}
+          <div className="dash-card announcements-compact-card">
+            <div className="card-top-header">
+              <h3 className="card-heading">Latest Announcements</h3>
+              <button
+                type="button"
+                className="btn-link-action"
+                onClick={() => setActiveModal('announcements')}
+              >
+                View All <FiArrowRight />
+              </button>
+            </div>
 
+            <div className="compact-announcements-list">
+              {latestAnnouncements.map((item) => (
+                <div key={item.id} className="compact-announce-item">
+                  <div className="announce-title-row">
+                    <strong>{item.title}</strong>
+                    <span className="announce-date">{new Date(item.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
+                  </div>
+                  <p className="announce-text">{item.content}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* UPCOMING DATES CARD */}
+          <div className="dash-card key-dates-card">
+            <div className="card-top-header">
+              <h3 className="card-heading">Upcoming Dates</h3>
+            </div>
+
+            <div className="dates-list">
+              {upcomingDates.map((item, idx) => {
+                const ItemIcon = item.icon;
+                return (
+                  <div key={idx} className={`date-item ${item.status}`}>
+                    <div className="date-icon-box">
+                      <ItemIcon />
+                    </div>
+                    <div className="date-info">
+                      <strong>{item.label}</strong>
+                      <span>{item.date}</span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+
+        {/* QUICK ACTIONS BAR */}
+        <div className="quick-actions-bar mt-4">
           <button
             type="button"
             className="quick-btn"
@@ -605,43 +1018,54 @@ export default function Dashboard() {
 
       </section>
 
-      {/* TEAM DETAILS MODAL */}
-      {activeModal === 'team' && (
-        <div className="dash-modal-overlay" onClick={() => setActiveModal(null)}>
-          <div className="dash-modal-box" onClick={(e) => e.stopPropagation()}>
+      {/* DOCUMENT & MEDIA PREVIEW MODAL */}
+      {activePreview && (
+        <div className="dash-modal-overlay" onClick={() => setActivePreview(null)}>
+          <div className="dash-modal-box modal-doc-viewer" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
-              <h3>Team Details: {registrationData.team.teamName}</h3>
-              <button type="button" className="btn-close-modal" onClick={() => setActiveModal(null)}>
+              <h3>{activePreview.title || 'Document Viewer'}</h3>
+              <button type="button" className="btn-close-modal" onClick={() => setActivePreview(null)}>
                 <FiX />
               </button>
             </div>
 
             <div className="modal-body">
-              <div className="member-card leader-card">
-                <div className="member-badge">Team Leader</div>
-                <h4>{registrationData.team.teamLeader}</h4>
-                <p>Email: {registrationData.personal.email}</p>
-                <p>Phone: {registrationData.personal.phone}</p>
-                <p>College: {registrationData.personal.collegeName}</p>
-                <p>Dept / Year: {registrationData.personal.department} | {registrationData.personal.year}</p>
-              </div>
-
-              <h4 className="mt-4 mb-2">Team Members ({registrationData.team.members?.length || 0})</h4>
-              {registrationData.team.members && registrationData.team.members.length > 0 ? (
-                <div className="members-modal-grid">
-                  {registrationData.team.members.map((m, idx) => (
-                    <div key={idx} className="member-card">
-                      <div className="member-num">Member #{idx + 2}</div>
-                      <h4>{m.fullName}</h4>
-                      <p>Email: {m.email || 'N/A'}</p>
-                      <p>Phone: {m.phone || 'N/A'}</p>
-                      <p>College: {m.college || 'N/A'}</p>
-                      <p>Dept / Year: {m.department || 'N/A'} | {m.year || 'N/A'}</p>
-                    </div>
-                  ))}
+              {activePreview.type === 'abstract' && (
+                <div className="abstract-full-box">
+                  <p>{activePreview.content}</p>
                 </div>
-              ) : (
-                <p className="text-dim">No additional members added to this team.</p>
+              )}
+
+              {(activePreview.type === 'ppt' || activePreview.type === 'doc') && (
+                <div>
+                  <div className="doc-iframe-box">
+                    <iframe
+                      src={activePreview.url}
+                      title={activePreview.title}
+                    />
+                  </div>
+                  <div className="mt-3 flex justify-end">
+                    <a
+                      href={activePreview.url}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="btn-doc-action btn-doc-primary"
+                    >
+                      <FiExternalLink /> Open in Full Window
+                    </a>
+                  </div>
+                </div>
+              )}
+
+              {activePreview.type === 'video' && (
+                <div className="doc-iframe-box">
+                  <iframe
+                    src={activePreview.url}
+                    title="Demo Video Stream"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                  />
+                </div>
               )}
             </div>
           </div>
@@ -676,49 +1100,9 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* SUBMISSION PROPOSAL MODAL */}
-      {activeModal === 'submission' && (
-        <div className="dash-modal-overlay" onClick={() => setActiveModal(null)}>
-          <div className="dash-modal-box modal-wide" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h3>Submission Details</h3>
-              <button type="button" className="btn-close-modal" onClick={() => setActiveModal(null)}>
-                <FiX />
-              </button>
-            </div>
-
-            <div className="modal-body">
-              <div className="submission-detail-block">
-                <span className="ps-tag">{registrationData.project.problemCode || 'Track Code'}</span>
-                <h4>{registrationData.project.title || 'Project Title'}</h4>
-                <p><strong>Track Theme:</strong> {registrationData.project.theme || 'N/A'}</p>
-                <p><strong>Problem Statement:</strong> {registrationData.project.problemStatement || 'N/A'}</p>
-              </div>
-
-              <div className="submission-detail-block">
-                <h5>Project Abstract</h5>
-                <p>{registrationData.project.abstract || 'No abstract entered.'}</p>
-              </div>
-
-              <div className="submission-detail-block">
-                <h5>Technology Stack & Repo</h5>
-                <p><strong>Stack:</strong> {registrationData.project.technologyStack || 'N/A'}</p>
-                <p><strong>GitHub Repo:</strong> {registrationData.project.githubRepository || 'N/A'}</p>
-                <p><strong>Video Link:</strong> {registrationData.project.demoVideoUrl || 'N/A'}</p>
-              </div>
-
-              <div className="submission-detail-block">
-                <h5>Attached Documents</h5>
-                <p><strong>Presentation (PPT):</strong> {registrationData.uploads.pptFile ? `${registrationData.uploads.pptFile.name} (${formatBytes(registrationData.uploads.pptFile.size)})` : 'Uploaded'}</p>
-                <p><strong>Supporting Document:</strong> {registrationData.uploads.supportingDocFile ? `${registrationData.uploads.supportingDocFile.name} (${formatBytes(registrationData.uploads.supportingDocFile.size)})` : 'Optional / None'}</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
       <Toast message={toast?.message} type={toast?.type} onDismiss={() => setToast(null)} />
     </main>
   );
 }
+
 

@@ -90,6 +90,7 @@ app.get("/api/health", (_req, res) => {
 });
 
 app.use("/api/event", eventRoutes);
+app.use("/api/events", eventRoutes);
 app.use("/api/problem-statements", problemStatementRoutes);
 app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/auth", authRoutes);

@@ -1565,3 +1565,389 @@
   }
 }
 
+/* ==========================================================================
+   PARTICIPANT DASHBOARD & TEAM DETAILS ENHANCEMENTS
+   ========================================================================== */
+
+.team-details-section {
+  display: flex;
+  flex-direction: column;
+  gap: 1.75rem;
+  margin-top: 2rem;
+  margin-bottom: 2rem;
+}
+
+.team-overview-card {
+  padding: 1.75rem;
+  border-radius: var(--radius-lg);
+  background: rgba(14, 18, 39, 0.75);
+  border: 1px solid var(--card-border);
+  box-shadow: var(--shadow-lg), var(--glow-card);
+  backdrop-filter: var(--glass-backdrop);
+}
+
+.section-head-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.section-title-group h3 {
+  font-size: 1.35rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--color-text);
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.team-info-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1.25rem;
+}
+
+.info-item-box {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  padding: 1rem 1.15rem;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: var(--radius-md);
+  transition: border-color 0.2s ease;
+}
+
+.info-item-box:hover {
+  border-color: rgba(99, 102, 241, 0.3);
+}
+
+.info-label {
+  font-size: 0.78rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-text-secondary);
+}
+
+.info-value {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--color-text);
+  word-break: break-word;
+}
+
+.reg-id-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-family: 'JetBrains Mono', monospace, sans-serif;
+  color: var(--color-cyan);
+  font-size: 1.1rem;
+  font-weight: 800;
+}
+
+/* ==========================================================================
+   TEAM MEMBERS TABLE & CARDS
+   ========================================================================== */
+
+.team-members-wrapper {
+  overflow-x: auto;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--card-border);
+  background: rgba(10, 14, 30, 0.6);
+  margin-top: 0.5rem;
+}
+
+.team-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  font-size: 0.9rem;
+}
+
+.team-table th {
+  background: rgba(255, 255, 255, 0.04);
+  padding: 1rem 1.15rem;
+  font-weight: 700;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-text-secondary);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  white-space: nowrap;
+}
+
+.team-table td {
+  padding: 1.15rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  color: var(--color-text);
+  vertical-align: middle;
+}
+
+.team-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.team-table tbody tr:hover {
+  background: rgba(99, 102, 241, 0.04);
+}
+
+.role-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.25rem 0.75rem;
+  border-radius: 50px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.role-leader {
+  background: rgba(245, 158, 11, 0.15);
+  border: 1px solid rgba(245, 158, 11, 0.4);
+  color: #f59e0b;
+}
+
+.role-member {
+  background: rgba(99, 102, 241, 0.12);
+  border: 1px solid rgba(99, 102, 241, 0.3);
+  color: #818cf8;
+}
+
+.member-name-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.member-name-text {
+  font-weight: 700;
+  font-size: 0.98rem;
+  color: var(--color-text);
+}
+
+.member-email-link, .member-phone-link {
+  color: var(--color-text-secondary);
+  text-decoration: none;
+  font-size: 0.85rem;
+  transition: color 0.2s;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.member-email-link:hover, .member-phone-link:hover {
+  color: var(--color-accent);
+}
+
+.member-socials-row {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.3rem;
+}
+
+.social-icon-btn {
+  color: var(--color-text-secondary);
+  font-size: 0.95rem;
+  transition: all 0.2s;
+}
+
+.social-icon-btn:hover {
+  color: var(--color-accent);
+  transform: translateY(-1px);
+}
+
+/* ==========================================================================
+   DOCUMENTS & SUBMISSION ASSETS GRID
+   ========================================================================== */
+
+.documents-section-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1.25rem;
+  margin-top: 0.5rem;
+}
+
+.doc-asset-card {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 1.35rem;
+  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  transition: all 0.25s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.doc-asset-card:hover {
+  border-color: rgba(99, 102, 241, 0.4);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.doc-top-info {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.doc-icon-box {
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-md);
+  background: rgba(99, 102, 241, 0.15);
+  color: var(--color-indigo);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.4rem;
+  flex-shrink: 0;
+}
+
+.doc-icon-box.doc-ppt {
+  background: rgba(239, 68, 68, 0.15);
+  color: #ef4444;
+}
+
+.doc-icon-box.doc-video {
+  background: rgba(239, 68, 68, 0.15);
+  color: #ef4444;
+}
+
+.doc-icon-box.doc-github {
+  background: rgba(255, 255, 255, 0.1);
+  color: #f3f4f6;
+}
+
+.doc-icon-box.doc-abstract {
+  background: rgba(16, 185, 129, 0.15);
+  color: #10b981;
+}
+
+.doc-meta-box h4 {
+  font-size: 1rem;
+  font-weight: 700;
+  margin: 0 0 0.25rem;
+  color: var(--color-text);
+}
+
+.doc-meta-box p {
+  font-size: 0.82rem;
+  color: var(--color-text-secondary);
+  margin: 0;
+  word-break: break-all;
+}
+
+.doc-status-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 0.2rem 0.6rem;
+  border-radius: 4px;
+  margin-top: 0.4rem;
+}
+
+.doc-status-tag.uploaded {
+  background: rgba(16, 185, 129, 0.12);
+  color: #10b981;
+}
+
+.doc-status-tag.missing {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--color-text-secondary);
+}
+
+.doc-btn-group {
+  display: flex;
+  gap: 0.6rem;
+  margin-top: 1rem;
+  padding-top: 0.85rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.btn-doc-action {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  padding: 0.55rem 0.9rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-decoration: none;
+}
+
+.btn-doc-primary {
+  background: var(--gradient-purple-blue);
+  color: var(--color-text);
+  border: none;
+}
+
+.btn-doc-primary:hover {
+  box-shadow: var(--glow-primary);
+  transform: translateY(-1px);
+}
+
+.btn-doc-secondary {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--color-text);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.btn-doc-secondary:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+.abstract-full-box {
+  margin-top: 1.25rem;
+  padding: 1.25rem;
+  border-radius: var(--radius-md);
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.abstract-full-box p {
+  line-height: 1.7;
+  color: var(--color-text-secondary);
+  font-size: 0.92rem;
+  white-space: pre-wrap;
+}
+
+.modal-doc-viewer {
+  width: min(900px, 95vw);
+  max-height: 90vh;
+}
+
+.doc-iframe-box {
+  width: 100%;
+  height: 520px;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  border: 1px solid var(--card-border);
+  background: #000;
+}
+
+.doc-iframe-box iframe {
+  width: 100%;
+  height: 100%;
+  border: none;
+}
+

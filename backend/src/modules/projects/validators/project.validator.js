@@ -41,10 +41,19 @@ const projectFields = [
     .isLength({ max: 1000 })
     .withMessage("Technology stack must not exceed 1000 characters"),
   body("githubRepository")
-    .optional({ checkFalsy: true })
     .trim()
+    .notEmpty()
+    .withMessage("GitHub repository link is required")
+    .bail()
     .isURL({ protocols: ["http", "https"], require_protocol: true })
     .withMessage("GitHub repository must be a valid URL")
+    .bail()
+    .custom((val) => {
+      if (!/github\.com\/[\w.-]+\/[\w.-]+/i.test(val)) {
+        throw new Error("Enter a valid GitHub repository URL (e.g. https://github.com/username/repository)");
+      }
+      return true;
+    })
     .bail()
     .isLength({ max: 300 })
     .withMessage("GitHub repository must not exceed 300 characters"),
@@ -73,10 +82,20 @@ export const updateProjectValidation = [
   body("innovationSummary").optional().trim().isLength({ max: 3000 }).withMessage("Innovation summary is invalid"),
   body("technologyStack").optional().trim().isLength({ max: 1000 }).withMessage("Technology stack is invalid"),
   body("githubRepository")
-    .optional({ checkFalsy: true })
+    .optional()
     .trim()
+    .notEmpty()
+    .withMessage("GitHub repository link is required")
+    .bail()
     .isURL({ protocols: ["http", "https"], require_protocol: true })
     .withMessage("GitHub repository must be a valid URL")
+    .bail()
+    .custom((val) => {
+      if (!/github\.com\/[\w.-]+\/[\w.-]+/i.test(val)) {
+        throw new Error("Enter a valid GitHub repository URL (e.g. https://github.com/username/repository)");
+      }
+      return true;
+    })
     .bail()
     .isLength({ max: 300 })
     .withMessage("GitHub repository is invalid"),

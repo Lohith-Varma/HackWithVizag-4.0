@@ -15,18 +15,18 @@ import Footer from './components/Footer/Footer';
 import Auth from './pages/Auth';
 import AdminPortal from './pages/AdminPortal';
 import Dashboard from './pages/Dashboard';
-// import Registration from './pages/Registration'; // Kept ready for official launch
-import RegistrationSoon from './pages/RegistrationSoon';
+import Registration from './pages/Registration';
+import { loadCurrentUser } from './utils/registrationStorage';
 import './App.css';
 
 const routes = {
   '#auth': 'auth',
   '#dashboard': 'dashboard',
-  '#registration': 'registration-soon',
-  '#register': 'registration-soon',
-  '#register-soon': 'registration-soon',
-  '#registration-soon': 'registration-soon',
-  '#coming-soon': 'registration-soon',
+  '#registration': 'registration',
+  '#register': 'registration',
+  '#register-soon': 'registration',
+  '#registration-soon': 'registration',
+  '#coming-soon': 'registration',
   '#admin': 'admin',
 };
 
@@ -40,7 +40,7 @@ function getCurrentRoute() {
     path.startsWith('/register') ||
     path.startsWith('/registration')
   ) {
-    return 'registration-soon';
+    return 'registration';
   }
   if (path.startsWith('/dashboard')) return 'dashboard';
   if (path.startsWith('/auth')) return 'auth';
@@ -54,7 +54,7 @@ function getCurrentRoute() {
     hash.startsWith('#register') ||
     hash.startsWith('#registration')
   ) {
-    return 'registration-soon';
+    return 'registration';
   }
   if (hash.startsWith('#dashboard')) return 'dashboard';
   if (hash.startsWith('#auth')) return 'auth';
@@ -88,11 +88,19 @@ export default function App() {
     }, 0);
   }, [route]);
 
+  const currentUser = loadCurrentUser();
+
   const renderPage = () => {
     if (route === 'admin') return <AdminPortal />;
     if (route === 'auth') return <Auth />;
-    if (route === 'dashboard') return <Dashboard />;
-    if (route === 'registration-soon' || route === 'registration') return <RegistrationSoon />;
+    if (route === 'dashboard') {
+      if (!currentUser) return <Auth />;
+      return <Dashboard />;
+    }
+    if (route === 'registration') {
+      if (!currentUser) return <Auth />;
+      return <Registration />;
+    }
 
     return (
       <>

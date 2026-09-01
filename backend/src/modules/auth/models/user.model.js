@@ -41,6 +41,11 @@ const userSchema = new mongoose.Schema(
       trim: true,
       default: "",
     },
+    registeredNumber: {
+      type: String,
+      trim: true,
+      default: "",
+    },
     department: {
       type: String,
       trim: true,

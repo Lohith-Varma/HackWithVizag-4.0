@@ -9,8 +9,14 @@ const buildUserResponse = (user) => ({
   phone: user.phone,
   college: user.college || user.collegeName || "",
   collegeName: user.collegeName || user.college || "",
+  registeredNumber: user.registeredNumber || "",
   department: user.department || "",
   year: user.year || "",
+  gender: user.gender || "",
+  resumeUrl: user.resumeUrl || "",
+  githubUrl: user.githubUrl || "",
+  linkedinUrl: user.linkedinUrl || "",
+  portfolioUrl: user.portfolioUrl || "",
   team: user.team ? user.team.toString() : null,
   role: user.role,
   status: user.status,
@@ -35,7 +41,7 @@ const signAccessToken = (user) => {
   );
 };
 
-export const registerUser = async ({ name, email, phone, password }) => {
+export const registerUser = async ({ name, email, phone, password, college, collegeName, registeredNumber, department, year, gender }) => {
   if (!password || password.length < 8) {
     throw new ApiError(400, "Password is required and must be at least 8 characters");
   }
@@ -51,6 +57,12 @@ export const registerUser = async ({ name, email, phone, password }) => {
     email,
     phone,
     password,
+    college: college || collegeName || "",
+    collegeName: collegeName || college || "",
+    registeredNumber: registeredNumber || "",
+    department: department || "",
+    year: year === "Final Year" ? "4th Year" : (year || ""),
+    gender: gender || "",
   });
 
   return {
@@ -91,3 +103,53 @@ export const getProfile = async (userId) => {
 
   return buildUserResponse(user);
 };
+
+export const updateUserProfile = async (userId, payload) => {
+  const allowedFields = ["name", "phone", "college", "collegeName", "department", "year", "gender", "githubUrl", "linkedinUrl", "portfolioUrl", "resumeUrl"];
+  const updates = {};
+
+  for (const field of allowedFields) {
+    if (payload[field] !== undefined) {
+      updates[field] = payload[field];
+    }
+  }
+
+  if (payload.college && !payload.collegeName) {
+    updates.collegeName = payload.college;
+  }
+
+  const user = await User.findByIdAndUpdate(userId, updates, { new: true, runValidators: true });
+
+  if (!user) {
+    throw new ApiError(404, "User not found");
+  }
+
+  return buildUserResponse(user);
+};
+
+export const changeUserPassword = async (userId, { currentPassword, newPassword }) => {
+  if (!currentPassword || !newPassword) {
+    throw new ApiError(400, "Current password and new password are required");
+  }
+
+  if (newPassword.length < 8) {
+    throw new ApiError(400, "New password must be at least 8 characters");
+  }
+
+  const user = await User.findById(userId).select("+password");
+
+  if (!user) {
+    throw new ApiError(404, "User not found");
+  }
+
+  const isCurrentValid = await user.comparePassword(currentPassword);
+  if (!isCurrentValid) {
+    throw new ApiError(400, "Current password does not match our records");
+  }
+
+  user.password = newPassword;
+  await user.save();
+
+  return { message: "Password updated successfully" };
+};
+

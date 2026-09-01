@@ -9,15 +9,15 @@ export const createTeam = asyncHandler(async (req, res) => {
 });
 
 export const getMyTeam = asyncHandler(async (req, res) => {
-  const team = await getUserTeam(req.user.id);
+  const data = await getUserTeam(req.user.id);
 
-  return sendSuccess(res, 200, "Team fetched successfully", { team });
+  return sendSuccess(res, 200, "Team fetched successfully", data);
 });
 
 export const getTeam = asyncHandler(async (req, res) => {
-  const team = await getTeamById(req.params.teamId);
+  const data = await getTeamById(req.params.teamId, req.user);
 
-  return sendSuccess(res, 200, "Team fetched successfully", { team });
+  return sendSuccess(res, 200, "Team fetched successfully", data);
 });
 
 export const addTeamMember = asyncHandler(async (req, res) => {
@@ -25,3 +25,4 @@ export const addTeamMember = asyncHandler(async (req, res) => {
 
   return sendSuccess(res, 200, "Team member added successfully", { team });
 });
+

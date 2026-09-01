@@ -55,9 +55,17 @@ export default function Auth() {
       const result = mode === 'register' ? await api.register(payload) : await api.login(payload);
       saveCurrentUser(result.user);
       setToast({ type: 'success', message: mode === 'register' ? 'Account created successfully.' : 'Signed in successfully.' });
-      window.setTimeout(() => {
-        window.location.hash = '#dashboard';
-      }, 450);
+      
+      try {
+        const dash = await api.getParticipantDashboard();
+        if (dash?.submission && dash.submission.status !== 'draft') {
+          window.location.hash = '#dashboard';
+        } else {
+          window.location.hash = '#registration';
+        }
+      } catch {
+        window.location.hash = '#registration';
+      }
     } catch (err) {
       if (err.payload?.errors) {
         const serverErrors = {};

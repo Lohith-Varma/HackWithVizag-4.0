@@ -67,6 +67,7 @@ const projectSchema = new mongoose.Schema(
     },
     githubRepository: {
       type: String,
+      required: [true, "GitHub repository link is required"],
       trim: true,
       maxlength: [300, "GitHub repository must not exceed 300 characters"],
       default: "",

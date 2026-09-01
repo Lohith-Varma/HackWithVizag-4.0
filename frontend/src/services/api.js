@@ -10,6 +10,13 @@ const resolveApiBaseUrl = () => {
   return `${origin}${base.startsWith('/') ? base : `/${base}`}`;
 };
 
+export const buildAssetUrl = (url) => {
+  if (!url) return '';
+  if (/^https?:\/\//i.test(url)) return url;
+  const base = resolveApiBaseUrl().replace(/\/api\/?$/, '');
+  return `${base}${url.startsWith('/') ? url : `/${url}`}`;
+};
+
 const buildUrl = (path, params) => {
   const base = resolveApiBaseUrl();
   const suffix = path.startsWith('/') ? path : `/${path}`;
@@ -21,6 +28,7 @@ const buildUrl = (path, params) => {
   });
   return url.toString();
 };
+
 
 const request = async (path, { method = 'GET', body, params, headers, isFormData = false } = {}) => {
   const response = await fetch(buildUrl(path, params), {
@@ -168,6 +176,10 @@ export const api = {
     return request('/auth/logout', { method: 'POST' });
   },
 
+  async adminLogout() {
+    return request('/auth/logout', { method: 'POST' });
+  },
+
   async getProfile() {
     return request('/auth/profile');
   },
@@ -182,9 +194,17 @@ export const api = {
     return result;
   },
 
-  // Participant Dashboard API
+  // Participant Team & Dashboard APIs
   async getParticipantDashboard() {
     return request('/dashboard/participant');
+  },
+
+  async getMyTeam() {
+    return request('/teams/my-team');
+  },
+
+  async getTeam(id) {
+    return request(`/teams/${id}`);
   },
 
   // Registration Submission API (Supports Multi-part File Uploads)
@@ -363,6 +383,71 @@ export const api = {
   async deleteNotificationLead(id) {
     return request(`/admin/leads/${id}`, {
       method: 'DELETE',
+    });
+  },
+
+  // Event Config APIs
+  async getEventConfig() {
+    try {
+      return await request('/events');
+    } catch {
+      return await request('/event');
+    }
+  },
+
+  async getAdminEvents() {
+    try {
+      return await request('/events/admin');
+    } catch {
+      return await request('/event/admin');
+    }
+  },
+
+  async createEvent(payload) {
+    return request('/events/admin', {
+      method: 'POST',
+      body: payload,
+    });
+  },
+
+  async updateEventConfig(id, payload) {
+    try {
+      return await request(`/events/admin/${id}`, {
+        method: 'PUT',
+        body: payload,
+      });
+    } catch {
+      return await request(`/event/admin/${id}`, {
+        method: 'PUT',
+        body: payload,
+      });
+    }
+  },
+
+  async setActiveEvent(id) {
+    return request(`/events/admin/${id}/active`, {
+      method: 'PATCH',
+    });
+  },
+
+  async deleteEvent(id) {
+    return request(`/events/admin/${id}`, {
+      method: 'DELETE',
+    });
+  },
+
+  // User Profile & Password Settings APIs
+  async updateProfile(payload) {
+    return request('/auth/profile', {
+      method: 'PUT',
+      body: payload,
+    });
+  },
+
+  async changePassword(payload) {
+    return request('/auth/change-password', {
+      method: 'POST',
+      body: payload,
     });
   },
 };
