@@ -36,7 +36,7 @@ const getPrimaryCollege = (team) =>
 const getPrimaryDepartment = (team) =>
   team.leader?.department || team.members?.find((member) => member.department)?.department || "";
 
-const adminUserFields = "name email phone role status college collegeName department year gender resumeUrl githubUrl linkedinUrl portfolioUrl profilePhoto createdAt";
+const adminUserFields = "name email phone role status college collegeName registeredNumber department year gender resumeUrl githubUrl linkedinUrl portfolioUrl profilePhoto createdAt";
 
 const teamPopulate = [
   { path: "leader", select: adminUserFields },

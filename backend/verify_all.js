@@ -110,11 +110,13 @@ async function runEndToEndVerification() {
     password: "Password@123",
     phone: leaderPhone,
     collegeName: "NSRIT Visakhapatnam",
+    registeredNumber: "23NU1A0501",
     department: "Computer Science Engineering",
     year: "4th Year",
+    gender: "Male",
   });
   const leaderUser = await User.findById(leaderAuth.user.id);
-  console.log(`-> [REGISTER LEADER PASS] Leader Created: ID=${leaderUser._id}, Email=${leaderEmail}`);
+  console.log(`-> [REGISTER LEADER PASS] Leader Created: ID=${leaderUser._id}, Email=${leaderEmail}, RegNo=${leaderUser.registeredNumber}`);
 
   // Submit Full Registration
   const targetPs = await ProblemStatement.findOne({ activeStatus: true });
@@ -131,8 +133,10 @@ async function runEndToEndVerification() {
           email: leaderEmail,
           phone: leaderPhone,
           collegeName: "NSRIT Visakhapatnam",
+          registeredNumber: "23NU1A0501",
           department: "Computer Science Engineering",
           year: "4th Year",
+          gender: "Male",
         },
         team: {
           teamName: `Vizag Tech Innovators ${uniqueTimestamp.toString().slice(-4)}`,
@@ -142,16 +146,20 @@ async function runEndToEndVerification() {
               email: `priya_${uniqueTimestamp}@hackwithvizag.test`,
               phone: `97${Math.floor(10000000 + Math.random() * 90000000)}`,
               collegeName: "NSRIT Visakhapatnam",
+              registeredNumber: "23NU1A0502",
               department: "Information Technology",
               year: "3rd Year",
+              gender: "Female",
             },
             {
               fullName: "Kiran Kumar (Member 2)",
               email: `kiran_${uniqueTimestamp}@hackwithvizag.test`,
               phone: `96${Math.floor(10000000 + Math.random() * 90000000)}`,
               collegeName: "NSRIT Visakhapatnam",
+              registeredNumber: "23NU1A0503",
               department: "Electronics & Communication",
               year: "4th Year",
+              gender: "Male",
             },
           ],
         },
@@ -163,6 +171,7 @@ async function runEndToEndVerification() {
           problemStatement: targetPs.problemStatement,
           problemType: targetPs.type,
           abstract: "Our solution utilizes computer vision and machine learning to optimize cargo container flow at Vizag Port. It reduces port congestion and demurrage delays significantly while automating crane scheduling.",
+          githubRepository: "https://github.com/vizagtech/smartport",
         },
       }),
     },
@@ -184,9 +193,130 @@ async function runEndToEndVerification() {
   }
 
   for (const m of teamDoc.members) {
-    console.log(`   - Member: ${m.name} | Email: ${m.email} | College: ${m.collegeName || m.college} | Dept: ${m.department}`);
+    console.log(`   - Member: ${m.name} | RegNo: ${m.registeredNumber} | Gender: ${m.gender} | Email: ${m.email} | College: ${m.collegeName || m.college} | Dept: ${m.department}`);
   }
   console.log("-> [DATABASE LINKAGE PASS] Leader + all 2 additional team members properly linked as User documents!");
+
+  // Test Missing GitHub Repository Rejection
+  console.log("\n[4b/6] Verifying Mandatory GitHub Repository Link Validation...");
+  const missingGithubReq = {
+    user: {
+      id: new mongoose.Types.ObjectId().toString(),
+      _id: new mongoose.Types.ObjectId(),
+      name: "Github Test User",
+    },
+    body: {
+      payload: JSON.stringify({
+        personal: {
+          fullName: "Github Test User",
+          email: `githubtest_${uniqueTimestamp}@hackwithvizag.test`,
+          phone: "9123456780",
+          collegeName: "NSRIT Visakhapatnam",
+          registeredNumber: "23NU1A0999",
+          department: "CSE",
+          year: "3rd Year",
+        },
+        team: {
+          teamName: `Missing GitHub Team ${uniqueTimestamp.toString().slice(-4)}`,
+          members: [],
+        },
+        project: {
+          title: "Test Project Without GitHub",
+          problemStatementId: targetPs._id.toString(),
+          problemCode: targetPs.code,
+          theme: targetPs.theme,
+          problemStatement: targetPs.problemStatement,
+          abstract: "Abstract describing project in full detail so that word count requirements are easily met here.",
+          githubRepository: "",
+        },
+      }),
+    },
+    files: {},
+  };
+
+  try {
+    await execHandler(submitFullRegistration, missingGithubReq);
+    console.error("[FAIL] Missing GitHub repo was not rejected!");
+    process.exit(1);
+  } catch (err) {
+    console.log(`-> [MANDATORY GITHUB PASS] Correctly rejected missing GitHub link: "${err.message}"`);
+  }
+
+  // Test Cross-College Team Rejection
+  console.log("\n[4c/6] Verifying Strict Cross-College Team Rejection...");
+  const crossCollegeMember = await User.create({
+    name: "Cross College Member",
+    email: `cross_${uniqueTimestamp}@othercollege.test`,
+    phone: "9988776655",
+    college: "Andhra University",
+    collegeName: "Andhra University",
+    registeredNumber: "AU-2026-99",
+    department: "IT",
+    year: "3rd Year",
+    role: "participant",
+  });
+
+  const crossCollegeReq = {
+    user: {
+      id: leaderUser._id.toString(),
+      _id: leaderUser._id,
+      name: leaderUser.name,
+    },
+    body: {
+      payload: JSON.stringify({
+        personal: {
+          fullName: "Subba Rao (Leader)",
+          email: leaderEmail,
+          phone: leaderPhone,
+          collegeName: "NSRIT Visakhapatnam",
+          registeredNumber: "23NU1A0501",
+          department: "Computer Science Engineering",
+          year: "4th Year",
+        },
+        team: {
+          teamName: `Cross College Team Test ${uniqueTimestamp.toString().slice(-4)}`,
+          members: [
+            {
+              fullName: "Valid College Member",
+              email: `valid_${uniqueTimestamp}@hackwithvizag.test`,
+              phone: "9988776611",
+              collegeName: "NSRIT Visakhapatnam",
+              registeredNumber: "23NU1A0588",
+              department: "IT",
+              year: "3rd Year",
+            },
+            {
+              fullName: "Cross College Member",
+              email: `cross_${uniqueTimestamp}@othercollege.test`,
+              phone: "9988776655",
+              collegeName: "Andhra University",
+              registeredNumber: "AU-2026-99",
+              department: "IT",
+              year: "3rd Year",
+            },
+          ],
+        },
+        project: {
+          title: "Cross College Test Project Title",
+          problemStatementId: targetPs._id.toString(),
+          problemCode: targetPs.code,
+          theme: targetPs.theme,
+          problemStatement: targetPs.problemStatement,
+          abstract: "Abstract describing project in full detail so that word count requirements are easily met here.",
+          githubRepository: "https://github.com/vizagtech/crosscollege",
+        },
+      }),
+    },
+    files: {},
+  };
+
+  try {
+    await execHandler(submitFullRegistration, crossCollegeReq);
+    console.error("[FAIL] Cross-college team was not rejected!");
+    process.exit(1);
+  } catch (err) {
+    console.log(`-> [CROSS-COLLEGE REJECTION PASS] Correctly rejected cross-college team: "${err.message}"`);
+  }
 
   // Test Admin Review & Dashboard Metrics
   console.log("\n[5/6] Verifying Admin Review Workflow & Dynamic Metrics...");
@@ -217,12 +347,32 @@ async function runEndToEndVerification() {
           email: `different_${uniqueTimestamp}@hackwithvizag.test`,
           phone: "9111111111",
           collegeName: "NSRIT Visakhapatnam",
+          registeredNumber: "23NU1A0888",
           department: "Computer Science",
           year: "4th Year",
         },
         team: {
           teamName: mockReq.body.payload ? JSON.parse(mockReq.body.payload).team.teamName : `Vizag Tech Innovators ${uniqueTimestamp.toString().slice(-4)}`,
-          members: [],
+          members: [
+            {
+              fullName: "Dup Member 1",
+              email: `dupmem1_${uniqueTimestamp}@hackwithvizag.test`,
+              phone: "9111111112",
+              collegeName: "NSRIT Visakhapatnam",
+              registeredNumber: "23NU1A0881",
+              department: "Computer Science",
+              year: "4th Year",
+            },
+            {
+              fullName: "Dup Member 2",
+              email: `dupmem2_${uniqueTimestamp}@hackwithvizag.test`,
+              phone: "9111111113",
+              collegeName: "NSRIT Visakhapatnam",
+              registeredNumber: "23NU1A0882",
+              department: "Computer Science",
+              year: "4th Year",
+            },
+          ],
         },
         project: {
           title: "Duplicate Team Test Project Title Here",
@@ -230,8 +380,8 @@ async function runEndToEndVerification() {
           problemCode: targetPs.code,
           theme: targetPs.theme,
           problemStatement: targetPs.problemStatement,
-          problemType: targetPs.type,
-          abstract: "Our solution utilizes computer vision and machine learning to optimize cargo container flow at Vizag Port. It reduces port congestion and demurrage delays significantly while automating crane scheduling.",
+          abstract: "Abstract describing project in full detail so that word count requirements are easily met here.",
+          githubRepository: "https://github.com/vizagtech/duplicate",
         },
       }),
     },

@@ -65,12 +65,12 @@ export default function StepProject({ data, errors, onChange, eventConfig = {} }
         </label>
 
         <label className="field">
-          <span>GitHub Repository (Optional)</span>
+          <span>GitHub Repository Link *</span>
           <input
             type="url"
             value={data.githubRepository}
             onChange={update('githubRepository')}
-            placeholder="https://github.com/team/project-repo"
+            placeholder="https://github.com/username/repository"
           />
           {errors.githubRepository && <small>{errors.githubRepository}</small>}
         </label>

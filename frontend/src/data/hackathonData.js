@@ -162,7 +162,7 @@ export const ELIGIBILITY_DATA = [
   {
     id: 'elig-3',
     title: 'Year of Study',
-    desc: 'Students from 1st year to final year are allowed.',
+    desc: 'Students from 1st year to 4th year are allowed.',
     icon: 'FiCalendar'
   },
   {

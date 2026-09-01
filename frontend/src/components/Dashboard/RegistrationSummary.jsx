@@ -39,6 +39,8 @@ export default function RegistrationSummary({ data, onEditSection }) {
         <Row label="Full Name" value={personal.fullName} />
         <Row label="Email Address" value={personal.email} />
         <Row label="Phone Number" value={personal.phone} />
+        <Row label="Registered Number" value={personal.registeredNumber} />
+        <Row label="Gender" value={personal.gender} />
         <Row label="College Name" value={personal.collegeName} />
         <Row label="Department / Branch" value={personal.department} />
         <Row label="Year of Study" value={personal.year} />
@@ -46,7 +48,8 @@ export default function RegistrationSummary({ data, onEditSection }) {
 
       <SummarySection title="2. Team Details" onEdit={onEditSection ? () => onEditSection(1) : null}>
         <Row label="Team Name" value={team.teamName} />
-        <Row label="Team Leader" value={team.teamLeader} />
+        <Row label="Team Leader" value={personal.fullName || team.teamLeader} />
+        <Row label="Team College" value={personal.collegeName || team.teamLeaderCollege} />
         <Row label="Total Members" value={1 + (team.members?.length || 0)} />
         {team.members && team.members.length > 0 && (
           <div className="summary-member-list mt-2">
@@ -55,7 +58,8 @@ export default function RegistrationSummary({ data, onEditSection }) {
               <div className="summary-member" key={`${member.email}-${index}`}>
                 <strong>Member {index + 2}: {display(member.fullName)}</strong>
                 <span>{display(member.email)} | {display(member.phone)}</span>
-                <span>{display(member.college)} | {display(member.department)} | {display(member.year)}</span>
+                <span>Reg No: {display(member.registeredNumber)} {member.gender ? `| Gender: ${member.gender}` : ''}</span>
+                <span>{display(member.college || personal.collegeName || team.teamLeaderCollege)} | {display(member.department)} | {display(member.year)}</span>
               </div>
             ))}
           </div>

@@ -1352,6 +1352,10 @@ export default function AdminPortal() {
                                 {' • '}
                                 <a href={`tel:${m.phone}`} className="text-dim hover:text-white">{m.phone || 'No phone'}</a>
                               </p>
+                              <div style={{ margin: '4px 0', fontSize: '0.82rem', color: '#cbd5e1' }}>
+                                <span>Reg No: <strong>{m.registeredNumber || 'Not provided'}</strong></span>
+                                {m.gender ? <span> • Gender: <strong>{m.gender}</strong></span> : ''}
+                              </div>
                               <small>
                                 {m.collegeName || m.college || 'College Not Set'} ({m.department || 'Dept Not Set'} • {m.year || 'Year Not Set'})
                               </small>

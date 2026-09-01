@@ -1,7 +1,7 @@
 import { FiImage } from 'react-icons/fi';
 import { formatBytes } from '../../utils/registrationValidation';
 
-const years = ['1st Year', '2nd Year', '3rd Year', '4th Year', 'Final Year'];
+const years = ['1st Year', '2nd Year', '3rd Year', '4th Year'];
 
 export default function StepPersonal({ data, errors, onChange, onFileChange }) {
   const update = (field) => (event) => onChange(field, event.target.value);
@@ -40,6 +40,16 @@ export default function StepPersonal({ data, errors, onChange, onFileChange }) {
         </label>
 
         <label className="field">
+          <span>Registered Number (College Reg. No.) *</span>
+          <input
+            value={data.registeredNumber || ''}
+            onChange={update('registeredNumber')}
+            placeholder="e.g. 23NU1A0501"
+          />
+          {errors.registeredNumber && <small>{errors.registeredNumber}</small>}
+        </label>
+
+        <label className="field">
           <span>University *</span>
           <input value={data.university} onChange={update('university')} placeholder="Affiliated university" />
           {errors.university && <small>{errors.university}</small>}
@@ -53,7 +63,7 @@ export default function StepPersonal({ data, errors, onChange, onFileChange }) {
 
         <label className="field">
           <span>Year of Study *</span>
-          <select value={data.year} onChange={update('year')}>
+          <select value={data.year === 'Final Year' ? '4th Year' : data.year} onChange={update('year')}>
             <option value="">Select year</option>
             {years.map((year) => <option key={year}>{year}</option>)}
           </select>
@@ -66,7 +76,8 @@ export default function StepPersonal({ data, errors, onChange, onFileChange }) {
             <option value="">Select gender</option>
             <option value="Male">Male</option>
             <option value="Female">Female</option>
-            <option value="Other">Other / Prefer not to say</option>
+            <option value="Other">Other</option>
+            <option value="Prefer not to say">Prefer not to say</option>
           </select>
         </label>
 

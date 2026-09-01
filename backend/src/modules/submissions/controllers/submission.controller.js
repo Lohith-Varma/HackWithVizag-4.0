@@ -45,6 +45,15 @@ export const submitFullRegistration = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Missing required registration payload sections");
   }
 
+  // GitHub repository link validation
+  if (!projectData.githubRepository || !String(projectData.githubRepository).trim()) {
+    throw new ApiError(400, "GitHub repository link is required");
+  }
+  const githubRepoPattern = /^https?:\/\/(www\.)?github\.com\/[\w.-]+\/[\w.-]+\/?$/i;
+  if (!githubRepoPattern.test(String(projectData.githubRepository).trim())) {
+    throw new ApiError(400, "Enter a valid GitHub repository URL (e.g. https://github.com/username/repository)");
+  }
+
   // Abstract word count validation
   const wordCount = projectData.abstract
     ? projectData.abstract.trim().split(/\s+/).filter(Boolean).length
@@ -87,8 +96,9 @@ export const submitFullRegistration = asyncHandler(async (req, res) => {
       phone: personal.phone,
       college: personal.collegeName || personal.college,
       collegeName: personal.collegeName || personal.college,
+      registeredNumber: personal.registeredNumber || personal.regNo || "",
       department: personal.department,
-      year: personal.year,
+      year: personal.year === "Final Year" ? "4th Year" : (personal.year || ""),
       gender: personal.gender || "",
       resumeUrl: personal.resumeUrl || personal.resume || "",
       githubUrl: personal.githubUrl || personal.github || "",
@@ -98,7 +108,9 @@ export const submitFullRegistration = asyncHandler(async (req, res) => {
     { new: true }
   );
 
-  // Process team members and check for email conflicts across existing teams
+  const leaderCollege = (leaderUser?.collegeName || leaderUser?.college || "").trim().toLowerCase();
+
+  // Process team members and check for email conflicts & cross-college mismatches
   const memberUserIds = [userId];
   for (const m of memberList) {
     if (!m || (!m.email && !m.fullName)) continue;
@@ -119,10 +131,11 @@ export const submitFullRegistration = asyncHandler(async (req, res) => {
         name: m.fullName || m.name || "Team Member",
         email: memberEmail,
         phone: m.phone || "9999999999",
-        college: m.college || m.collegeName || leaderUser?.college || "",
-        collegeName: m.collegeName || m.college || leaderUser?.collegeName || "",
+        college: leaderUser?.college || "",
+        collegeName: leaderUser?.collegeName || leaderUser?.college || "",
+        registeredNumber: m.registeredNumber || m.regNo || "",
         department: m.department || "",
-        year: m.year || "",
+        year: m.year === "Final Year" ? "4th Year" : (m.year || ""),
         gender: m.gender || "",
         githubUrl: m.githubUrl || m.github || "",
         linkedinUrl: m.linkedinUrl || m.linkedin || "",
@@ -131,14 +144,24 @@ export const submitFullRegistration = asyncHandler(async (req, res) => {
         status: "pending",
       });
     } else {
+      // Cross-college validation for existing account
+      const memberCollege = (memberUser.collegeName || memberUser.college || "").trim().toLowerCase();
+      if (memberCollege && leaderCollege && memberCollege !== leaderCollege) {
+        throw new ApiError(
+          400,
+          "All team members must belong to the same college. Cross-college teams are not allowed."
+        );
+      }
+
       memberUser.name = m.fullName || m.name || memberUser.name;
       if (m.phone) memberUser.phone = m.phone;
-      if (m.college || m.collegeName) {
-        memberUser.college = m.college || m.collegeName;
-        memberUser.collegeName = m.collegeName || m.college;
+      if (!memberUser.collegeName && leaderUser?.collegeName) {
+        memberUser.college = leaderUser.college;
+        memberUser.collegeName = leaderUser.collegeName;
       }
+      if (m.registeredNumber) memberUser.registeredNumber = m.registeredNumber;
       if (m.department) memberUser.department = m.department;
-      if (m.year) memberUser.year = m.year;
+      if (m.year) memberUser.year = m.year === "Final Year" ? "4th Year" : m.year;
       if (m.gender) memberUser.gender = m.gender;
       if (m.github || m.githubUrl) memberUser.githubUrl = m.githubUrl || m.github;
       if (m.linkedin || m.linkedinUrl) memberUser.linkedinUrl = m.linkedinUrl || m.linkedin;

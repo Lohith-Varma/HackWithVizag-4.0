@@ -166,10 +166,11 @@ export default function Dashboard() {
           name: m.name || (isLeader ? team.leader?.name : 'Participant'),
           email: m.email || (isLeader ? team.leader?.email : ''),
           phone: m.phone || (isLeader ? team.leader?.phone : ''),
+          registeredNumber: m.registeredNumber || (isLeader ? (team.leader?.registeredNumber || user.registeredNumber) : '') || '',
           college: m.collegeName || m.college || (isLeader ? (team.leader?.collegeName || team.leader?.college) : ''),
           department: m.department || (isLeader ? team.leader?.department : ''),
           year: m.year || (isLeader ? team.leader?.year : ''),
-          gender: m.gender || '',
+          gender: m.gender || (isLeader ? (team.leader?.gender || user.gender) : '') || '',
           githubUrl: m.githubUrl || '',
           linkedinUrl: m.linkedinUrl || '',
           portfolioUrl: m.portfolioUrl || '',
@@ -188,10 +189,11 @@ export default function Dashboard() {
       name: leaderName,
       email: draft.personal?.email || user.email || '',
       phone: draft.personal?.phone || user.phone || '',
+      registeredNumber: draft.personal?.registeredNumber || user.registeredNumber || '',
       college: draft.personal?.collegeName || user.collegeName || user.college || '',
       department: draft.personal?.department || user.department || '',
       year: draft.personal?.year || user.year || '',
-      gender: draft.personal?.gender || '',
+      gender: draft.personal?.gender || user.gender || '',
       githubUrl: draft.personal?.githubUrl || '',
       linkedinUrl: draft.personal?.linkedinUrl || '',
       portfolioUrl: draft.personal?.portfolioUrl || '',
@@ -208,6 +210,7 @@ export default function Dashboard() {
             name: m.fullName || `Member ${idx + 2}`,
             email: m.email || '',
             phone: m.phone || '',
+            registeredNumber: m.registeredNumber || '',
             college: m.college || draft.personal?.collegeName || '',
             department: m.department || '',
             year: m.year || '',
@@ -573,7 +576,10 @@ export default function Dashboard() {
                       <td>
                         <div className="member-name-cell">
                           <span className="member-name-text">{safeDisplay(member.name, 'Participant')}</span>
-                          {member.gender && <small className="text-dim">Gender: {member.gender}</small>}
+                          <div style={{ display: 'flex', gap: '8px', fontSize: '0.78rem', color: '#94a3b8', marginTop: '2px' }}>
+                            {member.registeredNumber && <span>Reg: <strong>{member.registeredNumber}</strong></span>}
+                            {member.gender && <span>Gender: {member.gender}</span>}
+                          </div>
                         </div>
                       </td>
                       <td>

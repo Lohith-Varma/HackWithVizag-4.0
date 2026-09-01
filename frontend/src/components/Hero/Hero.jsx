@@ -180,7 +180,7 @@ export default function Hero() {
               </div>
             )}
             <div className="registration-deadline">
-              Registrations <strong>Opening Very Soon</strong> • Expected Target: <strong>{regDeadline}</strong>
+              Registrations <strong>Open Now</strong> • Deadline: <strong>{regDeadline}</strong>
             </div>
           </motion.div>
 

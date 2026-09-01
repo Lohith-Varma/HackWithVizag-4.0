@@ -10,7 +10,7 @@ import { getDashboard as getAdminDashboardData } from "../../admin/controllers/a
 export const getParticipantDashboard = asyncHandler(async (req, res) => {
   const userId = req.user.id;
 
-  const userFields = "name email phone role status college collegeName department year gender resumeUrl githubUrl linkedinUrl portfolioUrl profilePhoto createdAt";
+  const userFields = "name email phone role status college collegeName registeredNumber department year gender resumeUrl githubUrl linkedinUrl portfolioUrl profilePhoto createdAt";
 
   const [user, activeEvent, team] = await Promise.all([
     User.findById(userId).select("-password"),

@@ -184,6 +184,17 @@ export const api = {
     return request('/auth/profile');
   },
 
+  async getCurrentUser() {
+    return request('/users/me');
+  },
+
+  async lookupUser(params = {}) {
+    const query = new URLSearchParams();
+    if (params.email) query.append('email', params.email);
+    if (params.registeredNumber) query.append('registeredNumber', params.registeredNumber);
+    return request(`/users/lookup?${query.toString()}`);
+  },
+
   async getAdminProfile() {
     const result = await request('/auth/profile');
     if (result.user?.role !== 'admin') {

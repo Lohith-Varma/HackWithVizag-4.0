@@ -5,7 +5,7 @@ import Project from "../../projects/models/project.model.js";
 import Submission from "../../submissions/models/submission.model.js";
 import ApiError from "../../../utils/apiError.js";
 
-const userFields = "name email phone role status college collegeName department year gender resumeUrl githubUrl linkedinUrl portfolioUrl profilePhoto createdAt";
+const userFields = "name email phone role status college collegeName registeredNumber department year gender resumeUrl githubUrl linkedinUrl portfolioUrl profilePhoto createdAt";
 
 export const getUserTeam = async (userId) => {
   const team = await Team.findOne({
@@ -73,7 +73,10 @@ export const addMemberToTeam = async (teamId, leaderId, { email }) => {
     throw new ApiError(409, "Team members cannot be changed after review has started");
   }
 
-  const user = await User.findOne({ email });
+  const [leaderUser, user] = await Promise.all([
+    User.findById(team.leader),
+    User.findOne({ email }),
+  ]);
 
   if (!user) {
     throw new ApiError(404, "User not found");
@@ -81,6 +84,13 @@ export const addMemberToTeam = async (teamId, leaderId, { email }) => {
 
   if (user.role !== "participant") {
     throw new ApiError(400, "Only participants can be added to teams");
+  }
+
+  // Cross-college validation
+  const leaderCollege = (leaderUser?.collegeName || leaderUser?.college || "").trim().toLowerCase();
+  const memberCollege = (user.collegeName || user.college || "").trim().toLowerCase();
+  if (leaderCollege && memberCollege && leaderCollege !== memberCollege) {
+    throw new ApiError(400, "All team members must belong to the same college. Cross-college teams are not allowed.");
   }
 
   const userTeam = await Team.findOne({

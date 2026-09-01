@@ -46,7 +46,7 @@ export default function Registration() {
   const [success, setSuccess] = useState(null);
   const [toast, setToast] = useState(null);
 
-  // Fetch Event Configuration dynamically on mount
+  // Fetch Event Configuration & Authenticated User dynamically on mount
   useEffect(() => {
     let isMounted = true;
     api
@@ -57,6 +57,58 @@ export default function Registration() {
         }
       })
       .catch(() => {});
+
+    api
+      .getCurrentUser()
+      .then((res) => {
+        if (isMounted && res?.user) {
+          const u = res.user;
+          setRegistration((current) => {
+            const personal = {
+              ...current.personal,
+              fullName: current.personal?.fullName || u.name || '',
+              email: current.personal?.email || u.email || '',
+              phone: current.personal?.phone || u.phone || '',
+              collegeName: current.personal?.collegeName || u.collegeName || u.college || '',
+              registeredNumber: current.personal?.registeredNumber || u.registeredNumber || '',
+              department: current.personal?.department || u.department || '',
+              year: (current.personal?.year === 'Final Year' ? '4th Year' : current.personal?.year) || (u.year === 'Final Year' ? '4th Year' : u.year) || '',
+              gender: current.personal?.gender || u.gender || '',
+            };
+            const team = {
+              ...current.team,
+              teamLeader: u.name || current.personal?.fullName || current.team?.teamLeader || '',
+              teamLeaderCollege: u.collegeName || u.college || current.personal?.collegeName || '',
+            };
+            return { ...current, personal, team };
+          });
+        }
+      })
+      .catch(() => {
+        const u = loadCurrentUser();
+        if (u) {
+          setRegistration((current) => {
+            const personal = {
+              ...current.personal,
+              fullName: current.personal?.fullName || u.name || '',
+              email: current.personal?.email || u.email || '',
+              phone: current.personal?.phone || u.phone || '',
+              collegeName: current.personal?.collegeName || u.collegeName || u.college || '',
+              registeredNumber: current.personal?.registeredNumber || u.registeredNumber || '',
+              department: current.personal?.department || u.department || '',
+              year: (current.personal?.year === 'Final Year' ? '4th Year' : current.personal?.year) || (u.year === 'Final Year' ? '4th Year' : u.year) || '',
+              gender: current.personal?.gender || u.gender || '',
+            };
+            const team = {
+              ...current.team,
+              teamLeader: u.name || current.personal?.fullName || current.team?.teamLeader || '',
+              teamLeaderCollege: u.collegeName || u.college || current.personal?.collegeName || '',
+            };
+            return { ...current, personal, team };
+          });
+        }
+      });
+
     return () => {
       isMounted = false;
     };
@@ -78,7 +130,7 @@ export default function Registration() {
   const stepValidators = useMemo(
     () => [
       (reg) => validatePersonal(reg.personal),
-      (reg) => validateTeam(reg.team, eventConfig),
+      (reg) => validateTeam(reg.team, eventConfig, reg.personal?.collegeName || reg.team?.teamLeaderCollege),
       (reg) => {
         const errs = {};
         if (!reg.project?.problemStatementId && !reg.project?.problemCode) {
@@ -206,6 +258,8 @@ export default function Registration() {
           errors={currentStepErrors}
           onChange={(team) => updateSection('team', team)}
           eventConfig={eventConfig}
+          leadName={registration.personal?.fullName || registration.team?.teamLeader}
+          leadCollege={registration.personal?.collegeName || registration.team?.teamLeaderCollege}
         />
       );
     }

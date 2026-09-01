@@ -11,7 +11,8 @@ export const createEmptyMember = () => ({
   fullName: '',
   email: '',
   phone: '',
-  college: '',
+  registeredNumber: '',
+  gender: '',
   department: '',
   year: '',
 });
@@ -22,6 +23,8 @@ export const createInitialRegistration = () => ({
     email: '',
     phone: '',
     collegeName: '',
+    registeredNumber: '',
+    gender: '',
     university: '',
     department: '',
     year: '',
@@ -33,7 +36,7 @@ export const createInitialRegistration = () => ({
     teamName: '',
     teamLeader: '',
     numberOfMembers: TEAM_LIMITS.min,
-    members: [createEmptyMember(), createEmptyMember()],
+    members: [],
   },
   project: {
     title: '',
@@ -81,7 +84,15 @@ const stripFileObjects = (value) => {
 
 export const loadDraftRegistration = () => {
   const draft = safeParse(localStorage.getItem(DRAFT_KEY), null);
-  return draft ? { ...createInitialRegistration(), ...draft } : createInitialRegistration();
+  if (!draft) return createInitialRegistration();
+  const merged = { ...createInitialRegistration(), ...draft };
+  if (merged.personal?.year === 'Final Year') merged.personal.year = '4th Year';
+  if (Array.isArray(merged.team?.members)) {
+    merged.team.members = merged.team.members.map((m) =>
+      m.year === 'Final Year' ? { ...m, year: '4th Year' } : m
+    );
+  }
+  return merged;
 };
 
 export const saveDraftRegistration = (data) => {

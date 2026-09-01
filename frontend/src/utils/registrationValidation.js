@@ -37,6 +37,8 @@ export const validateFile = (file, rules = {}) => {
   return '';
 };
 
+const githubRepoPattern = /^https?:\/\/(www\.)?github\.com\/[\w.-]+\/[\w.-]+\/?$/i;
+
 export const validatePersonal = (personal = {}) => {
   const errors = {};
   [
@@ -44,6 +46,7 @@ export const validatePersonal = (personal = {}) => {
     ['email', 'Email address is required'],
     ['phone', 'Phone number is required'],
     ['collegeName', 'College name is required'],
+    ['registeredNumber', 'College registered number is required'],
     ['department', 'Department / Branch is required'],
     ['year', 'Year of study is required'],
   ].forEach(([field, message]) => {
@@ -56,16 +59,18 @@ export const validatePersonal = (personal = {}) => {
   if (personal.phone && !phonePattern.test(personal.phone)) {
     errors.phone = 'Enter a valid phone number';
   }
+  if (personal.year === 'Final Year') {
+    errors.year = 'Please select 4th Year (Final Year is no longer an option)';
+  }
   return errors;
 };
 
-export const validateTeam = (team = {}, eventConfig = {}) => {
+export const validateTeam = (team = {}, eventConfig = {}, leadCollege = '') => {
   const errors = { members: [] };
   const minTeamSize = eventConfig.minTeamSize || 1;
   const maxTeamSize = eventConfig.maxTeamSize || 4;
 
   if (required(team.teamName)) errors.teamName = 'Team name is required';
-  if (required(team.teamLeader)) errors.teamLeader = 'Team leader is required';
 
   const memberList = Array.isArray(team.members) ? team.members : [];
   const totalCount = 1 + memberList.length; // Leader + Members
@@ -74,20 +79,32 @@ export const validateTeam = (team = {}, eventConfig = {}) => {
     errors.membersCount = `Total team members (including Leader) must be between ${minTeamSize} and ${maxTeamSize}. Current: ${totalCount}`;
   }
 
+  const normalizedLeadCollege = (leadCollege || team.teamLeaderCollege || '').trim().toLowerCase();
+
   memberList.forEach((member, index) => {
     const memberErrors = {};
     [
       ['fullName', 'Full name is required'],
       ['email', 'Email is required'],
       ['phone', 'Phone is required'],
-      ['college', 'College is required'],
+      ['registeredNumber', 'Registered number is required'],
       ['department', 'Department is required'],
       ['year', 'Year is required'],
     ].forEach(([field, message]) => {
       if (required(member[field])) memberErrors[field] = message;
     });
+
     if (member.email && !emailPattern.test(member.email)) memberErrors.email = 'Enter a valid email';
     if (member.phone && !phonePattern.test(member.phone)) memberErrors.phone = 'Enter a valid phone';
+    if (member.year === 'Final Year') memberErrors.year = 'Please select 4th Year';
+
+    if (member.college && normalizedLeadCollege) {
+      const memberCollege = member.college.trim().toLowerCase();
+      if (memberCollege !== normalizedLeadCollege) {
+        memberErrors.college = 'All team members must belong to the same college. Cross-college teams are not allowed.';
+      }
+    }
+
     errors.members[index] = memberErrors;
   });
 
@@ -116,8 +133,10 @@ export const validateProject = (project = {}, eventConfig = {}) => {
     }
   }
 
-  if (project.githubRepository && !urlPattern.test(project.githubRepository)) {
-    errors.githubRepository = 'Enter a valid GitHub repository URL';
+  if (required(project.githubRepository)) {
+    errors.githubRepository = 'GitHub repository link is required.';
+  } else if (!githubRepoPattern.test(project.githubRepository.trim())) {
+    errors.githubRepository = 'Enter a valid GitHub repository URL (e.g. https://github.com/username/repository)';
   }
 
   if (project.demoVideoUrl) {

@@ -105,13 +105,30 @@ export const getProfile = async (userId) => {
 };
 
 export const updateUserProfile = async (userId, payload) => {
-  const allowedFields = ["name", "phone", "college", "collegeName", "department", "year", "gender", "githubUrl", "linkedinUrl", "portfolioUrl", "resumeUrl"];
+  const allowedFields = [
+    "name",
+    "phone",
+    "college",
+    "collegeName",
+    "registeredNumber",
+    "department",
+    "year",
+    "gender",
+    "githubUrl",
+    "linkedinUrl",
+    "portfolioUrl",
+    "resumeUrl",
+  ];
   const updates = {};
 
   for (const field of allowedFields) {
     if (payload[field] !== undefined) {
       updates[field] = payload[field];
     }
+  }
+
+  if (updates.year === "Final Year") {
+    updates.year = "4th Year";
   }
 
   if (payload.college && !payload.collegeName) {
