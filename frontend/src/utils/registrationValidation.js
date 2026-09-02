@@ -65,21 +65,20 @@ export const validatePersonal = (personal = {}) => {
   return errors;
 };
 
-export const validateTeam = (team = {}, eventConfig = {}, leadCollege = '') => {
+export const validateTeam = (team = {}, _eventConfig = {}, leadCollege = '') => {
   const errors = { members: [] };
-  const minTeamSize = eventConfig.minTeamSize || 1;
-  const maxTeamSize = eventConfig.maxTeamSize || 4;
 
   if (required(team.teamName)) errors.teamName = 'Team name is required';
 
   const memberList = Array.isArray(team.members) ? team.members : [];
   const totalCount = 1 + memberList.length; // Leader + Members
 
-  if (totalCount < minTeamSize || totalCount > maxTeamSize) {
-    errors.membersCount = `Total team members (including Leader) must be between ${minTeamSize} and ${maxTeamSize}. Current: ${totalCount}`;
+  if (totalCount !== 3 && totalCount !== 4) {
+    errors.membersCount = `Team size must be exactly 3 or 4 members (including Team Leader). Current: ${totalCount}`;
   }
 
   const normalizedLeadCollege = (leadCollege || team.teamLeaderCollege || '').trim().toLowerCase();
+  const seenMemberEmails = new Set();
 
   memberList.forEach((member, index) => {
     const memberErrors = {};
@@ -94,7 +93,16 @@ export const validateTeam = (team = {}, eventConfig = {}, leadCollege = '') => {
       if (required(member[field])) memberErrors[field] = message;
     });
 
-    if (member.email && !emailPattern.test(member.email)) memberErrors.email = 'Enter a valid email';
+    if (member.email) {
+      const em = member.email.trim().toLowerCase();
+      if (!emailPattern.test(em)) {
+        memberErrors.email = 'Enter a valid email';
+      } else if (seenMemberEmails.has(em)) {
+        memberErrors.email = 'Duplicate member email address';
+      } else {
+        seenMemberEmails.add(em);
+      }
+    }
     if (member.phone && !phonePattern.test(member.phone)) memberErrors.phone = 'Enter a valid phone';
     if (member.year === 'Final Year') memberErrors.year = 'Please select 4th Year';
 

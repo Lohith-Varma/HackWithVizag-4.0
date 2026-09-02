@@ -1,10 +1,10 @@
-import { useState } from 'react';
-import { FiCheckCircle, FiMinusCircle, FiPlusCircle, FiSearch, FiTrash2, FiUser, FiAlertCircle } from 'react-icons/fi';
+import { useEffect, useState } from 'react';
+import { FiCheckCircle, FiSearch, FiAlertCircle } from 'react-icons/fi';
 import { api } from '../../services/api';
 
 const yearOptions = ['1st Year', '2nd Year', '3rd Year', '4th Year'];
 
-const createEmptyMember = () => ({
+const createEmptyMember = (college = '') => ({
   fullName: '',
   email: '',
   phone: '',
@@ -12,29 +12,53 @@ const createEmptyMember = () => ({
   gender: '',
   department: '',
   year: '',
-  college: '',
+  college: college,
   isVerifiedUser: false,
 });
 
-export default function StepTeam({ data, errors, onChange, eventConfig = {}, leadName = '', leadCollege = '' }) {
-  const minSize = eventConfig.minTeamSize || 1;
-  const maxSize = eventConfig.maxTeamSize || 4;
+export default function StepTeam({ data, errors, onChange, leadName = '', leadCollege = '' }) {
   const effectiveLeadName = leadName || data.teamLeader || 'Logged-in Account';
   const effectiveLeadCollege = leadCollege || data.teamLeaderCollege || 'Profile College';
 
   const [lookupLoading, setLookupLoading] = useState({});
   const [lookupMessage, setLookupMessage] = useState({});
 
+  // Team size includes the Team Lead (1 Lead + N Members)
+  const currentTotalSize = 1 + (data.members?.length || 0);
+  const selectedSize = currentTotalSize === 4 ? 4 : 3;
+
+  // Ensure initial member array matches size (default 2 additional members = 3 total)
+  useEffect(() => {
+    const memberCount = (data.members || []).length;
+    if (memberCount !== 2 && memberCount !== 3) {
+      const targetAdditional = 2; // Default to 3 total
+      const members = [...(data.members || [])];
+      while (members.length < targetAdditional) {
+        members.push(createEmptyMember(effectiveLeadCollege));
+      }
+      onChange({
+        ...data,
+        numberOfMembers: 1 + targetAdditional,
+        members: members.slice(0, targetAdditional),
+      });
+    }
+  }, []);
+
   const setTeamField = (field, value) => onChange({ ...data, [field]: value });
 
-  const setMembersForSize = (targetCount) => {
-    const additionalTarget = Math.max(0, Math.min(maxSize - 1, targetCount - 1));
+  const handleSelectTeamSize = (targetTotalSize) => {
+    const targetAdditional = targetTotalSize === 4 ? 3 : 2;
     const members = [...(data.members || [])];
-    while (members.length < additionalTarget) members.push(createEmptyMember());
+
+    while (members.length < targetAdditional) {
+      members.push(createEmptyMember(effectiveLeadCollege));
+    }
+
+    const nextMembers = members.slice(0, targetAdditional);
     onChange({
       ...data,
-      numberOfMembers: 1 + additionalTarget,
-      members: members.slice(0, additionalTarget),
+      numberOfMembers: targetTotalSize,
+      members: nextMembers,
     });
   };
 
@@ -56,6 +80,19 @@ export default function StepTeam({ data, errors, onChange, eventConfig = {}, lea
       const res = await api.lookupUser({ email });
       if (res?.user) {
         const u = res.user;
+
+        // Check if user is already registered in a team
+        if (res.isAlreadyInTeam) {
+          setLookupMessage((prev) => ({
+            ...prev,
+            [index]: {
+              type: 'error',
+              text: `This user is already registered with team "${res.existingTeamName || 'registered team'}" and cannot be added to another team.`,
+            },
+          }));
+          return;
+        }
+
         const userCollege = (u.collegeName || u.college || '').trim().toLowerCase();
         const leadCol = effectiveLeadCollege.trim().toLowerCase();
 
@@ -98,7 +135,7 @@ export default function StepTeam({ data, errors, onChange, eventConfig = {}, lea
           ...prev,
           [index]: {
             type: 'info',
-            text: 'No existing account found. Please fill in member details manually (they will be registered under the same college).',
+            text: 'No existing account found. Please enter member details manually (they will be registered under your college).',
           },
         }));
       }
@@ -109,24 +146,12 @@ export default function StepTeam({ data, errors, onChange, eventConfig = {}, lea
     }
   };
 
-  const addMember = () => {
-    if (1 + (data.members || []).length >= maxSize) return;
-    const members = [...(data.members || []), createEmptyMember()];
-    onChange({ ...data, members, numberOfMembers: 1 + members.length });
-  };
-
-  const removeMember = (index) => {
-    if (1 + (data.members || []).length <= minSize) return;
-    const members = (data.members || []).filter((_, memberIndex) => memberIndex !== index);
-    onChange({ ...data, members, numberOfMembers: 1 + members.length });
-  };
-
   return (
     <div className="wizard-step">
       <div className="step-copy">
         <span className="section-subtitle">Step 2</span>
         <h2>Team Details</h2>
-        <p>Teams must have between {minSize} and {maxSize} members. Cross-college teams are strictly not permitted.</p>
+        <p>Team size is strictly <strong>3 or 4 members</strong> (including Team Leader). Cross-college teams are not allowed.</p>
       </div>
 
       <div className="form-grid compact">
@@ -148,52 +173,84 @@ export default function StepTeam({ data, errors, onChange, eventConfig = {}, lea
           </div>
         </div>
 
-        <label className="field team-size-field">
-          <span>Total Team Size *</span>
-          <div className="stepper">
+        {/* TEAM SIZE SELECTION (STRICTLY 3 OR 4 ONLY) */}
+        <div className="field" style={{ gridColumn: 'span 2' }}>
+          <span>Team Size (Total Members Including Leader) *</span>
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: '1fr 1fr',
+              gap: '1rem',
+              marginTop: '0.35rem',
+            }}
+          >
             <button
               type="button"
-              onClick={() => setMembersForSize(1 + (data.members?.length || 0) - 1)}
-              disabled={1 + (data.members?.length || 0) <= minSize}
-              aria-label="Decrease team size"
+              className={`team-size-option-card ${selectedSize === 3 ? 'active' : ''}`}
+              onClick={() => handleSelectTeamSize(3)}
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'flex-start',
+                padding: '1rem 1.25rem',
+                borderRadius: '8px',
+                border: selectedSize === 3 ? '2px solid #6366f1' : '1px solid rgba(255,255,255,0.1)',
+                background: selectedSize === 3 ? 'rgba(99, 102, 241, 0.15)' : 'rgba(15, 23, 42, 0.6)',
+                cursor: 'pointer',
+                textAlign: 'left',
+                transition: 'all 0.2s ease',
+              }}
             >
-              <FiMinusCircle />
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', marginBottom: '4px' }}>
+                <strong style={{ fontSize: '1.05rem', color: selectedSize === 3 ? '#a5b4fc' : '#fff' }}>
+                  👥 3 Members
+                </strong>
+                {selectedSize === 3 && <FiCheckCircle style={{ color: '#6366f1', fontSize: '1.2rem' }} />}
+              </div>
+              <span style={{ fontSize: '0.82rem', color: '#94a3b8' }}>
+                1 Team Leader + 2 Team Members
+              </span>
             </button>
-            <input
-              type="number"
-              min={minSize}
-              max={maxSize}
-              value={1 + (data.members?.length || 0)}
-              onChange={(e) => setMembersForSize(Number(e.target.value))}
-            />
+
             <button
               type="button"
-              onClick={() => setMembersForSize(1 + (data.members?.length || 0) + 1)}
-              disabled={1 + (data.members?.length || 0) >= maxSize}
-              aria-label="Increase team size"
+              className={`team-size-option-card ${selectedSize === 4 ? 'active' : ''}`}
+              onClick={() => handleSelectTeamSize(4)}
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'flex-start',
+                padding: '1rem 1.25rem',
+                borderRadius: '8px',
+                border: selectedSize === 4 ? '2px solid #6366f1' : '1px solid rgba(255,255,255,0.1)',
+                background: selectedSize === 4 ? 'rgba(99, 102, 241, 0.15)' : 'rgba(15, 23, 42, 0.6)',
+                cursor: 'pointer',
+                textAlign: 'left',
+                transition: 'all 0.2s ease',
+              }}
             >
-              <FiPlusCircle />
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', marginBottom: '4px' }}>
+                <strong style={{ fontSize: '1.05rem', color: selectedSize === 4 ? '#a5b4fc' : '#fff' }}>
+                  👥 4 Members
+                </strong>
+                {selectedSize === 4 && <FiCheckCircle style={{ color: '#6366f1', fontSize: '1.2rem' }} />}
+              </div>
+              <span style={{ fontSize: '0.82rem', color: '#94a3b8' }}>
+                1 Team Leader + 3 Team Members
+              </span>
             </button>
           </div>
-          {errors.membersCount && <small>{errors.membersCount}</small>}
-        </label>
+          {errors.membersCount && <small style={{ color: '#ef4444', marginTop: '4px', display: 'block' }}>{errors.membersCount}</small>}
+        </div>
       </div>
 
-      <div className="members-header">
+      <div className="members-header" style={{ marginTop: '2rem' }}>
         <div>
-          <h3>Additional Team Members ({(data.members || []).length})</h3>
+          <h3>Additional Team Members ({(data.members || []).length} Required)</h3>
           <span className="text-dim font-xs" style={{ display: 'block', marginTop: '2px', color: '#94a3b8' }}>
             All team members must belong to <strong>{effectiveLeadCollege}</strong>.
           </span>
         </div>
-        <button
-          type="button"
-          className="ghost-action"
-          onClick={addMember}
-          disabled={1 + (data.members || []).length >= maxSize}
-        >
-          <FiPlusCircle /> Add Member
-        </button>
       </div>
 
       <div className="member-list">
@@ -212,14 +269,6 @@ export default function StepTeam({ data, errors, onChange, eventConfig = {}, lea
                     </span>
                   )}
                 </div>
-                <button
-                  type="button"
-                  onClick={() => removeMember(index)}
-                  disabled={1 + (data.members || []).length <= minSize}
-                  aria-label={`Remove member ${index + 2}`}
-                >
-                  <FiTrash2 />
-                </button>
               </div>
 
               {msg && (

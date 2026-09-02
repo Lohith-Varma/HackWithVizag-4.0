@@ -102,9 +102,15 @@ export const addMemberToTeam = async (teamId, leaderId, { email }) => {
     throw new ApiError(409, "User is already part of another team");
   }
 
+  if (team.members.length >= 4) {
+    throw new ApiError(400, "Maximum team size is 4 members (including the Team Leader).");
+  }
+
   if (!team.members.some((member) => member.toString() === user._id.toString())) {
     team.members.push(user._id);
     await team.save();
+    user.team = team._id;
+    await user.save();
   }
 
   return team.populate("leader members", userFields);

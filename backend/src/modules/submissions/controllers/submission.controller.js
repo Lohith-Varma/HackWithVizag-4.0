@@ -65,24 +65,27 @@ export const submitFullRegistration = asyncHandler(async (req, res) => {
     );
   }
 
-  // Member count check
+  // Check if authenticated user already belongs to a registered team
+  const existingUserTeam = await Team.findOne({
+    $or: [{ leader: userId }, { members: userId }],
+  });
+  if (existingUserTeam) {
+    throw new ApiError(409, "You are already registered with a team.");
+  }
+
+  // Member count check: Must be strictly 3 or 4
   const memberList = Array.isArray(teamData.members) ? teamData.members : [];
   const totalMembers = 1 + memberList.length; // Leader + additional members
-  if (totalMembers < minTeamSize || totalMembers > maxTeamSize) {
+  if (totalMembers !== 3 && totalMembers !== 4) {
     throw new ApiError(
       400,
-      `Team size must be between ${minTeamSize} and ${maxTeamSize} members. Current count: ${totalMembers}`
+      `Team size must be exactly 3 or 4 members (1 Team Leader + 2 or 3 Members). Current count: ${totalMembers}`
     );
   }
 
   // Duplicate team name validation
-  let team = await Team.findOne({
-    $or: [{ leader: userId }, { members: userId }],
-  });
-
   const existingTeamWithName = await Team.findOne({
     teamName: new RegExp(`^${teamData.teamName.trim()}$`, "i"),
-    _id: { $ne: team?._id },
   });
   if (existingTeamWithName) {
     throw new ApiError(409, `Team name "${teamData.teamName}" is already registered by another team.`);
@@ -108,31 +111,68 @@ export const submitFullRegistration = asyncHandler(async (req, res) => {
     { new: true }
   );
 
-  const leaderCollege = (leaderUser?.collegeName || leaderUser?.college || "").trim().toLowerCase();
+  const leaderCollege = (leaderUser?.collegeName || leaderUser?.college || personal.collegeName || personal.college || "").trim().toLowerCase();
+  const leaderEmail = (leaderUser?.email || req.user.email || personal.email || "").toLowerCase().trim();
 
-  // Process team members and check for email conflicts & cross-college mismatches
+  // Validate member uniqueness & check for existing team memberships
+  const seenEmails = new Set([leaderEmail]);
   const memberUserIds = [userId];
-  for (const m of memberList) {
-    if (!m || (!m.email && !m.fullName)) continue;
-    const memberEmail = (m.email || "").toLowerCase().trim();
-    if (!memberEmail) continue;
 
-    // Check if member email belongs to another active team
-    let memberUser = await User.findOne({ email: memberEmail });
-    if (memberUser && memberUser.team && team && memberUser.team.toString() !== team._id.toString()) {
-      throw new ApiError(
-        409,
-        `Member email "${memberEmail}" is already registered under another team.`
-      );
+  for (const m of memberList) {
+    if (!m) continue;
+    const memberEmail = (m.email || "").toLowerCase().trim();
+    if (!memberEmail) {
+      throw new ApiError(400, "All team members must have a valid email address.");
     }
 
-    if (!memberUser) {
+    if (seenEmails.has(memberEmail)) {
+      throw new ApiError(400, `Duplicate member email "${memberEmail}". Each team member must have a unique email.`);
+    }
+    seenEmails.add(memberEmail);
+
+    // Check if member email belongs to an existing user
+    let memberUser = await User.findOne({ email: memberEmail });
+    if (memberUser) {
+      // Check if this existing user is already registered with a team
+      const memberExistingTeam = await Team.findOne({
+        $or: [{ leader: memberUser._id }, { members: memberUser._id }],
+      });
+      if (memberExistingTeam || memberUser.team) {
+        throw new ApiError(
+          409,
+          `Member email "${memberEmail}" is already registered with a team and cannot be added to another team.`
+        );
+      }
+
+      // Cross-college validation for existing account
+      const memberCollege = (memberUser.collegeName || memberUser.college || m.college || "").trim().toLowerCase();
+      if (memberCollege && leaderCollege && memberCollege !== leaderCollege) {
+        throw new ApiError(
+          400,
+          "All team members must belong to the same college. Cross-college teams are not allowed."
+        );
+      }
+
+      memberUser.name = m.fullName || m.name || memberUser.name;
+      if (m.phone) memberUser.phone = m.phone;
+      memberUser.college = leaderUser?.college || personal.collegeName || personal.college || memberUser.college;
+      memberUser.collegeName = leaderUser?.collegeName || personal.collegeName || personal.college || memberUser.collegeName;
+      if (m.registeredNumber || m.regNo) memberUser.registeredNumber = m.registeredNumber || m.regNo;
+      if (m.department) memberUser.department = m.department;
+      if (m.year) memberUser.year = m.year === "Final Year" ? "4th Year" : m.year;
+      if (m.gender) memberUser.gender = m.gender;
+      if (m.github || m.githubUrl) memberUser.githubUrl = m.githubUrl || m.github;
+      if (m.linkedin || m.linkedinUrl) memberUser.linkedinUrl = m.linkedinUrl || m.linkedin;
+      if (m.portfolio || m.portfolioUrl) memberUser.portfolioUrl = m.portfolioUrl || m.portfolio;
+      await memberUser.save();
+    } else {
+      // Create new user for the team member
       memberUser = await User.create({
         name: m.fullName || m.name || "Team Member",
         email: memberEmail,
         phone: m.phone || "9999999999",
-        college: leaderUser?.college || "",
-        collegeName: leaderUser?.collegeName || leaderUser?.college || "",
+        college: leaderUser?.college || personal.collegeName || personal.college || "",
+        collegeName: leaderUser?.collegeName || personal.collegeName || personal.college || "",
         registeredNumber: m.registeredNumber || m.regNo || "",
         department: m.department || "",
         year: m.year === "Final Year" ? "4th Year" : (m.year || ""),
@@ -143,30 +183,6 @@ export const submitFullRegistration = asyncHandler(async (req, res) => {
         role: "participant",
         status: "pending",
       });
-    } else {
-      // Cross-college validation for existing account
-      const memberCollege = (memberUser.collegeName || memberUser.college || "").trim().toLowerCase();
-      if (memberCollege && leaderCollege && memberCollege !== leaderCollege) {
-        throw new ApiError(
-          400,
-          "All team members must belong to the same college. Cross-college teams are not allowed."
-        );
-      }
-
-      memberUser.name = m.fullName || m.name || memberUser.name;
-      if (m.phone) memberUser.phone = m.phone;
-      if (!memberUser.collegeName && leaderUser?.collegeName) {
-        memberUser.college = leaderUser.college;
-        memberUser.collegeName = leaderUser.collegeName;
-      }
-      if (m.registeredNumber) memberUser.registeredNumber = m.registeredNumber;
-      if (m.department) memberUser.department = m.department;
-      if (m.year) memberUser.year = m.year === "Final Year" ? "4th Year" : m.year;
-      if (m.gender) memberUser.gender = m.gender;
-      if (m.github || m.githubUrl) memberUser.githubUrl = m.githubUrl || m.github;
-      if (m.linkedin || m.linkedinUrl) memberUser.linkedinUrl = m.linkedinUrl || m.linkedin;
-      if (m.portfolio || m.portfolioUrl) memberUser.portfolioUrl = m.portfolioUrl || m.portfolio;
-      await memberUser.save();
     }
 
     if (!memberUserIds.some((id) => id.toString() === memberUser._id.toString())) {
@@ -174,21 +190,13 @@ export const submitFullRegistration = asyncHandler(async (req, res) => {
     }
   }
 
-  // Create or update Team
-  if (!team) {
-    team = await Team.create({
-      teamName: teamData.teamName.trim(),
-      leader: userId,
-      members: memberUserIds,
-      currentStatus: "under_review",
-    });
-  } else {
-    team.teamName = teamData.teamName.trim() || team.teamName;
-    team.leader = userId;
-    team.members = memberUserIds;
-    team.currentStatus = "under_review";
-    await team.save();
-  }
+  // Create Team
+  const team = await Team.create({
+    teamName: teamData.teamName.trim(),
+    leader: userId,
+    members: memberUserIds,
+    currentStatus: "under_review",
+  });
 
   // Update team reference on all users in team
   await User.updateMany({ _id: { $in: memberUserIds } }, { team: team._id });

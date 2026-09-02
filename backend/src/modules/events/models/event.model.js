@@ -51,14 +51,15 @@ const eventSchema = new mongoose.Schema(
     minTeamSize: {
       type: Number,
       required: true,
-      default: 1,
-      min: 1,
+      default: 3,
+      min: 3,
     },
     maxTeamSize: {
       type: Number,
       required: true,
       default: 4,
-      min: 1,
+      min: 3,
+      max: 4,
     },
     minAbstractWords: {
       type: Number,
@@ -111,7 +112,7 @@ const eventSchema = new mongoose.Schema(
     rules: {
       type: [String],
       default: [
-        "Teams must consist of 1 to 4 participants.",
+        "Teams must consist of 3 to 4 participants.",
         "Plagiarism or pre-built commercial products will lead to instant disqualification.",
         "All code must be committed to the public GitHub repository during the hackathon timeline.",
         "The decision of the jury panel is final and binding.",

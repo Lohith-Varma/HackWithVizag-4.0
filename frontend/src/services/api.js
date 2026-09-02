@@ -397,56 +397,6 @@ export const api = {
     });
   },
 
-  // Event Config APIs
-  async getEventConfig() {
-    try {
-      return await request('/events');
-    } catch {
-      return await request('/event');
-    }
-  },
-
-  async getAdminEvents() {
-    try {
-      return await request('/events/admin');
-    } catch {
-      return await request('/event/admin');
-    }
-  },
-
-  async createEvent(payload) {
-    return request('/events/admin', {
-      method: 'POST',
-      body: payload,
-    });
-  },
-
-  async updateEventConfig(id, payload) {
-    try {
-      return await request(`/events/admin/${id}`, {
-        method: 'PUT',
-        body: payload,
-      });
-    } catch {
-      return await request(`/event/admin/${id}`, {
-        method: 'PUT',
-        body: payload,
-      });
-    }
-  },
-
-  async setActiveEvent(id) {
-    return request(`/events/admin/${id}/active`, {
-      method: 'PATCH',
-    });
-  },
-
-  async deleteEvent(id) {
-    return request(`/events/admin/${id}`, {
-      method: 'DELETE',
-    });
-  },
-
   // User Profile & Password Settings APIs
   async updateProfile(payload) {
     return request('/auth/profile', {

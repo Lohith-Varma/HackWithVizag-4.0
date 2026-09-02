@@ -1,4 +1,5 @@
 import User from "../../auth/models/user.model.js";
+import Team from "../../teams/models/team.model.js";
 import { uploadRoot } from "../../../middleware/upload.middleware.js";
 import { asyncHandler } from "../../../utils/asyncHandler.js";
 import ApiError from "../../../utils/apiError.js";
@@ -98,8 +99,12 @@ export const lookupUser = asyncHandler(async (req, res) => {
   const user = await User.findOne(query);
 
   if (!user) {
-    return sendSuccess(res, 200, "User lookup result", { user: null });
+    return sendSuccess(res, 200, "User lookup result", { user: null, isAlreadyInTeam: false });
   }
+
+  const userTeam = await Team.findOne({
+    $or: [{ leader: user._id }, { members: user._id }],
+  });
 
   return sendSuccess(res, 200, "User found", {
     user: {
@@ -115,6 +120,9 @@ export const lookupUser = asyncHandler(async (req, res) => {
       gender: user.gender || "",
       role: user.role,
     },
+    isAlreadyInTeam: Boolean(userTeam),
+    existingTeamName: userTeam ? userTeam.teamName : null,
+    existingTeamId: userTeam ? userTeam._id.toString() : null,
   });
 });
 
