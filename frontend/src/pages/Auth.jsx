@@ -10,7 +10,14 @@ const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const phonePattern = /^[6-9]\d{9}$/;
 
 export default function Auth() {
-  const [mode, setMode] = useState('register');
+  const [mode, setMode] = useState(() => {
+    const hash = (typeof window !== 'undefined' ? window.location.hash : '').toLowerCase();
+    const search = (typeof window !== 'undefined' ? window.location.search : '').toLowerCase();
+    if (hash.includes('login') || search.includes('login') || search.includes('mode=login')) {
+      return 'login';
+    }
+    return 'register';
+  });
   const [form, setForm] = useState({ name: '', email: '', phone: '', password: '' });
   const [errors, setErrors] = useState({});
   const [isLoading, setIsLoading] = useState(false);

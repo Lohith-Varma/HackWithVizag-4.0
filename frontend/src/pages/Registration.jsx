@@ -32,6 +32,7 @@ import StepReview from '../components/Registration/StepReview';
 import Toast from '../components/Toast/Toast';
 import { api, buildAssetUrl } from '../services/api';
 import {
+  clearCurrentUser,
   clearDraftRegistration,
   loadCurrentUser,
   loadDraftRegistration,
@@ -322,6 +323,15 @@ export default function Registration() {
   // RENDER STATE 2: API ERROR / RETRY SCREEN
   // -------------------------------------------------------------
   if (statusCheckError) {
+    const handleRetryStatusCheck = () => {
+      clearCurrentUser();
+      window.location.hash = '#auth';
+      if (window.location.pathname !== '/' && window.location.pathname !== '') {
+        window.history.pushState(null, '', '/#auth');
+      }
+      window.dispatchEvent(new HashChangeEvent('hashchange'));
+    };
+
     return (
       <main className="portal-page">
         <section className="portal-shell" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '60vh' }}>
@@ -336,7 +346,7 @@ export default function Registration() {
             <button
               type="button"
               className="primary-action"
-              onClick={checkRegistrationStatus}
+              onClick={handleRetryStatusCheck}
               style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}
             >
               Retry Status Check

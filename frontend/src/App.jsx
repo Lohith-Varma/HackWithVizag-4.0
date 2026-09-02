@@ -31,20 +31,6 @@ const routes = {
 };
 
 function getCurrentRoute() {
-  const path = window.location.pathname.toLowerCase();
-  if (path.startsWith('/admin')) return 'admin';
-  if (
-    path.startsWith('/registration-soon') ||
-    path.startsWith('/register-soon') ||
-    path.startsWith('/coming-soon') ||
-    path.startsWith('/register') ||
-    path.startsWith('/registration')
-  ) {
-    return 'registration';
-  }
-  if (path.startsWith('/dashboard')) return 'dashboard';
-  if (path.startsWith('/auth')) return 'auth';
-
   const hash = window.location.hash.toLowerCase();
   if (hash.startsWith('#admin')) return 'admin';
   if (
@@ -57,7 +43,21 @@ function getCurrentRoute() {
     return 'registration';
   }
   if (hash.startsWith('#dashboard')) return 'dashboard';
-  if (hash.startsWith('#auth')) return 'auth';
+  if (hash.startsWith('#auth') || hash.startsWith('#login')) return 'auth';
+
+  const path = window.location.pathname.toLowerCase();
+  if (path.startsWith('/admin')) return 'admin';
+  if (
+    path.startsWith('/registration-soon') ||
+    path.startsWith('/register-soon') ||
+    path.startsWith('/coming-soon') ||
+    path.startsWith('/register') ||
+    path.startsWith('/registration')
+  ) {
+    return 'registration';
+  }
+  if (path.startsWith('/dashboard')) return 'dashboard';
+  if (path.startsWith('/auth') || path.startsWith('/login')) return 'auth';
 
   return routes[window.location.hash] || 'landing';
 }
