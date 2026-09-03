@@ -100,20 +100,16 @@ export default function About() {
           <motion.div variants={itemVariants} className="about-card about-vision">
             <h3>Our Vision</h3>
             <p>
-              Located along the scenic coast of Visakhapatnam, we aim to bridge the gap between academic brilliance and industrial realities. By focusing on critical tracks like Marine AI, FinTech, and Disaster Resilience, Hack With Vizag 4.0 provides a launching pad for products that solve real-world problems.
+              At Hack With Vizag 4.0, our vision is to create a national platform where students challenge conventions, think beyond boundaries, and build solutions to problems that matter. Conducted by NSRIT, the hackathon aims to bridge the gap between academic learning and real-world problem solving by nurturing critical thinkers, innovators, and future technology leaders.
             </p>
             <div className="vision-bullets">
               <div className="bullet-item">
                 <FiCheckCircle className="bullet-icon" />
-                <span>Nurturing localized solutions with global potential.</span>
+                <span>Encouraging students to question conventional approaches and develop creative solutions to complex challenges.</span>
               </div>
               <div className="bullet-item">
                 <FiCheckCircle className="bullet-icon" />
-                <span>Empowering student developers with mentorship and infrastructure.</span>
-              </div>
-              <div className="bullet-item">
-                <FiCheckCircle className="bullet-icon" />
-                <span>Fostering public-private partnerships in governance.</span>
+                <span>Transforming ideas and technical knowledge into practical solutions that address real-world needs.</span>
               </div>
             </div>
           </motion.div>
@@ -121,24 +117,11 @@ export default function About() {
           <motion.div variants={itemVariants} className="about-card about-organizers">
             <h3>About Organizers</h3>
             <p>
-              Hack With Vizag is organized by a passionate consortium of academic institutions, government bodies, and technology communities. In collaboration with the Vizag Tech Hub and ocean research institutes, we are dedicated to providing a frictionless, high-energy environment for the developer ecosystem.
+              Hack With Vizag 4.0, organized by NSRIT, is a national-level platform built to bring together the brightest student minds, innovators, and technology enthusiasts from across the country. We are committed to creating an environment where ideas are challenged, skills are tested, and innovative solutions are built.
             </p>
-            <div className="organizer-features">
-              <div className="org-badge">
-                <FiCpu className="org-icon" />
-                <div>
-                  <h4>Government Support</h4>
-                  <p>In partnership with state incubation centers.</p>
-                </div>
-              </div>
-              <div className="org-badge">
-                <FiTrendingUp className="org-icon" />
-                <div>
-                  <h4>Industry Connected</h4>
-                  <p>Advisory panel from top multinational companies.</p>
-                </div>
-              </div>
-            </div>
+            <p>
+              Through collaboration, mentorship, and hands-on problem solving, we aim to empower students to move beyond the classroom and take on challenges that reflect the realities of the world around them.
+            </p>
           </motion.div>
         </motion.div>
 
