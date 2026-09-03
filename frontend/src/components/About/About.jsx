@@ -126,7 +126,7 @@ export default function About() {
         </motion.div>
 
         {/* Statistics Grid */}
-        <div className="stats-grid">
+        {/* <div className="stats-grid">
           <div className="stat-card">
             <FiUsers className="stat-icon icon-purple" />
             <StatCounter end="500" suffix="+" />
@@ -147,7 +147,7 @@ export default function About() {
             <span className="stat-number">₹1L+</span>
             <span className="stat-label">Cash Prize Pool</span>
           </div>
-        </div>
+        </div> */}
 
         {/* Why Participate Block */}
         <div className="why-participate-container">

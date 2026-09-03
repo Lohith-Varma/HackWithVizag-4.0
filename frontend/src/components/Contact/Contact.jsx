@@ -112,8 +112,8 @@ export default function Contact() {
 
               <div className="coord-card">
                 <span className="coord-role">Student Coordinator</span>
-                <h4 className="coord-name">Lohith Varma</h4>
-                <p className="coord-desc">President, Tech Club HWV</p>
+                <h4 className="coord-name">D. K. Lohith Varma</h4>
+                <p className="coord-desc">Organizing Committee Member</p>
                 <div className="coord-contact-item">
                   <FiPhone size={14} />
                   <a href="tel:+917670818348">+91 76708 18348</a>
