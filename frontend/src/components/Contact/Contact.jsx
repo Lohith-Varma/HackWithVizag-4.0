@@ -160,10 +160,10 @@ export default function Contact() {
             <div className="socials-box">
               <h5>Follow Us</h5>
               <div className="social-icons-row">
-                <a href="#" aria-label="Follow us on Twitter"><FaTwitter /></a>
-                <a href="#" aria-label="Follow us on Instagram"><FaInstagram /></a>
-                <a href="#" aria-label="View our GitHub organization"><FaGithub /></a>
-                <a href="#" aria-label="Follow us on LinkedIn"><FaLinkedin /></a>
+                {/* <a href="https://x.com/NSRAJUINSTITUT2" aria-label="Follow us on Twitter"><FaTwitter /></a> */}
+                <a href="https://chat.whatsapp.com/LjcFke4fB536fLYEmc0lpF" aria-label="Join our WhatsApp Community"><FaWhatsapp /></a>
+                <a href="https://www.instagram.com/nsrit_college/" aria-label="Follow us on Instagram"><FaInstagram /></a>
+                <a href="https://www.linkedin.com/school/nsrit-autonomous/" aria-label="Follow us on LinkedIn"><FaLinkedin /></a>
               </div>
             </div>
           </div>
