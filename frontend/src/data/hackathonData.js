@@ -91,28 +91,28 @@ export const TIMELINE_DATA = [
   {
     id: 'step-2',
     title: 'Registration Closes',
-    date: 'September 22, 2026',
+    date: 'September 15, 2026',
     desc: 'Final date to submit team registrations. No further participants will be accepted.',
     status: 'active'
   },
   {
     id: 'step-3',
     title: 'PPT Submission Deadline',
-    date: 'September 20, 2026',
+    date: 'September 15, 2026',
     desc: 'Submit your solution idea proposal presentation (PPT) following our official guidelines.',
     status: 'upcoming'
   },
   {
     id: 'step-4',
     title: 'Screening & Shortlisting',
-    date: 'September 22, 2026',
+    date: 'September 20, 2026',
     desc: 'Internal review of idea submissions. Top teams will be announced and invited to the offline round.',
     status: 'upcoming'
   },
   {
     id: 'step-5',
     title: 'Offline Registration & Welcome',
-    date: 'September 23, 2026',
+    date: 'September 15 - 20, 2026',
     desc: 'Physical reporting at the Vizag Convention Centre, registration desk, kit distribution, and opening ceremony.',
     status: 'upcoming'
   },
