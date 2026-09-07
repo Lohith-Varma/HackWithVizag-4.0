@@ -1482,6 +1482,16 @@
   border: 1px solid rgba(16, 185, 129, 0.3);
 }
 
+.offline-payment-page { max-width: 1100px; }
+.offline-error { display: flex; gap: .6rem; align-items: center; margin-top: 1rem; padding: 1rem; color: #fecaca; background: rgba(127, 29, 29, .35); border: 1px solid rgba(248, 113, 113, .4); border-radius: 12px; }
+.offline-payment-grid { display: grid; grid-template-columns: 1fr minmax(250px, 360px); gap: 2rem; align-items: center; }
+.offline-fee { font-size: 2rem; font-weight: 800; color: #86efac; }
+.qr-panel { display: flex; flex-direction: column; align-items: center; gap: .8rem; padding: 1.25rem; border: 1px solid rgba(148, 163, 184, .25); border-radius: 16px; background: rgba(15, 23, 42, .5); }
+.payment-qr { display: block; width: min(100%, 300px); aspect-ratio: 1; object-fit: contain; background: white; border-radius: 10px; padding: .5rem; }
+.payment-instructions { padding-left: 1.25rem; line-height: 1.7; color: #cbd5e1; }
+.payment-proof-preview { max-width: 360px; max-height: 300px; border-radius: 10px; border: 1px solid rgba(148, 163, 184, .3); }
+@media (max-width: 720px) { .offline-payment-grid { grid-template-columns: 1fr; } }
+
 .alert-check-icon {
   font-size: 1.75rem;
   color: var(--color-emerald);
@@ -1980,4 +1990,3 @@
   color: #a5b4fc;
   border: 1px solid rgba(99, 102, 241, 0.35);
 }
-

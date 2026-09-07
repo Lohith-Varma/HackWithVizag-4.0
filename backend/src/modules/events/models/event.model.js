@@ -48,6 +48,18 @@ const eventSchema = new mongoose.Schema(
       default: 0,
       min: 0,
     },
+    // These values are intentionally event configuration, not client-side constants.
+    // QR image URLs can point at the organiser's managed image storage/CDN.
+    offlinePaymentConfig: {
+      threeMembers: {
+        fee: { type: Number, required: true, default: 0, min: 0 },
+        qrCodeUrl: { type: String, trim: true, default: "" },
+      },
+      fourMembers: {
+        fee: { type: Number, required: true, default: 0, min: 0 },
+        qrCodeUrl: { type: String, trim: true, default: "" },
+      },
+    },
     minTeamSize: {
       type: Number,
       required: true,

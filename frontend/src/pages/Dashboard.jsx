@@ -82,8 +82,18 @@ const STATUS_CONFIGS = {
     badgeIcon: FiAward,
     title: 'Congratulations! Your Team is Selected!',
     description: 'You have been shortlisted for the final offline hackathon round at NSRIT Visakhapatnam.',
-    actionLabel: 'Proceed to Offline Registration',
-    actionTarget: 'offline-section',
+    actionLabel: 'Register for Offline Hackathon',
+    actionRoute: '#offline-registration',
+    themeClass: 'status-card-selected',
+  },
+  offline_submitted: {
+    badgeLabel: 'Offline Registration Submitted',
+    badgeColor: 'green',
+    badgeIcon: FiCheckCircle,
+    title: 'Offline Registration Submitted ✓',
+    description: 'Your team’s offline registration and payment details have been submitted successfully.',
+    actionLabel: 'View Offline Registration',
+    actionRoute: '#offline-registration',
     themeClass: 'status-card-selected',
   },
   rejected: {
@@ -111,10 +121,6 @@ export default function Dashboard() {
 
   const [loading, setLoading] = useState(true);
   const [dashboardData, setDashboardData] = useState(null);
-  const [offlineForm, setOfflineForm] = useState({ contactName: '', contactPhone: '', arrivalDate: '', accommodationRequired: false });
-  const [offlineStatus, setOfflineStatus] = useState(null);
-  const [offlineError, setOfflineError] = useState(null);
-  const [isSubmittingOffline, setIsSubmittingOffline] = useState(false);
   const [toast, setToast] = useState(null);
 
   // Active Preview & Modals
@@ -127,11 +133,6 @@ export default function Dashboard() {
       const data = await api.getParticipantDashboard();
       setDashboardData(data);
 
-      if (data.team?.currentStatus === 'selected') {
-        api.getOfflineRegistrationEligibility(data.team._id)
-          .then(() => setOfflineError(null))
-          .catch((err) => setOfflineError(err.message || 'Offline registration access denied'));
-      }
     } catch {
       // Fallback mode
     } finally {
@@ -148,7 +149,9 @@ export default function Dashboard() {
   const project = dashboardData?.project || null;
   const submission = dashboardData?.submission || null;
   const currentStage = dashboardData?.timelineStage || (submission ? 'Under Review' : 'Draft');
-  const rawStatus = team?.currentStatus || submission?.status || 'draft';
+  const rawStatus = dashboardData?.offlineRegistration?.status === 'OFFLINE_SUBMITTED'
+    ? 'offline_submitted'
+    : (dashboardData?.isEligibleForOffline ? 'selected' : (team?.currentStatus || submission?.status || 'draft'));
   const status = rawStatus.toLowerCase().replace(' ', '_');
   const registrationId = dashboardData?.registrationId || (submission ? `HWV-2026-${submission._id.toString().slice(-6).toUpperCase()}` : 'HWV-2026-PENDING');
 
@@ -281,23 +284,6 @@ export default function Dashboard() {
     }
   };
 
-  const handleOfflineSubmit = async (e) => {
-    e.preventDefault();
-    if (!team?._id) return;
-    setIsSubmittingOffline(true);
-    setOfflineError(null);
-    try {
-      await api.saveOfflineRegistration(team._id, offlineForm);
-      await api.completeOfflineRegistration(team._id);
-      setOfflineStatus('completed');
-      setToast({ type: 'success', message: 'Offline registration confirmed successfully!' });
-    } catch (err) {
-      setOfflineError(err.message || '403 Forbidden: You are not eligible for offline registration.');
-      setToast({ type: 'error', message: err.message || 'Offline registration failed' });
-    } finally {
-      setIsSubmittingOffline(false);
-    }
-  };
 
   const logout = async () => {
     await api.logout().catch(() => {});
@@ -866,77 +852,33 @@ export default function Dashboard() {
 
         </div>
 
-        {/* OFFLINE REGISTRATION SECTION (UNLOCKED IF STATUS === 'SELECTED') */}
+        {/* Offline payment is intentionally isolated on its own route. */}
         {status === 'selected' && (
           <div id="offline-section" className="dash-card offline-registration-card">
             <div className="card-top-header">
               <div>
                 <span className="section-subtitle">Venue Phase</span>
-                <h3 className="card-heading">Offline Registration Form</h3>
+                <h3 className="card-heading">Congratulations! Your team has been selected.</h3>
               </div>
               <span className="unlocked-badge">
                 <FiCheckCircle /> Shortlisted Team
               </span>
             </div>
 
-            {offlineStatus === 'completed' ? (
-              <div className="offline-complete-alert">
-                <FiCheckCircle className="alert-check-icon" />
-                <div>
-                  <h4>Offline Registration Confirmed!</h4>
-                  <p>Your team details have been recorded for the on-site hackathon at NSRIT Visakhapatnam. We look forward to hosting you!</p>
-                </div>
-              </div>
-            ) : (
-              <form onSubmit={handleOfflineSubmit} className="form-grid compact mt-3">
-                <label className="field">
-                  <span>Primary Contact Name *</span>
-                  <input
-                    required
-                    value={offlineForm.contactName}
-                    onChange={(e) => setOfflineForm({ ...offlineForm, contactName: e.target.value })}
-                    placeholder="Contact person full name"
-                  />
-                </label>
-
-                <label className="field">
-                  <span>Primary Contact Phone *</span>
-                  <input
-                    required
-                    type="tel"
-                    value={offlineForm.contactPhone}
-                    onChange={(e) => setOfflineForm({ ...offlineForm, contactPhone: e.target.value })}
-                    placeholder="+91 98765 43210"
-                  />
-                </label>
-
-                <label className="field">
-                  <span>Expected Arrival Date</span>
-                  <input
-                    type="date"
-                    value={offlineForm.arrivalDate}
-                    onChange={(e) => setOfflineForm({ ...offlineForm, arrivalDate: e.target.value })}
-                  />
-                </label>
-
-                <label className="field checkbox-field span-2">
-                  <input
-                    type="checkbox"
-                    checked={offlineForm.accommodationRequired}
-                    onChange={(e) => setOfflineForm({ ...offlineForm, accommodationRequired: e.target.checked })}
-                  />
-                  <span>Require Campus Accommodation at NSRIT Hostel</span>
-                </label>
-
-                {offlineError && <small className="error-text span-2">{offlineError}</small>}
-
-                <div className="span-2 mt-2">
-                  <button type="submit" className="primary-action" disabled={isSubmittingOffline}>
-                    {isSubmittingOffline ? 'Confirming...' : 'Confirm Offline Participation'}
-                  </button>
-                </div>
-              </form>
-            )}
+            <p className="mt-3">Complete your manual UPI payment details to secure your offline-hackathon registration.</p>
+            <div className="mt-3">
+              <button type="button" className="primary-action" onClick={() => { window.location.hash = '#offline-registration'; }}>
+                Register for Offline Hackathon <FiArrowRight />
+              </button>
+            </div>
+          </div>
+        )}
+        {status === 'offline_submitted' && (
+          <div className="dash-card offline-registration-card">
+            <div className="offline-complete-alert">
+              <FiCheckCircle className="alert-check-icon" />
+              <div><h4>Offline Registration Submitted ✓</h4><p>Your team's payment details were submitted successfully. No further payment submission is available.</p></div>
+            </div>
           </div>
         )}
 
@@ -1110,5 +1052,3 @@ export default function Dashboard() {
     </main>
   );
 }
-
-

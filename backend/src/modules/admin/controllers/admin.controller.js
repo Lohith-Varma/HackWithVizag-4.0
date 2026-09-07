@@ -234,8 +234,6 @@ export const getDashboard = asyncHandler(async (_req, res) => {
     rejectedTeams,
     waitlistedTeams,
     shortlistedTeams,
-    paymentPendingTeams,
-    paymentCompletedTeams,
     openInnovationEntries,
     officialEntries,
     dailyAgg,
@@ -252,8 +250,6 @@ export const getDashboard = asyncHandler(async (_req, res) => {
     Team.countDocuments({ currentStatus: "rejected" }),
     Team.countDocuments({ currentStatus: "waitlisted" }),
     Team.countDocuments({ currentStatus: "shortlisted" }),
-    Team.countDocuments({ currentStatus: "payment_pending" }),
-    Team.countDocuments({ currentStatus: "payment_completed" }),
     Project.countDocuments({ problemType: "open" }),
     Project.countDocuments({ problemType: "official" }),
     Team.aggregate([
@@ -283,8 +279,6 @@ export const getDashboard = asyncHandler(async (_req, res) => {
       rejectedTeams,
       waitlistedTeams,
       shortlistedTeams,
-      paymentPendingTeams,
-      paymentCompletedTeams,
       openInnovationEntries,
       officialEntries,
       dailyRegistrations,
@@ -800,5 +794,4 @@ export const deleteNotificationLead = asyncHandler(async (req, res) => {
 });
 
 export const getAdminOverview = getDashboard;
-
 

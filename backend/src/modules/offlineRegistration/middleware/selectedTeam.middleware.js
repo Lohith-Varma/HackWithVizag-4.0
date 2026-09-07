@@ -16,7 +16,7 @@ export const requireSelectedTeam = async (req, _res, next) => {
       throw new ApiError(404, "Team not found");
     }
 
-    if (team.currentStatus !== "selected") {
+    if (!["selected", "shortlisted", "approved"].includes(team.currentStatus)) {
       throw new ApiError(403, "Only selected teams can access offline registration");
     }
 

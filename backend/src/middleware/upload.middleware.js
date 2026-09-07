@@ -13,6 +13,7 @@ const uploadDirectories = {
   supportingDoc: path.join(uploadRoot, "docs"),
   profile: path.join(uploadRoot, "profile"),
   temp: path.join(uploadRoot, "temp"),
+  paymentProof: path.join(uploadRoot, "payment-proofs"),
 };
 
 Object.values(uploadDirectories).forEach((directory) => {
@@ -24,6 +25,7 @@ const allowedExtensions = {
   supportingDoc: [".pdf", ".zip", ".rar", ".doc", ".docx"],
   profile: [".jpg", ".jpeg", ".png", ".webp"],
   temp: [".pdf", ".ppt", ".pptx", ".zip", ".rar", ".doc", ".docx", ".jpg", ".jpeg", ".png", ".webp"],
+  paymentProof: [".jpg", ".jpeg", ".png", ".webp"],
 };
 
 const buildStorage = (folder) =>
@@ -68,6 +70,7 @@ export const uploadPpt = createUploader("ppt", Number(process.env.MAX_PPT_UPLOAD
 export const uploadSupportingDoc = createUploader("supportingDoc", Number(process.env.MAX_DOC_UPLOAD_BYTES || 20 * 1024 * 1024));
 export const uploadProfileImage = createUploader("profile", Number(process.env.MAX_PROFILE_UPLOAD_BYTES || 5 * 1024 * 1024));
 export const uploadTemp = createUploader("temp", Number(process.env.MAX_TEMP_UPLOAD_BYTES || 20 * 1024 * 1024));
+export const uploadPaymentScreenshot = createUploader("paymentProof", Number(process.env.MAX_PAYMENT_PROOF_UPLOAD_BYTES || 5 * 1024 * 1024));
 
 export const uploadProjectFiles = multer({
   storage: multer.diskStorage({

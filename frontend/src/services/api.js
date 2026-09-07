@@ -356,16 +356,14 @@ export const api = {
     return request(`/offline-registration/team/${teamId}`);
   },
 
-  async saveOfflineRegistration(teamId, payload) {
+  async submitOfflineRegistration(teamId, payload) {
+    const form = new FormData();
+    form.append('utrId', payload.utrId);
+    form.append('paymentScreenshot', payload.paymentScreenshot);
     return request(`/offline-registration/team/${teamId}`, {
       method: 'POST',
-      body: payload,
-    });
-  },
-
-  async completeOfflineRegistration(teamId) {
-    return request(`/offline-registration/team/${teamId}/complete`, {
-      method: 'POST',
+      body: form,
+      isFormData: true,
     });
   },
 

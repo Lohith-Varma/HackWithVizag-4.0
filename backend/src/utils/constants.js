@@ -9,8 +9,6 @@ export const USER_STATUSES = [
   "rejected",
   "waitlisted",
   "shortlisted",
-  "payment_pending",
-  "payment_completed",
   "blocked",
 ];
 
@@ -23,8 +21,6 @@ export const TEAM_STATUSES = [
   "rejected",
   "waitlisted",
   "shortlisted",
-  "payment_pending",
-  "payment_completed",
 ];
 
 export const SUBMISSION_STATUSES = [
@@ -39,4 +35,3 @@ export const SUBMISSION_STATUSES = [
 ];
 
 export const PAYMENT_STATUSES = ["pending", "completed", "failed"];
-

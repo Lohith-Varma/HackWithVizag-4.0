@@ -14,7 +14,6 @@ import eventRoutes from "./modules/events/routes/event.routes.js";
 import problemStatementRoutes from "./modules/problemStatements/routes/problemStatement.routes.js";
 import inquiryRoutes from "./modules/inquiries/routes/inquiry.routes.js";
 import offlineRegistrationRoutes from "./modules/offlineRegistration/routes/offlineRegistration.routes.js";
-import paymentRoutes from "./modules/payments/routes/payment.routes.js";
 import projectRoutes from "./modules/projects/routes/project.routes.js";
 import submissionRoutes from "./modules/submissions/routes/submission.routes.js";
 import teamRoutes from "./modules/teams/routes/team.routes.js";
@@ -79,6 +78,9 @@ app.use(cookieParser());
 app.use(morgan(process.env.NODE_ENV === "production" ? "combined" : "dev"));
 
 
+// Payment evidence is never served by the public uploads mount. It is available
+// only through the authorised offline-registration endpoint.
+app.use("/uploads/payment-proofs", (_req, res) => res.status(404).end());
 app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
 
 app.get("/api/health", (_req, res) => {
@@ -100,7 +102,6 @@ app.use("/api/teams", teamRoutes);
 app.use("/api/projects", projectRoutes);
 app.use("/api/submissions", submissionRoutes);
 app.use("/api/offline-registration", offlineRegistrationRoutes);
-app.use("/api/payments", paymentRoutes);
 app.use("/api/admin", adminRoutes);
 
 app.use(notFoundHandler);

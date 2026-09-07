@@ -52,8 +52,6 @@ const statusOptions = [
   'rejected',
   'waitlisted',
   'shortlisted',
-  'payment_pending',
-  'payment_completed',
 ];
 
 const statusLabels = {
@@ -65,8 +63,6 @@ const statusLabels = {
   rejected: 'Rejected',
   waitlisted: 'Waitlisted',
   shortlisted: 'Shortlisted',
-  payment_pending: 'Payment Pending',
-  payment_completed: 'Payment Completed',
   draft: 'Draft',
 };
 
@@ -79,8 +75,6 @@ const statusColors = {
   rejected: 'red',
   waitlisted: 'purple',
   shortlisted: 'emerald',
-  payment_pending: 'amber',
-  payment_completed: 'indigo',
   draft: 'gray',
 };
 
@@ -1827,6 +1821,32 @@ export default function AdminPortal() {
                         onChange={(e) => setEventConfig({ ...eventConfig, registrationFee: Number(e.target.value) })}
                       />
                     </label>
+                    <div className="field span-3">
+                      <span>Offline Registration Payment Configuration</span>
+                      <div className="config-grid triple-col mt-2">
+                        <label className="field">
+                          <span>3-Member Fee (INR)</span>
+                          <input type="number" min={0} value={eventConfig.offlinePaymentConfig?.threeMembers?.fee ?? 0}
+                            onChange={(e) => setEventConfig({ ...eventConfig, offlinePaymentConfig: { ...(eventConfig.offlinePaymentConfig || {}), threeMembers: { ...(eventConfig.offlinePaymentConfig?.threeMembers || {}), fee: Number(e.target.value) } } })} />
+                        </label>
+                        <label className="field span-2">
+                          <span>3-Member QR Image URL *</span>
+                          <input type="url" value={eventConfig.offlinePaymentConfig?.threeMembers?.qrCodeUrl || ''} placeholder="https://…/qr-3-members.png"
+                            onChange={(e) => setEventConfig({ ...eventConfig, offlinePaymentConfig: { ...(eventConfig.offlinePaymentConfig || {}), threeMembers: { ...(eventConfig.offlinePaymentConfig?.threeMembers || {}), qrCodeUrl: e.target.value } } })} />
+                        </label>
+                        <label className="field">
+                          <span>4-Member Fee (INR)</span>
+                          <input type="number" min={0} value={eventConfig.offlinePaymentConfig?.fourMembers?.fee ?? 0}
+                            onChange={(e) => setEventConfig({ ...eventConfig, offlinePaymentConfig: { ...(eventConfig.offlinePaymentConfig || {}), fourMembers: { ...(eventConfig.offlinePaymentConfig?.fourMembers || {}), fee: Number(e.target.value) } } })} />
+                        </label>
+                        <label className="field span-2">
+                          <span>4-Member QR Image URL *</span>
+                          <input type="url" value={eventConfig.offlinePaymentConfig?.fourMembers?.qrCodeUrl || ''} placeholder="https://…/qr-4-members.png"
+                            onChange={(e) => setEventConfig({ ...eventConfig, offlinePaymentConfig: { ...(eventConfig.offlinePaymentConfig || {}), fourMembers: { ...(eventConfig.offlinePaymentConfig?.fourMembers || {}), qrCodeUrl: e.target.value } } })} />
+                        </label>
+                      </div>
+                      <small className="text-dim">The QR and fee are selected on the server from the team's saved member count. Add both QR image URLs before enabling offline payment submissions.</small>
+                    </div>
                     <label className="field">
                       <span>Min Abstract Words</span>
                       <input

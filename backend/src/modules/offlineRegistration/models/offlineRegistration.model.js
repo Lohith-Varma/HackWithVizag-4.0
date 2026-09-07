@@ -1,6 +1,4 @@
 import mongoose from "mongoose";
-import { PAYMENT_STATUSES } from "../../../utils/constants.js";
-
 const offlineRegistrationSchema = new mongoose.Schema(
   {
     team: {
@@ -12,15 +10,14 @@ const offlineRegistrationSchema = new mongoose.Schema(
     },
     contactName: {
       type: String,
-      required: [true, "Contact name is required"],
       trim: true,
+      default: "",
       maxlength: [80, "Contact name must not exceed 80 characters"],
     },
     contactPhone: {
       type: String,
-      required: [true, "Contact phone is required"],
       trim: true,
-      match: [/^[6-9]\d{9}$/, "Contact phone must be a valid 10 digit Indian mobile number"],
+      default: "",
     },
     arrivalDate: {
       type: Date,
@@ -34,6 +31,28 @@ const offlineRegistrationSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    status: {
+      type: String,
+      enum: ["PAYMENT_PENDING", "OFFLINE_SUBMITTED"],
+      default: "PAYMENT_PENDING",
+      index: true,
+    },
+    teamSize: { type: Number, required: true, enum: [3, 4] },
+    expectedAmount: { type: Number, required: true, min: 0 },
+    utrId: {
+      type: String,
+      required: [true, "UTR ID is required"],
+      trim: true,
+      minlength: [6, "UTR ID must be at least 6 characters"],
+      maxlength: [64, "UTR ID must not exceed 64 characters"],
+    },
+    paymentScreenshot: {
+      filename: { type: String, required: true },
+      originalName: { type: String, required: true },
+      mimeType: { type: String, required: true },
+      size: { type: Number, required: true },
+    },
+    submittedAt: { type: Date, default: null },
     confirmationCode: {
       type: String,
       trim: true,
@@ -44,15 +63,8 @@ const offlineRegistrationSchema = new mongoose.Schema(
         type: Number,
         default: 0,
       },
-      status: {
-        type: String,
-        enum: PAYMENT_STATUSES,
-        default: "pending",
-      },
-      provider: {
-        type: String,
-        default: "placeholder",
-      },
+      status: { type: String, default: "submitted" },
+      provider: { type: String, default: "manual_upi" },
     },
   },
   {

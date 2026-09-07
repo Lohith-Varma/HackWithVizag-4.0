@@ -16,6 +16,7 @@ import Auth from './pages/Auth';
 import AdminPortal from './pages/AdminPortal';
 import Dashboard from './pages/Dashboard';
 import Registration from './pages/Registration';
+import OfflineRegistration from './pages/OfflineRegistration';
 import { loadCurrentUser } from './utils/registrationStorage';
 import './App.css';
 
@@ -28,6 +29,7 @@ const routes = {
   '#registration-soon': 'registration',
   '#coming-soon': 'registration',
   '#admin': 'admin',
+  '#offline-registration': 'offline-registration',
 };
 
 function getCurrentRoute() {
@@ -43,6 +45,7 @@ function getCurrentRoute() {
     return 'registration';
   }
   if (hash.startsWith('#dashboard')) return 'dashboard';
+  if (hash.startsWith('#offline-registration')) return 'offline-registration';
   if (hash.startsWith('#auth') || hash.startsWith('#login')) return 'auth';
 
   const path = window.location.pathname.toLowerCase();
@@ -57,6 +60,7 @@ function getCurrentRoute() {
     return 'registration';
   }
   if (path.startsWith('/dashboard')) return 'dashboard';
+  if (path.startsWith('/offline-registration')) return 'offline-registration';
   if (path.startsWith('/auth') || path.startsWith('/login')) return 'auth';
 
   return routes[window.location.hash] || 'landing';
@@ -96,6 +100,10 @@ export default function App() {
     if (route === 'dashboard') {
       if (!currentUser) return <Auth />;
       return <Dashboard />;
+    }
+    if (route === 'offline-registration') {
+      if (!currentUser) return <Auth />;
+      return <OfflineRegistration />;
     }
     if (route === 'registration') {
       if (!currentUser) return <Auth />;

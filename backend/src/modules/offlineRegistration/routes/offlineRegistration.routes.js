@@ -1,21 +1,20 @@
 import { Router } from "express";
 import { authenticate } from "../../../middleware/auth.middleware.js";
 import { validateRequest } from "../../../middleware/validateRequest.middleware.js";
-import { sendSuccess } from "../../../utils/apiResponse.js";
 import {
-  completeOfflineRegistration,
+  getPaymentScreenshot,
   getOfflineRegistration,
   getOfflineRegistrationEligibility,
-  saveOfflineRegistration,
+  submitOfflineRegistration,
 } from "../controllers/offlineRegistration.controller.js";
 import { requireSelectedTeam } from "../middleware/selectedTeam.middleware.js";
 import { offlineRegistrationValidation, teamIdValidation } from "../validators/offlineRegistration.validator.js";
+import { uploadPaymentScreenshot } from "../../../middleware/upload.middleware.js";
 
 const router = Router();
 
 router.use(authenticate);
 
-router.get("/", (_req, res) => sendSuccess(res, 200, "Offline registration routes ready"));
 router.get(
   "/team/:teamId/eligibility",
   teamIdValidation,
@@ -24,19 +23,16 @@ router.get(
   getOfflineRegistrationEligibility
 );
 router.get("/team/:teamId", teamIdValidation, validateRequest, requireSelectedTeam, getOfflineRegistration);
+router.get("/team/:teamId/payment-screenshot", teamIdValidation, validateRequest, requireSelectedTeam, getPaymentScreenshot);
 router.post(
   "/team/:teamId",
-  offlineRegistrationValidation,
-  validateRequest,
-  requireSelectedTeam,
-  saveOfflineRegistration
-);
-router.post(
-  "/team/:teamId/complete",
   teamIdValidation,
   validateRequest,
   requireSelectedTeam,
-  completeOfflineRegistration
+  uploadPaymentScreenshot.single("paymentScreenshot"),
+  offlineRegistrationValidation,
+  validateRequest,
+  submitOfflineRegistration
 );
 
 export default router;

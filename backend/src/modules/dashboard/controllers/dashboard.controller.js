@@ -5,6 +5,7 @@ import Team from "../../teams/models/team.model.js";
 import Project from "../../projects/models/project.model.js";
 import Submission from "../../submissions/models/submission.model.js";
 import Event from "../../events/models/event.model.js";
+import OfflineRegistration from "../../offlineRegistration/models/offlineRegistration.model.js";
 import { getDashboard as getAdminDashboardData } from "../../admin/controllers/admin.controller.js";
 
 export const getParticipantDashboard = asyncHandler(async (req, res) => {
@@ -23,11 +24,13 @@ export const getParticipantDashboard = asyncHandler(async (req, res) => {
 
   let project = null;
   let submission = null;
+  let offlineRegistration = null;
 
   if (team) {
-    [project, submission] = await Promise.all([
+    [project, submission, offlineRegistration] = await Promise.all([
       Project.findOne({ team: team._id }).populate("problemStatementId"),
       Submission.findOne({ team: team._id }),
+      OfflineRegistration.findOne({ team: team._id }),
     ]);
   }
 
@@ -83,11 +86,12 @@ export const getParticipantDashboard = asyncHandler(async (req, res) => {
     team,
     project,
     submission,
+    offlineRegistration,
     registrationId,
     timelineStage,
     statusText,
     announcements,
-    isEligibleForOffline: team?.currentStatus === "selected",
+    isEligibleForOffline: ["selected", "shortlisted", "approved"].includes(team?.currentStatus),
   });
 });
 
