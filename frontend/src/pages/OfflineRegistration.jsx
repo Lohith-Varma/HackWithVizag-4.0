@@ -73,7 +73,10 @@ export default function OfflineRegistration() {
         {data && registration?.status === 'OFFLINE_SUBMITTED' && (
           <div className="offline-complete-alert mt-3"><FiCheckCircle className="alert-check-icon" /><div><h3>Offline Registration Submitted ✓</h3><p>Your offline registration and payment details have been submitted successfully. No further action is required.</p><small>Submitted {registration.submittedAt ? new Date(registration.submittedAt).toLocaleString('en-IN') : ''}</small></div></div>
         )}
-        {data && !registration && (
+        {data && !registration && !data.payment?.configured && (
+          <div className="offline-error mt-3"><FiAlertTriangle /> Payment instructions are being configured by the organisers. Please check back shortly.</div>
+        )}
+        {data && !registration && data.payment?.configured && (
           <>
             <section className="dash-card mt-3">
               <div className="card-top-header"><div><span className="section-subtitle">Your saved registration</span><h3 className="card-heading">Team Details</h3></div><span className="unlocked-badge"><FiCheckCircle /> Selected</span></div>

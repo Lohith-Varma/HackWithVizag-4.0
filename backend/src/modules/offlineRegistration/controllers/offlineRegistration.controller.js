@@ -7,15 +7,21 @@ import Project from "../../projects/models/project.model.js";
 import path from "path";
 import { uploadRoot } from "../../../middleware/upload.middleware.js";
 
-const getPaymentConfig = async (team) => {
+const getPaymentConfig = async (team, { required = true } = {}) => {
   const teamSize = team.members.length;
   if (![3, 4].includes(teamSize)) throw new ApiError(400, "Offline registration is available only for 3 or 4 member teams");
   const event = await Event.findOne({ activeEvent: true });
   const config = teamSize === 3 ? event?.offlinePaymentConfig?.threeMembers : event?.offlinePaymentConfig?.fourMembers;
-  if (!config?.qrCodeUrl || !Number.isFinite(config.fee)) {
+  const configured = Boolean(config?.qrCodeUrl) && Number.isFinite(config?.fee) && config.fee > 0;
+  if (!configured && required) {
     throw new ApiError(503, "Offline payment configuration is not available. Please contact the organisers.");
   }
-  return { teamSize, expectedAmount: config.fee, qrCodeUrl: config.qrCodeUrl };
+  return {
+    teamSize,
+    expectedAmount: configured ? config.fee : null,
+    qrCodeUrl: configured ? config.qrCodeUrl : "",
+    configured,
+  };
 };
 
 const serializeRegistration = (registration) => registration && ({
@@ -30,7 +36,7 @@ export const getOfflineRegistrationEligibility = asyncHandler(async (req, res) =
   ]);
   // A previously submitted team must continue to see its submitted state even
   // if organisers later rotate/remove the QR configuration.
-  const payment = offlineRegistration ? null : await getPaymentConfig(req.team);
+  const payment = offlineRegistration ? null : await getPaymentConfig(req.team, { required: false });
   return sendSuccess(res, 200, "Team is eligible for offline registration", {
     eligible: true,
     team: req.team,
