@@ -100,20 +100,20 @@ export const TIMELINE_DATA = [
     title: 'PPT Submission Deadline',
     date: 'September 15, 2026',
     desc: 'Submit your solution idea proposal presentation (PPT) following our official guidelines.',
-    status: 'upcoming'
+    status: 'active'
   },
   {
     id: 'step-4',
     title: 'Screening & Shortlisting',
     date: 'September 20, 2026',
     desc: 'Internal review of idea submissions. Top teams will be announced and invited to the offline round.',
-    status: 'upcoming'
+    status: 'active'
   },
   {
     id: 'step-5',
     title: 'Offline Registration & Welcome',
     date: 'September 15 - 20, 2026',
-    desc: 'Physical reporting at the Vizag Convention Centre, registration desk, kit distribution, and opening ceremony.',
+    desc: 'Physical reporting at the NSRIT College, registration desk and opening ceremony.',
     status: 'upcoming'
   },
   {
@@ -141,7 +141,7 @@ export const TIMELINE_DATA = [
     id: 'step-9',
     title: 'Winners Announcement',
     date: 'September 26, 2026 - 04:00 PM',
-    desc: 'Valedictory function, prize distribution, networking dinner, and photoshoots.',
+    desc: 'Valedictory function, prize distribution, networking and photoshoots.',
     status: 'upcoming'
   }
 ];
