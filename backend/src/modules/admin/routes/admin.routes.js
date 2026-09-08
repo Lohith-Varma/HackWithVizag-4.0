@@ -5,6 +5,7 @@ import { sendSuccess } from "../../../utils/apiResponse.js";
 import {
   deleteTeam,
   downloadTeamSubmission,
+  serveAdminTeamDocument,
   exportAdminData,
   getAnalytics,
   getAdminOverview,
@@ -52,6 +53,8 @@ router.post("/team/:id/email", teamIdValidation, validateRequest, sendTeamEmail)
 router.post("/teams/:teamId/email", legacyTeamIdValidation, validateRequest, sendTeamEmail);
 router.get("/team/:id/download", teamIdValidation, validateRequest, downloadTeamSubmission);
 router.get("/teams/:teamId/download", legacyTeamIdValidation, validateRequest, downloadTeamSubmission);
+router.get("/team/:id/documents/:type", teamIdValidation, validateRequest, serveAdminTeamDocument);
+router.get("/teams/:teamId/documents/:type", legacyTeamIdValidation, validateRequest, serveAdminTeamDocument);
 router.get("/submissions", listSubmissionsValidation, validateRequest, listSubmissions);
 router.get("/analytics", getAnalytics);
 router.get("/export", exportValidation, validateRequest, exportAdminData);
@@ -71,4 +74,3 @@ router.get("/leads/export", exportNotificationLeads);
 router.delete("/leads/:id", deleteNotificationLead);
 
 export default router;
-

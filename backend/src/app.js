@@ -82,6 +82,11 @@ app.use(morgan(process.env.NODE_ENV === "production" ? "combined" : "dev"));
 // only through the authorised offline-registration endpoint.
 app.use("/uploads/payment-proofs", (_req, res) => res.status(404).end());
 app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
+// Keep missing upload URLs out of the API catch-all so clients receive a useful
+// file error instead of a misleading "Route not found" response.
+app.use("/uploads", (_req, res) =>
+  res.status(404).json({ success: false, message: "File not found", errors: [] })
+);
 
 app.get("/api/health", (_req, res) => {
   return res.status(200).json({

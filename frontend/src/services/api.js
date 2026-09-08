@@ -29,6 +29,12 @@ const buildUrl = (path, params) => {
   return url.toString();
 };
 
+const getDownloadFilename = (disposition, fallback) => {
+  const utf8Match = disposition.match(/filename\*=UTF-8''([^;]+)/i);
+  if (utf8Match) return decodeURIComponent(utf8Match[1]);
+  return disposition.match(/filename="?([^";]+)"?/i)?.[1] || fallback;
+};
+
 
 const request = async (path, { method = 'GET', body, params, headers, isFormData = false } = {}) => {
   const response = await fetch(buildUrl(path, params), {
@@ -67,7 +73,7 @@ const downloadFile = async (path, params) => {
 
   const blob = await response.blob();
   const disposition = response.headers.get('content-disposition') || '';
-  const filename = disposition.match(/filename="([^"]+)"/)?.[1] || `hack-with-vizag-export.${params?.format || 'csv'}`;
+  const filename = getDownloadFilename(disposition, `hack-with-vizag-export.${params?.format || 'csv'}`);
   const url = window.URL.createObjectURL(blob);
   const link = document.createElement('a');
   link.href = url;
@@ -76,6 +82,33 @@ const downloadFile = async (path, params) => {
   link.click();
   link.remove();
   window.URL.revokeObjectURL(url);
+};
+
+const fetchProtectedFile = async (path, { fallbackName, view = false } = {}) => {
+  const response = await fetch(buildUrl(path), { credentials: 'include' });
+  if (!response.ok) {
+    const payload = await response.json().catch(() => ({}));
+    throw new Error(payload.message || 'This document is no longer available.');
+  }
+
+  const blob = await response.blob();
+  const filename = getDownloadFilename(response.headers.get('content-disposition') || '', fallbackName);
+  const objectUrl = window.URL.createObjectURL(blob);
+
+  if (view) {
+    const preview = window.open(objectUrl, '_blank', 'noopener,noreferrer');
+    if (!preview) window.location.assign(objectUrl);
+    window.setTimeout(() => window.URL.revokeObjectURL(objectUrl), 60_000);
+    return;
+  }
+
+  const link = document.createElement('a');
+  link.href = objectUrl;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  window.URL.revokeObjectURL(objectUrl);
 };
 
 export const api = {
@@ -336,6 +369,14 @@ export const api = {
 
   async downloadAdminTeamSubmission(id) {
     return request(`/admin/team/${id}/download`);
+  },
+
+  async openAdminTeamDocument(id, type, fallbackName) {
+    return fetchProtectedFile(`/admin/team/${id}/documents/${type}`, { fallbackName, view: true });
+  },
+
+  async downloadAdminTeamDocument(id, type, fallbackName) {
+    return fetchProtectedFile(`/admin/team/${id}/documents/${type}?disposition=attachment`, { fallbackName });
   },
 
   async getAdminAnalytics() {

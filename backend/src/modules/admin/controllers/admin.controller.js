@@ -1,4 +1,6 @@
 import mongoose from "mongoose";
+import fs from "fs/promises";
+import path from "path";
 import User from "../../auth/models/user.model.js";
 import Project from "../../projects/models/project.model.js";
 import Submission from "../../submissions/models/submission.model.js";
@@ -8,6 +10,7 @@ import RegistrationLead from "../../inquiries/models/registrationLead.model.js";
 import { asyncHandler } from "../../../utils/asyncHandler.js";
 import ApiError from "../../../utils/apiError.js";
 import { sendSuccess } from "../../../utils/apiResponse.js";
+import { uploadRoot } from "../../../middleware/upload.middleware.js";
 
 const STATUS_TO_SUBMISSION_STATUS = {
   pending: "draft",
@@ -736,6 +739,62 @@ export const downloadTeamSubmission = asyncHandler(async (req, res) => {
   });
 });
 
+const adminDocumentFolders = {
+  ppt: "ppt",
+  supporting: "docs",
+};
+
+const getStoredDocumentPath = (file, folder) => {
+  const storedReference = file?.url || file?.path || "";
+  const filename = path.basename(String(storedReference).replace(/\\/g, "/"));
+
+  if (!filename || filename === "." || filename === path.sep) return null;
+
+  const folderRoot = path.resolve(uploadRoot, folder);
+  const resolvedPath = path.resolve(folderRoot, filename);
+  return resolvedPath.startsWith(`${folderRoot}${path.sep}`) ? resolvedPath : null;
+};
+
+export const serveAdminTeamDocument = asyncHandler(async (req, res) => {
+  const teamId = req.params.id || req.params.teamId;
+  const type = req.params.type;
+  const folder = adminDocumentFolders[type];
+
+  if (!folder) {
+    throw new ApiError(404, "Document type not found");
+  }
+
+  const project = await Project.findOne({ team: teamId });
+  if (!project) {
+    throw new ApiError(404, "No submission project found for this team");
+  }
+
+  const file = type === "ppt" ? project.pptFile : project.supportingDocFile;
+  const filePath = getStoredDocumentPath(file, folder);
+  if (!filePath) {
+    throw new ApiError(404, "This document is no longer available");
+  }
+
+  try {
+    await fs.access(filePath);
+  } catch {
+    throw new ApiError(404, "This document is no longer available");
+  }
+
+  const downloadName = file.originalName || path.basename(filePath);
+  const isDownload = req.query.disposition === "attachment";
+
+  if (isDownload) {
+    return res.download(filePath, downloadName);
+  }
+
+  res.setHeader(
+    "Content-Disposition",
+    `inline; filename*=UTF-8''${encodeURIComponent(downloadName)}`
+  );
+  return res.sendFile(filePath, { headers: file.mimeType ? { "Content-Type": file.mimeType } : undefined });
+});
+
 export const listNotificationLeads = asyncHandler(async (req, res) => {
   const page = toInt(req.query.page, 1, 1, 1000);
   const limit = toInt(req.query.limit, 100, 1, 500);
@@ -794,4 +853,3 @@ export const deleteNotificationLead = asyncHandler(async (req, res) => {
 });
 
 export const getAdminOverview = getDashboard;
-

@@ -109,14 +109,6 @@ const formatDate = (value) => {
   }).format(new Date(value));
 };
 
-const backendAssetBase = () => api.baseUrl.replace(/\/api\/?$/, '').replace(/\/$/, '');
-
-const buildAssetUrl = (url) => {
-  if (!url) return '';
-  if (/^https?:\/\//i.test(url)) return url;
-  return `${backendAssetBase()}${url.startsWith('/') ? url : `/${url}`}`;
-};
-
 function AdminLogin({ onLogin, onToast }) {
   const [form, setForm] = useState({ email: 'hackwithvizag@nsrit.edu.in', password: '' });
   const [errors, setErrors] = useState({});
@@ -523,6 +515,19 @@ export default function AdminPortal() {
       setReviewFormRemarks(result.team?.remarks || '');
     } catch (error) {
       setToast({ type: 'error', message: error.message || 'Unable to open team details.' });
+    }
+  };
+
+  const handleDocumentAction = async (type, action, fallbackName) => {
+    if (!selectedTeamId) return;
+    try {
+      if (action === 'view') {
+        await api.openAdminTeamDocument(selectedTeamId, type, fallbackName);
+      } else {
+        await api.downloadAdminTeamDocument(selectedTeamId, type, fallbackName);
+      }
+    } catch (error) {
+      setToast({ type: 'error', message: error.message || 'This document is no longer available.' });
     }
   };
 
@@ -1185,21 +1190,19 @@ export default function AdminPortal() {
                           <button
                             type="button"
                             className="attachment-btn"
-                            onClick={() => setActiveEmbed('ppt')}
+                            onClick={() => handleDocumentAction('ppt', 'view', selectedTeam.project.pptFile.originalName || 'presentation.pptx')}
                           >
                             <FiFileText /> View PPT ({selectedTeam.project.pptFile.originalName || 'Presentation'})
                           </button>
-                          <a
-                            href={buildAssetUrl(selectedTeam.project.pptFile.url)}
-                            download={selectedTeam.project.pptFile.originalName || 'presentation.ppt'}
-                            target="_blank"
-                            rel="noreferrer"
+                          <button
+                            type="button"
                             className="attachment-btn"
                             title="Download Presentation"
                             style={{ padding: '0.6rem 0.85rem' }}
+                            onClick={() => handleDocumentAction('ppt', 'download', selectedTeam.project.pptFile.originalName || 'presentation.pptx')}
                           >
                             <FiDownload />
-                          </a>
+                          </button>
                         </div>
                       ) : (
                         <span className="attachment-btn disabled" style={{ opacity: 0.6 }}>
@@ -1212,21 +1215,19 @@ export default function AdminPortal() {
                           <button
                             type="button"
                             className="attachment-btn"
-                            onClick={() => setActiveEmbed('doc')}
+                            onClick={() => handleDocumentAction('supporting', 'view', selectedTeam.project.supportingDocFile.originalName || 'supporting-document')}
                           >
                             <FiFileText /> View Doc ({selectedTeam.project.supportingDocFile.originalName || 'SupportingDoc'})
                           </button>
-                          <a
-                            href={buildAssetUrl(selectedTeam.project.supportingDocFile.url)}
-                            download={selectedTeam.project.supportingDocFile.originalName || 'supporting-doc.pdf'}
-                            target="_blank"
-                            rel="noreferrer"
+                          <button
+                            type="button"
                             className="attachment-btn"
                             title="Download Supporting Document"
                             style={{ padding: '0.6rem 0.85rem' }}
+                            onClick={() => handleDocumentAction('supporting', 'download', selectedTeam.project.supportingDocFile.originalName || 'supporting-document')}
                           >
                             <FiDownload />
-                          </a>
+                          </button>
                         </div>
                       ) : (
                         <span className="attachment-btn disabled" style={{ opacity: 0.6 }}>
@@ -1269,8 +1270,6 @@ export default function AdminPortal() {
                       <div className="embedded-media-pane mt-3">
                         <div className="pane-header">
                           <span>
-                            {activeEmbed === 'ppt' && 'Presentation Deck Viewer'}
-                            {activeEmbed === 'doc' && 'Supporting Document Viewer'}
                             {activeEmbed === 'video' && 'Demo Video Stream'}
                           </span>
                           <button type="button" className="btn-close-pane" onClick={() => setActiveEmbed(null)}>
@@ -1279,22 +1278,6 @@ export default function AdminPortal() {
                         </div>
 
                         <div className="pane-content-box">
-                          {activeEmbed === 'ppt' && (
-                            <iframe
-                              src={buildAssetUrl(selectedTeam.project?.pptFile?.url)}
-                              title="PPT Preview"
-                              className="media-iframe"
-                            />
-                          )}
-
-                          {activeEmbed === 'doc' && (
-                            <iframe
-                              src={buildAssetUrl(selectedTeam.project?.supportingDocFile?.url)}
-                              title="Document Preview"
-                              className="media-iframe"
-                            />
-                          )}
-
                           {activeEmbed === 'video' && (
                             <div className="video-wrapper">
                               <iframe
