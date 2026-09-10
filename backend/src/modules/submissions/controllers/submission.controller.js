@@ -6,6 +6,8 @@ import Project from "../../projects/models/project.model.js";
 import Submission from "../models/submission.model.js";
 import User from "../../auth/models/user.model.js";
 import Event from "../../events/models/event.model.js";
+import { validateUploadedFile } from "../../../middleware/upload.middleware.js";
+import { deleteStoredFile, ensurePrivateBucket, uploadFile } from "../../../services/storage.service.js";
 import {
   finalSubmitProject,
   getSubmissionForUser,
@@ -43,6 +45,21 @@ export const submitFullRegistration = asyncHandler(async (req, res) => {
 
   if (!personal || !teamData || !projectData) {
     throw new ApiError(400, "Missing required registration payload sections");
+  }
+
+  const pptUpload = req.files?.pptFile?.[0];
+  const supportingDocUpload = req.files?.supportingDocFile?.[0];
+  if (!pptUpload) throw new ApiError(400, "Project PPT is required");
+
+  validateUploadedFile(pptUpload, {
+    kind: "ppt",
+    maxBytes: (activeEvent?.maxPptSizeMb || 15) * 1024 * 1024,
+  });
+  if (supportingDocUpload) {
+    validateUploadedFile(supportingDocUpload, {
+      kind: "supportingDoc",
+      maxBytes: (activeEvent?.maxSupportingDocSizeMb || 15) * 1024 * 1024,
+    });
   }
 
   // GitHub repository link validation
@@ -90,6 +107,9 @@ export const submitFullRegistration = asyncHandler(async (req, res) => {
   if (existingTeamWithName) {
     throw new ApiError(409, `Team name "${teamData.teamName}" is already registered by another team.`);
   }
+
+  // Fail before creating/updating users when persistent storage is unavailable.
+  await ensurePrivateBucket();
 
   // Update profile & social fields of leader user
   const leaderUser = await User.findByIdAndUpdate(
@@ -191,96 +211,110 @@ export const submitFullRegistration = asyncHandler(async (req, res) => {
   }
 
   // Create Team
-  const team = await Team.create({
+  const team = new Team({
     teamName: teamData.teamName.trim(),
     leader: userId,
     members: memberUserIds,
     currentStatus: "under_review",
   });
 
-  // Update team reference on all users in team
-  await User.updateMany({ _id: { $in: memberUserIds } }, { team: team._id });
+  const uploadedObjects = [];
+  let projectPersisted = false;
+  let pptFileMeta;
+  let docFileMeta = {};
 
-
-  // Process uploaded files if any
-  let pptFileMeta = projectData.pptFile || {};
-  let docFileMeta = projectData.supportingDocFile || {};
-
-  if (req.files?.pptFile?.[0]) {
-    const file = req.files.pptFile[0];
+  try {
+    const uploadedPpt = await uploadFile({ folder: "ppt", ownerId: team._id, file: pptUpload });
+    uploadedObjects.push(uploadedPpt);
     pptFileMeta = {
-      url: `/uploads/ppt/${file.filename}`,
-      path: file.path,
-      originalName: file.originalname,
-      mimeType: file.mimetype,
-      size: file.size,
+      ...uploadedPpt,
+      url: `/api/projects/team/${team._id}/documents/ppt`,
+      path: uploadedPpt.storagePath,
     };
-  }
 
-  if (req.files?.supportingDocFile?.[0]) {
-    const file = req.files.supportingDocFile[0];
-    docFileMeta = {
-      url: `/uploads/docs/${file.filename}`,
-      path: file.path,
-      originalName: file.originalname,
-      mimeType: file.mimetype,
-      size: file.size,
-    };
-  }
-
-  // Create or Update Project
-  let project = await Project.findOne({ team: team._id });
-  const projectFields = {
-    team: team._id,
-    title: projectData.title,
-    theme: projectData.theme,
-    problemStatement: projectData.problemStatement,
-    problemStatementId: projectData.problemStatementId || null,
-    problemCode: projectData.problemCode || "",
-    problemType: projectData.problemType || "official",
-    abstract: projectData.abstract,
-    technologyStack: projectData.technologyStack || "",
-    githubRepository: projectData.githubRepository || "",
-    demoVideoUrl: projectData.demoVideoUrl || "",
-    pptFile: pptFileMeta,
-    supportingDocFile: docFileMeta,
-    submittedAt: new Date(),
-  };
-
-  if (!project) {
-    project = await Project.create(projectFields);
-  } else {
-    Object.assign(project, projectFields);
-    await project.save();
-  }
-
-  // Create or Update Submission
-  const submission = await Submission.findOneAndUpdate(
-    { team: team._id },
-    {
-      team: team._id,
-      project: project._id,
-      submittedBy: userId,
-      status: "under_review",
-      finalSubmittedAt: project.submittedAt,
-    },
-    {
-      upsert: true,
-      new: true,
-      runValidators: true,
-      setDefaultsOnInsert: true,
+    if (supportingDocUpload) {
+      const uploadedDoc = await uploadFile({
+        folder: "supporting-documents",
+        ownerId: team._id,
+        file: supportingDocUpload,
+      });
+      uploadedObjects.push(uploadedDoc);
+      docFileMeta = {
+        ...uploadedDoc,
+        url: `/api/projects/team/${team._id}/documents/supporting`,
+        path: uploadedDoc.storagePath,
+      };
     }
-  )
-    .populate("team")
-    .populate("project");
 
-  const yearSuffix = activeEvent?.eventYear || "2026";
-  const regId = `HWV-${yearSuffix}-${submission._id.toString().slice(-6).toUpperCase()}`;
+    await team.save();
 
-  return sendSuccess(res, 201, "Registration and project submitted successfully", {
-    registrationId: regId,
-    status: "under_review",
-    submissionDate: (project?.submittedAt || new Date()).toISOString(),
-    submission,
-  });
+    // Update team reference on all users in team
+    await User.updateMany({ _id: { $in: memberUserIds } }, { team: team._id });
+
+    // Create or Update Project
+    let project = await Project.findOne({ team: team._id });
+    const projectFields = {
+      team: team._id,
+      title: projectData.title,
+      theme: projectData.theme,
+      problemStatement: projectData.problemStatement,
+      problemStatementId: projectData.problemStatementId || null,
+      problemCode: projectData.problemCode || "",
+      problemType: projectData.problemType || "official",
+      abstract: projectData.abstract,
+      technologyStack: projectData.technologyStack || "",
+      githubRepository: projectData.githubRepository || "",
+      demoVideoUrl: projectData.demoVideoUrl || "",
+      pptFile: pptFileMeta,
+      supportingDocFile: docFileMeta,
+      submittedAt: new Date(),
+    };
+
+    if (!project) {
+      project = await Project.create(projectFields);
+    } else {
+      Object.assign(project, projectFields);
+      await project.save();
+    }
+    projectPersisted = true;
+
+    // Create or Update Submission
+    const submission = await Submission.findOneAndUpdate(
+      { team: team._id },
+      {
+        team: team._id,
+        project: project._id,
+        submittedBy: userId,
+        status: "under_review",
+        finalSubmittedAt: project.submittedAt,
+      },
+      {
+        upsert: true,
+        new: true,
+        runValidators: true,
+        setDefaultsOnInsert: true,
+      }
+    )
+      .populate("team")
+      .populate("project");
+
+    const yearSuffix = activeEvent?.eventYear || "2026";
+    const regId = `HWV-${yearSuffix}-${submission._id.toString().slice(-6).toUpperCase()}`;
+
+    return sendSuccess(res, 201, "Registration and project submitted successfully", {
+      registrationId: regId,
+      status: "under_review",
+      submissionDate: (project?.submittedAt || new Date()).toISOString(),
+      submission,
+    });
+  } catch (error) {
+    if (!projectPersisted) {
+      await Promise.all(uploadedObjects.map((file) => deleteStoredFile(file).catch((cleanupError) => {
+        console.error(`[storage-cleanup] context=full-registration path=${file.storagePath} success=false message=${cleanupError.message}`);
+      })));
+    } else {
+      console.error(`[storage-cleanup] context=full-registration skipped=referenced reason=project-metadata-persisted`);
+    }
+    throw error;
+  }
 });

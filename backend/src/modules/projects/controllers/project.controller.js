@@ -1,26 +1,18 @@
-import { uploadRoot } from "../../../middleware/upload.middleware.js";
+import { validateUploadedFile } from "../../../middleware/upload.middleware.js";
 import { asyncHandler } from "../../../utils/asyncHandler.js";
 import ApiError from "../../../utils/apiError.js";
 import { sendSuccess } from "../../../utils/apiResponse.js";
+import { deleteStoredFile, downloadStoredFile, uploadFile } from "../../../services/storage.service.js";
+import { sendFileBuffer } from "../../../utils/fileResponse.js";
 import {
   attachProjectPpt,
   createProjectForTeam,
   getMyProject,
   getProjectById,
+  getProjectForPptUpload,
+  getTeamProjectDocument,
   updateProjectDetails,
 } from "../services/project.service.js";
-
-const buildPptFileData = (file) => {
-  const relativePath = file.path.replace(uploadRoot, "").replace(/\\/g, "/");
-
-  return {
-    url: `/uploads${relativePath}`,
-    path: file.path,
-    originalName: file.originalname,
-    mimeType: file.mimetype,
-    size: file.size,
-  };
-};
 
 export const createProject = asyncHandler(async (req, res) => {
   const project = await createProjectForTeam(req.user.id, req.body);
@@ -51,7 +43,46 @@ export const uploadProjectPpt = asyncHandler(async (req, res) => {
     throw new ApiError(400, "PPT file is required");
   }
 
-  const project = await attachProjectPpt(req.user.id, req.params.projectId, buildPptFileData(req.file));
+  validateUploadedFile(req.file, {
+    kind: "ppt",
+    maxBytes: Number(process.env.MAX_PPT_UPLOAD_BYTES || 20 * 1024 * 1024),
+  });
+
+  const project = await getProjectForPptUpload(req.user.id, req.params.projectId);
+  const oldFile = project.pptFile?.toObject?.() || project.pptFile;
+  const uploadedFile = await uploadFile({ folder: "ppt", ownerId: project.team, file: req.file });
+  const fileData = {
+    ...uploadedFile,
+    url: `/api/projects/team/${project.team}/documents/ppt`,
+    path: uploadedFile.storagePath,
+  };
+
+  try {
+    await attachProjectPpt(project, fileData);
+  } catch (error) {
+    await deleteStoredFile(uploadedFile).catch((cleanupError) => {
+      console.error(`[storage-cleanup] context=project-ppt path=${uploadedFile.storagePath} success=false message=${cleanupError.message}`);
+    });
+    throw error;
+  }
+
+  if (oldFile?.storagePath && oldFile.storagePath !== uploadedFile.storagePath) {
+    await deleteStoredFile(oldFile).catch((cleanupError) => {
+      console.error(`[storage-cleanup] context=old-project-ppt path=${oldFile.storagePath} success=false message=${cleanupError.message}`);
+    });
+  }
 
   return sendSuccess(res, 200, "PPT uploaded successfully", { project });
+});
+
+export const getProjectDocument = asyncHandler(async (req, res) => {
+  const file = await getTeamProjectDocument(req.user.id, req.params.teamId, req.params.type);
+  const legacyFolder = req.params.type === "ppt" ? "ppt" : "docs";
+  const buffer = await downloadStoredFile(file, { legacyFolder });
+  return sendFileBuffer(res, {
+    buffer,
+    file,
+    disposition: req.query.disposition === "attachment" ? "attachment" : "inline",
+    fallbackName: req.params.type === "ppt" ? "presentation.pptx" : "supporting-document",
+  });
 });

@@ -7,6 +7,9 @@ const fileMetaSchema = new mongoose.Schema(
     originalName: { type: String, default: "" },
     mimeType: { type: String, default: "" },
     size: { type: Number, default: 0 },
+    storageProvider: { type: String, enum: ["", "supabase"], default: "" },
+    bucket: { type: String, default: "" },
+    storagePath: { type: String, default: "" },
   },
   { _id: false }
 );

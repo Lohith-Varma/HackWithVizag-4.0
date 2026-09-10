@@ -5,10 +5,6 @@
       "destination": "https://hackwithvizag-4-0.onrender.com/api/:path*"
     },
     {
-      "source": "/uploads/:path*",
-      "destination": "https://hackwithvizag-4-0.onrender.com/uploads/:path*"
-    },
-    {
       "source": "/(.*)",
       "destination": "/index.html"
     }

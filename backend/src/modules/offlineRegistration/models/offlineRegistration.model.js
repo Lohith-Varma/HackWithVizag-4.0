@@ -51,6 +51,9 @@ const offlineRegistrationSchema = new mongoose.Schema(
       originalName: { type: String, required: true },
       mimeType: { type: String, required: true },
       size: { type: Number, required: true },
+      storageProvider: { type: String, enum: ["supabase"], default: undefined },
+      bucket: { type: String, default: "" },
+      storagePath: { type: String, default: "" },
     },
     submittedAt: { type: Date, default: null },
     confirmationCode: {

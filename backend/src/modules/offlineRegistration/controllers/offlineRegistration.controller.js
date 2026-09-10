@@ -4,8 +4,9 @@ import ApiError from "../../../utils/apiError.js";
 import { sendSuccess } from "../../../utils/apiResponse.js";
 import Event from "../../events/models/event.model.js";
 import Project from "../../projects/models/project.model.js";
-import path from "path";
-import { uploadRoot } from "../../../middleware/upload.middleware.js";
+import { validateUploadedFile } from "../../../middleware/upload.middleware.js";
+import { deleteStoredFile, downloadStoredFile, uploadFile } from "../../../services/storage.service.js";
+import { sendFileBuffer } from "../../../utils/fileResponse.js";
 
 const getPaymentConfig = async (team, { required = true } = {}) => {
   const teamSize = team.members.length;
@@ -57,12 +58,18 @@ export const submitOfflineRegistration = asyncHandler(async (req, res) => {
   const teamId = req.team?._id || req.params.teamId;
   if (req.team.leader.toString() !== req.user.id) throw new ApiError(403, "Only the team lead can submit offline payment details");
   if (!req.file) throw new ApiError(400, "Payment screenshot is required");
-  if (!["image/jpeg", "image/png", "image/webp"].includes(req.file.mimetype)) {
-    throw new ApiError(400, "Payment screenshot must be a JPG, PNG, or WebP image");
-  }
+  validateUploadedFile(req.file, {
+    kind: "paymentProof",
+    maxBytes: Number(process.env.MAX_PAYMENT_PROOF_UPLOAD_BYTES || 5 * 1024 * 1024),
+  });
   if (await OfflineRegistration.exists({ team: teamId })) throw new ApiError(409, "Offline registration has already been submitted for this team");
   const payment = await getPaymentConfig(req.team);
   const confirmationCode = `HWV-OFF-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
+  const uploadedScreenshot = await uploadFile({
+    folder: "payment-screenshots",
+    ownerId: teamId,
+    file: req.file,
+  });
   let offlineRegistration;
   try {
     offlineRegistration = await OfflineRegistration.create({
@@ -70,9 +77,12 @@ export const submitOfflineRegistration = asyncHandler(async (req, res) => {
       utrId: req.body.utrId.trim(), status: "OFFLINE_SUBMITTED", submittedAt: new Date(),
       registrationCompleted: true, confirmationCode,
       payment: { amount: payment.expectedAmount, status: "submitted", provider: "manual_upi" },
-      paymentScreenshot: { filename: req.file.filename, originalName: req.file.originalname, mimeType: req.file.mimetype, size: req.file.size },
+      paymentScreenshot: uploadedScreenshot,
     });
   } catch (error) {
+    await deleteStoredFile(uploadedScreenshot).catch((cleanupError) => {
+      console.error(`[storage-cleanup] context=offline-registration path=${uploadedScreenshot.storagePath} success=false message=${cleanupError.message}`);
+    });
     if (error?.code === 11000) throw new ApiError(409, "Offline registration has already been submitted for this team");
     throw error;
   }
@@ -82,5 +92,11 @@ export const submitOfflineRegistration = asyncHandler(async (req, res) => {
 export const getPaymentScreenshot = asyncHandler(async (req, res) => {
   const registration = await OfflineRegistration.findOne({ team: req.team._id });
   if (!registration?.paymentScreenshot?.filename) throw new ApiError(404, "Payment screenshot not found");
-  return res.type(registration.paymentScreenshot.mimeType).sendFile(path.join(uploadRoot, "payment-proofs", registration.paymentScreenshot.filename));
+  const buffer = await downloadStoredFile(registration.paymentScreenshot, { legacyFolder: "payment-proofs" });
+  return sendFileBuffer(res, {
+    buffer,
+    file: registration.paymentScreenshot,
+    disposition: "inline",
+    fallbackName: "payment-screenshot",
+  });
 });

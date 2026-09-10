@@ -32,7 +32,8 @@ const getProjectForSubmitter = async (projectId, userId) => {
 
 const ensureProjectComplete = (project) => {
   const hasRequiredDetails =
-    project.title && project.theme && project.problemStatement && project.abstract && project.pptFile?.url;
+    project.title && project.theme && project.problemStatement && project.abstract &&
+    (project.pptFile?.storagePath || project.pptFile?.url);
 
   if (!hasRequiredDetails) {
     throw new ApiError(409, "Project details and PPT are required before final submission");
@@ -58,7 +59,8 @@ export const reviewProjectSubmission = async (projectId, userId) => {
     team,
     project,
     readyForFinalSubmit: Boolean(
-      project.title && project.theme && project.problemStatement && project.abstract && project.pptFile?.url
+      project.title && project.theme && project.problemStatement && project.abstract &&
+      (project.pptFile?.storagePath || project.pptFile?.url)
     ),
   };
 };

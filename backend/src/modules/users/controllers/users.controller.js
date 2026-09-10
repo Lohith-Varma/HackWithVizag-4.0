@@ -1,9 +1,11 @@
 import User from "../../auth/models/user.model.js";
 import Team from "../../teams/models/team.model.js";
-import { uploadRoot } from "../../../middleware/upload.middleware.js";
+import { validateUploadedFile } from "../../../middleware/upload.middleware.js";
 import { asyncHandler } from "../../../utils/asyncHandler.js";
 import ApiError from "../../../utils/apiError.js";
 import { sendSuccess } from "../../../utils/apiResponse.js";
+import { deleteStoredFile, downloadStoredFile, uploadFile } from "../../../services/storage.service.js";
+import { sendFileBuffer } from "../../../utils/fileResponse.js";
 
 const buildUserResponse = (user) => ({
   id: user._id.toString(),
@@ -131,14 +133,47 @@ export const uploadProfilePhoto = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Profile image is required");
   }
 
-  const relativePath = req.file.path.replace(uploadRoot, "").replace(/\\/g, "/");
-  const user = await User.findByIdAndUpdate(
-    req.user.id,
-    {
-      profilePhoto: `/uploads${relativePath}`,
-    },
-    { new: true, runValidators: true }
-  );
+  validateUploadedFile(req.file, {
+    kind: "profile",
+    maxBytes: Number(process.env.MAX_PROFILE_UPLOAD_BYTES || 5 * 1024 * 1024),
+  });
+
+  const user = await User.findById(req.user.id);
+  if (!user) throw new ApiError(404, "User not found");
+
+  const oldFile = user.profilePhotoFile?.toObject?.() || user.profilePhotoFile;
+  const uploadedPhoto = await uploadFile({ folder: "profile", ownerId: req.user.id, file: req.file });
+  user.profilePhoto = `/api/users/${req.user.id}/profile-photo`;
+  user.profilePhotoFile = uploadedPhoto;
+
+  try {
+    await user.save();
+  } catch (error) {
+    await deleteStoredFile(uploadedPhoto).catch((cleanupError) => {
+      console.error(`[storage-cleanup] context=profile-photo path=${uploadedPhoto.storagePath} success=false message=${cleanupError.message}`);
+    });
+    throw error;
+  }
+
+  if (oldFile?.storagePath && oldFile.storagePath !== uploadedPhoto.storagePath) {
+    await deleteStoredFile(oldFile).catch((cleanupError) => {
+      console.error(`[storage-cleanup] context=old-profile-photo path=${oldFile.storagePath} success=false message=${cleanupError.message}`);
+    });
+  }
 
   return sendSuccess(res, 200, "Profile image uploaded successfully", { user: buildUserResponse(user) });
+});
+
+export const getProfilePhoto = asyncHandler(async (req, res) => {
+  const userId = req.params.userId || req.user.id;
+  if (!/^[a-f0-9]{24}$/i.test(userId)) throw new ApiError(400, "Invalid user id");
+
+  const user = await User.findById(userId).select("profilePhoto profilePhotoFile");
+  if (!user?.profilePhoto) throw new ApiError(404, "Profile image not found");
+
+  const file = user.profilePhotoFile?.storagePath
+    ? user.profilePhotoFile
+    : { url: user.profilePhoto, originalName: "profile-photo" };
+  const buffer = await downloadStoredFile(file, { legacyFolder: "profile" });
+  return sendFileBuffer(res, { buffer, file, disposition: "inline", fallbackName: "profile-photo" });
 });

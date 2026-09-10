@@ -5,6 +5,7 @@ import { validateRequest } from "../../../middleware/validateRequest.middleware.
 import { sendSuccess } from "../../../utils/apiResponse.js";
 import {
   createProject,
+  getProjectDocument,
   getMyProjectDetails,
   getProject,
   updateProject,
@@ -19,6 +20,7 @@ router.use(authenticate);
 router.get("/", (_req, res) => sendSuccess(res, 200, "Project routes ready"));
 router.post("/", createProjectValidation, validateRequest, createProject);
 router.get("/my-project", getMyProjectDetails);
+router.get("/team/:teamId/documents/:type", getProjectDocument);
 router.get("/:projectId", projectIdValidation, validateRequest, getProject);
 router.patch("/:projectId", updateProjectValidation, validateRequest, updateProject);
 router.post("/:projectId/ppt", projectIdValidation, validateRequest, uploadPpt.single("ppt"), uploadProjectPpt);

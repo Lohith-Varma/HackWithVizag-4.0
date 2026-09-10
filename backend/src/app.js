@@ -3,8 +3,6 @@ import cors from "cors";
 import express from "express";
 import helmet from "helmet";
 import morgan from "morgan";
-import path from "path";
-import { fileURLToPath } from "url";
 import { getDatabaseStatus } from "./config/database.js";
 import { errorHandler, notFoundHandler } from "./middleware/error.middleware.js";
 import adminRoutes from "./modules/admin/routes/admin.routes.js";
@@ -19,9 +17,6 @@ import submissionRoutes from "./modules/submissions/routes/submission.routes.js"
 import teamRoutes from "./modules/teams/routes/team.routes.js";
 import userRoutes from "./modules/users/routes/users.routes.js";
 import ApiError from "./utils/apiError.js";
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 
 const app = express();
 
@@ -78,12 +73,9 @@ app.use(cookieParser());
 app.use(morgan(process.env.NODE_ENV === "production" ? "combined" : "dev"));
 
 
-// Payment evidence is never served by the public uploads mount. It is available
-// only through the authorised offline-registration endpoint.
-app.use("/uploads/payment-proofs", (_req, res) => res.status(404).end());
-app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
-// Keep missing upload URLs out of the API catch-all so clients receive a useful
-// file error instead of a misleading "Route not found" response.
+// Uploaded files are private and are served only by authenticated API routes.
+// This explicit legacy response prevents old /uploads references from falling
+// through to the API route handler without reintroducing a public file mount.
 app.use("/uploads", (_req, res) =>
   res.status(404).json({ success: false, message: "File not found", errors: [] })
 );

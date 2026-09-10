@@ -77,7 +77,7 @@ export const updateProjectDetails = async (userId, projectId, payload) => {
   return project;
 };
 
-export const attachProjectPpt = async (userId, projectId, fileData) => {
+export const getProjectForPptUpload = async (userId, projectId) => {
   if (!mongoose.Types.ObjectId.isValid(projectId)) {
     throw new ApiError(400, "Invalid project id");
   }
@@ -94,10 +94,23 @@ export const attachProjectPpt = async (userId, projectId, fileData) => {
     throw new ApiError(409, "PPT cannot be changed after review has started");
   }
 
+  return project;
+};
+
+export const attachProjectPpt = async (project, fileData) => {
   project.pptFile = fileData;
   await project.save();
-
   return project;
+};
+
+export const getTeamProjectDocument = async (userId, teamId, type) => {
+  const team = await ensureTeamOwnership(teamId, userId, true);
+  const project = await Project.findOne({ team: team._id });
+  if (!project) throw new ApiError(404, "Project not found");
+
+  if (type === "ppt") return project.pptFile;
+  if (type === "supporting") return project.supportingDocFile;
+  throw new ApiError(404, "Document type not found");
 };
 
 export const getMyProject = async (userId) => {

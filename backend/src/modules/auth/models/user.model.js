@@ -100,6 +100,15 @@ const userSchema = new mongoose.Schema(
       type: String,
       default: null,
     },
+    profilePhotoFile: {
+      storageProvider: { type: String, enum: ["supabase"], default: undefined },
+      bucket: { type: String, default: "" },
+      storagePath: { type: String, default: "" },
+      filename: { type: String, default: "" },
+      originalName: { type: String, default: "" },
+      mimeType: { type: String, default: "" },
+      size: { type: Number, default: 0 },
+    },
   },
   {
     timestamps: true,
