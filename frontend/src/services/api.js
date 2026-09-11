@@ -111,6 +111,20 @@ const fetchProtectedFile = async (path, { fallbackName, view = false } = {}) => 
   window.URL.revokeObjectURL(objectUrl);
 };
 
+const fetchProtectedBlob = async (path, fallbackName) => {
+  const response = await fetch(buildUrl(path), { credentials: 'include' });
+  if (!response.ok) {
+    const payload = await response.json().catch(() => ({}));
+    throw new Error(payload.message || 'This document is no longer available.');
+  }
+  const blob = await response.blob();
+  return {
+    url: window.URL.createObjectURL(blob),
+    filename: getDownloadFilename(response.headers.get('content-disposition') || '', fallbackName),
+    contentType: response.headers.get('content-type') || blob.type,
+  };
+};
+
 export const api = {
   baseUrl: API_BASE_URL,
 
@@ -331,6 +345,18 @@ export const api = {
 
   async getAdminTeam(id) {
     return request(`/admin/team/${id}`);
+  },
+
+  async getAdminOfflineRegistrations(params) {
+    return request('/admin/offline-registrations', { params });
+  },
+
+  async getAdminOfflineRegistration(teamId) {
+    return request(`/admin/offline-registrations/${teamId}`);
+  },
+
+  async getAdminPaymentScreenshot(teamId, fallbackName = 'payment-screenshot') {
+    return fetchProtectedBlob(`/offline-registration/team/${teamId}/payment-screenshot`, fallbackName);
   },
 
   async updateAdminTeamStatus(id, payload) {

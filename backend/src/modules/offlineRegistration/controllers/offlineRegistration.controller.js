@@ -91,8 +91,17 @@ export const submitOfflineRegistration = asyncHandler(async (req, res) => {
 
 export const getPaymentScreenshot = asyncHandler(async (req, res) => {
   const registration = await OfflineRegistration.findOne({ team: req.team._id });
-  if (!registration?.paymentScreenshot?.filename) throw new ApiError(404, "Payment screenshot not found");
-  const buffer = await downloadStoredFile(registration.paymentScreenshot, { legacyFolder: "payment-proofs" });
+  if (!registration) throw new ApiError(404, "Offline registration not found");
+  if (!registration.paymentScreenshot?.filename) throw new ApiError(404, "Payment screenshot unavailable");
+  let buffer;
+  try {
+    buffer = await downloadStoredFile(registration.paymentScreenshot, { legacyFolder: "payment-proofs" });
+  } catch (error) {
+    if (error?.statusCode === 404) {
+      throw new ApiError(404, "Payment screenshot unavailable in persistent storage");
+    }
+    throw error;
+  }
   return sendFileBuffer(res, {
     buffer,
     file: registration.paymentScreenshot,

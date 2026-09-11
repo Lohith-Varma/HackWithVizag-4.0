@@ -21,6 +21,16 @@ export const listSubmissionsValidation = [
     .withMessage(`Submission status must be one of: ${SUBMISSION_STATUSES.join(", ")}`),
 ];
 
+export const listOfflineRegistrationsValidation = [
+  query("page").optional().isInt({ min: 1 }).withMessage("Page must be a positive number"),
+  query("limit").optional().isInt({ min: 1, max: 100 }).withMessage("Limit must be between 1 and 100"),
+  query("search").optional().trim().isLength({ max: 120 }).withMessage("Search must not exceed 120 characters"),
+  query("status")
+    .optional()
+    .isIn(["OFFLINE_SUBMITTED"])
+    .withMessage("Status must be OFFLINE_SUBMITTED"),
+];
+
 export const teamIdValidation = [param("id").isMongoId().withMessage("Invalid team id")];
 
 export const legacyTeamIdValidation = [param("teamId").isMongoId().withMessage("Invalid team id")];

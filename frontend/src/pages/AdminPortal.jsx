@@ -40,6 +40,7 @@ import {
   FiBell,
 } from 'react-icons/fi';
 import Toast from '../components/Toast/Toast';
+import AdminOfflineRegistrations from '../components/AdminOfflineRegistrations/AdminOfflineRegistrations';
 import { api } from '../services/api';
 import './AdminPortal.css';
 
@@ -83,6 +84,7 @@ const navItems = [
   { id: 'dashboard', label: 'Dashboard', icon: FiGrid },
   { id: 'review', label: 'Review Queue', icon: FiSliders },
   { id: 'teams', label: 'All Teams', icon: FiUsers },
+  { id: 'offlineRegistrations', label: 'Offline Registered Teams', icon: FiFileText },
   { id: 'leads', label: 'Notification Leads', icon: FiBell },
   { id: 'problemStatements', label: 'Problem Statements', icon: FiLayers },
   { id: 'eventConfig', label: 'Event Config', icon: FiCalendar },
@@ -96,6 +98,7 @@ const emptyDashboard = {
   totalSubmittedProjects: 0,
   teamsUnderReview: 0,
   selectedTeams: 0,
+  offlineRegisteredTeams: 0,
   rejectedTeams: 0,
   openInnovationEntries: 0,
   officialEntries: 0,
@@ -205,6 +208,7 @@ const getInitialViewFromHash = () => {
   if (hash.includes('settings')) return 'settings';
   if (hash.includes('problem-statements') || hash.includes('problemstatements')) return 'problemStatements';
   if (hash.includes('leads') || hash.includes('notifications')) return 'leads';
+  if (hash.includes('offline-registrations') || hash.includes('offlineregistrations')) return 'offlineRegistrations';
   if (hash.includes('teams')) return 'teams';
   if (hash.includes('dashboard')) return 'dashboard';
   if (hash.includes('review')) return 'review';
@@ -707,6 +711,7 @@ export default function AdminPortal() {
       settings: 'settings',
       dashboard: 'dashboard',
       teams: 'teams',
+      offlineRegistrations: 'offline-registrations',
       review: 'review',
     };
     const slug = slugMap[viewId] || viewId;
@@ -950,6 +955,14 @@ export default function AdminPortal() {
                   <strong className="kpi-val">{dashboard.rejectedTeams}</strong>
                 </div>
               </div>
+
+              <button type="button" className="kpi-card kpi-card-button" onClick={() => handleSwitchView('offlineRegistrations')}>
+                <div className="kpi-icon-box green"><FiFileText /></div>
+                <div className="kpi-data">
+                  <span className="kpi-label">Offline Registered Teams</span>
+                  <strong className="kpi-val">{dashboard.offlineRegisteredTeams}</strong>
+                </div>
+              </button>
             </div>
 
             {/* Quick Summary Section */}
@@ -981,6 +994,10 @@ export default function AdminPortal() {
               </div>
             </div>
           </div>
+        )}
+
+        {activeView === 'offlineRegistrations' && (
+          <AdminOfflineRegistrations onToast={setToast} />
         )}
 
         {/* REVIEW WORKSPACE 3-COLUMN VIEW (Primary Working Interface) */}

@@ -11,6 +11,8 @@ import {
   getAdminOverview,
   getDashboard,
   getTeamDetails,
+  getOfflineRegistrationDetails,
+  listOfflineRegistrations,
   listSubmissions,
   listTeams,
   listUsers,
@@ -28,6 +30,7 @@ import {
   legacyTeamIdValidation,
   listSubmissionsValidation,
   listTeamsValidation,
+  listOfflineRegistrationsValidation,
   teamIdValidation,
   updateTeamRemarksValidation,
   updateTeamStatusValidation,
@@ -43,6 +46,8 @@ router.get("/dashboard", getDashboard);
 router.get("/overview", getAdminOverview);
 router.get("/users", listUsers);
 router.get("/teams", listTeamsValidation, validateRequest, listTeams);
+router.get("/offline-registrations", listOfflineRegistrationsValidation, validateRequest, listOfflineRegistrations);
+router.get("/offline-registrations/:teamId", legacyTeamIdValidation, validateRequest, getOfflineRegistrationDetails);
 router.get("/team/:id", teamIdValidation, validateRequest, getTeamDetails);
 router.get("/teams/:teamId", legacyTeamIdValidation, validateRequest, getTeamDetails);
 router.put("/team/:id", teamIdValidation, validateRequest, updateAdminTeamDetails);

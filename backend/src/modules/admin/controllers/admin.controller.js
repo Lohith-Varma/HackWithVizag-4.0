@@ -5,6 +5,7 @@ import Submission from "../../submissions/models/submission.model.js";
 import Team from "../../teams/models/team.model.js";
 import ProblemStatement from "../../problemStatements/models/problemStatement.model.js";
 import RegistrationLead from "../../inquiries/models/registrationLead.model.js";
+import OfflineRegistration from "../../offlineRegistration/models/offlineRegistration.model.js";
 import { asyncHandler } from "../../../utils/asyncHandler.js";
 import ApiError from "../../../utils/apiError.js";
 import { sendSuccess } from "../../../utils/apiResponse.js";
@@ -46,6 +47,11 @@ const teamPopulate = [
   { path: "reviewedBy", select: "name email role" },
 ];
 
+const offlineTeamPopulate = [
+  { path: "leader", select: "name email phone college collegeName registeredNumber department year gender" },
+  { path: "members", select: "name email phone college collegeName registeredNumber department year gender" },
+];
+
 const normalizeTeam = ({ team, project = null, submission = null } = {}) => {
   const regId = submission
     ? `HWV-2026-${submission._id.toString().slice(-6).toUpperCase()}`
@@ -77,6 +83,31 @@ const normalizeTeam = ({ team, project = null, submission = null } = {}) => {
     updatedAt: team.updatedAt,
   };
 };
+
+const normalizeOfflineRegistration = (registration) => ({
+  id: registration._id.toString(),
+  teamId: registration.team?._id?.toString?.() || registration.team?.toString?.() || "",
+  status: registration.status,
+  teamSize: registration.teamSize,
+  expectedAmount: registration.expectedAmount,
+  utrId: registration.utrId,
+  registrationCompleted: registration.registrationCompleted,
+  submittedAt: registration.submittedAt || registration.createdAt,
+  payment: registration.payment,
+  paymentScreenshot: registration.paymentScreenshot?.filename
+    ? {
+        available: true,
+        originalName: registration.paymentScreenshot.originalName,
+        mimeType: registration.paymentScreenshot.mimeType,
+        size: registration.paymentScreenshot.size,
+      }
+    : { available: false },
+  paymentScreenshotUrl: registration.team
+    ? `/api/offline-registration/team/${registration.team?._id || registration.team}/payment-screenshot`
+    : "",
+  createdAt: registration.createdAt,
+  updatedAt: registration.updatedAt,
+});
 
 
 const buildTeamQuery = async ({ search, status, college, department, theme, problemStatement, isOpenInnovation }) => {
@@ -238,6 +269,7 @@ export const getDashboard = asyncHandler(async (_req, res) => {
     shortlistedTeams,
     openInnovationEntries,
     officialEntries,
+    offlineRegisteredTeams,
     dailyAgg,
   ] = await Promise.all([
     Team.countDocuments(),
@@ -254,6 +286,7 @@ export const getDashboard = asyncHandler(async (_req, res) => {
     Team.countDocuments({ currentStatus: "shortlisted" }),
     Project.countDocuments({ problemType: "open" }),
     Project.countDocuments({ problemType: "official" }),
+    OfflineRegistration.countDocuments({ status: "OFFLINE_SUBMITTED" }),
     Team.aggregate([
       {
         $group: {
@@ -283,8 +316,84 @@ export const getDashboard = asyncHandler(async (_req, res) => {
       shortlistedTeams,
       openInnovationEntries,
       officialEntries,
+      offlineRegisteredTeams,
       dailyRegistrations,
     },
+  });
+});
+
+export const listOfflineRegistrations = asyncHandler(async (req, res) => {
+  const page = toInt(req.query.page, 1, 1, 100000);
+  const limit = toInt(req.query.limit, 25, 1, 100);
+  const search = req.query.search?.trim();
+  const query = { status: "OFFLINE_SUBMITTED" };
+
+  if (search) {
+    const regex = new RegExp(escapeRegex(search), "i");
+    const userIds = await User.find({
+      $or: [{ name: regex }, { email: regex }, { college: regex }, { collegeName: regex }],
+    }).distinct("_id");
+    const teamClauses = [
+      { teamName: regex },
+      { leader: { $in: userIds } },
+      { members: { $in: userIds } },
+    ];
+    if (mongoose.Types.ObjectId.isValid(search)) teamClauses.push({ _id: search });
+    const teamIds = await Team.find({ $or: teamClauses }).distinct("_id");
+    query.$or = [{ utrId: regex }, { team: { $in: teamIds } }];
+  }
+
+  const [registrations, total] = await Promise.all([
+    OfflineRegistration.find(query)
+      .populate({ path: "team", populate: offlineTeamPopulate })
+      .sort({ submittedAt: -1, createdAt: -1 })
+      .skip((page - 1) * limit)
+      .limit(limit),
+    OfflineRegistration.countDocuments(query),
+  ]);
+
+  const validRegistrations = registrations.filter((registration) => registration.team);
+  const teams = validRegistrations.map((registration) => registration.team);
+  const projects = await Project.find({ team: { $in: teams.map((team) => team._id) } }).populate("problemStatementId");
+  const projectByTeam = new Map(projects.map((project) => [project.team.toString(), project]));
+  const items = validRegistrations.map((registration) => {
+    const team = registration.team;
+    const teamId = team._id.toString();
+    return {
+      ...normalizeTeam({
+        team,
+        project: projectByTeam.get(teamId) || null,
+        submission: null,
+      }),
+      offlineRegistration: normalizeOfflineRegistration(registration),
+    };
+  });
+
+  return sendSuccess(res, 200, "Offline registered teams fetched successfully", {
+    offlineRegistrations: items,
+    pagination: { page, limit, total, pages: Math.max(Math.ceil(total / limit), 1) },
+  });
+});
+
+export const getOfflineRegistrationDetails = asyncHandler(async (req, res) => {
+  const { teamId } = req.params;
+  const registration = await OfflineRegistration.findOne({
+    team: teamId,
+    status: "OFFLINE_SUBMITTED",
+  }).populate({ path: "team", populate: offlineTeamPopulate });
+
+  if (!registration) throw new ApiError(404, "Offline registration not found");
+  if (!registration.team) throw new ApiError(404, "Registered team not found");
+
+  const project = await Project.findOne({ team: registration.team._id }).populate("problemStatementId");
+
+  return sendSuccess(res, 200, "Offline registration details fetched successfully", {
+    team: normalizeTeam({ team: registration.team, project, submission: null }),
+    members: registration.team.members || [],
+    project,
+    problemStatement: project?.problemStatementId || null,
+    offlineRegistration: normalizeOfflineRegistration(registration),
+    paymentScreenshotAvailable: Boolean(registration.paymentScreenshot?.filename),
   });
 });
 
