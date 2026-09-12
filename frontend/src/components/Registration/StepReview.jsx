@@ -4,7 +4,7 @@ export default function StepReview({ data, accepted, onAcceptedChange, onEditSec
   return (
     <div className="wizard-step">
       <div className="step-copy">
-        <span className="section-subtitle">Step 5</span>
+        <span className="section-subtitle">Step 6</span>
         <h2>Review & Final Submit</h2>
         <p>Review each section carefully. You can jump back and edit before the final submission.</p>
       </div>

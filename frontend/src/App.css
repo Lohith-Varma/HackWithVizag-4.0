@@ -5,7 +5,7 @@
   flex-direction: column;
   background-color: var(--color-bg);
   position: relative;
-  overflow: hidden;
+  overflow-x: clip;
 }
 
 /* Base style for spacing sections - elegant & spacious */
@@ -53,5 +53,19 @@ section {
   color: var(--color-text-secondary);
   font-size: 1.05rem;
   line-height: 1.65;
+}
+
+@media (max-width: 480px) {
+  section {
+    padding-inline: 1rem;
+  }
+
+  .section-header {
+    margin-bottom: 2.5rem;
+  }
+
+  .section-title {
+    font-size: clamp(1.75rem, 9vw, 2.25rem);
+  }
 }
 

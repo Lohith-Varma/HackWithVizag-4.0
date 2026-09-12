@@ -85,6 +85,20 @@ export default function Registration() {
   // Active modal preview for existing team view
   const [activePreview, setActivePreview] = useState(null);
 
+  useEffect(() => {
+    if (!activePreview) return undefined;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    const closeOnEscape = (event) => {
+      if (event.key === 'Escape') setActivePreview(null);
+    };
+    window.addEventListener('keydown', closeOnEscape);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener('keydown', closeOnEscape);
+    };
+  }, [activePreview]);
+
   // 1. Initial Authentication and Team Status Check
   const checkRegistrationStatus = async () => {
     setIsCheckingStatus(true);
@@ -945,13 +959,16 @@ export default function Registration() {
               <motion.div
                 className="preview-modal-dialog"
                 onClick={(e) => e.stopPropagation()}
+                role="dialog"
+                aria-modal="true"
+                aria-label={activePreview.title || 'Submission preview'}
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.95 }}
               >
                 <div className="modal-top-bar">
                   <h3 className="modal-title-text">{activePreview.title}</h3>
-                  <button type="button" className="btn-modal-close" onClick={() => setActivePreview(null)}>
+                  <button type="button" className="btn-modal-close" onClick={() => setActivePreview(null)} aria-label="Close preview">
                     <FiX />
                   </button>
                 </div>

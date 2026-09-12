@@ -5,6 +5,10 @@ export default function ProgressBar({ steps, currentStep, onStepClick, highestSt
 
   return (
     <div className="wizard-progress" aria-label="Registration progress">
+      <div className="mobile-step-summary" aria-live="polite">
+        <span>Step {currentStep + 1} of {steps.length}</span>
+        <strong>{steps[currentStep].label}</strong>
+      </div>
       <div className="progress-track">
         <span style={{ width: `${progress}%` }} />
       </div>
@@ -21,6 +25,7 @@ export default function ProgressBar({ steps, currentStep, onStepClick, highestSt
               className={`step-indicator ${isActive ? 'active' : ''} ${isDone ? 'done' : ''}`}
               onClick={() => canVisit && onStepClick(index)}
               disabled={!canVisit}
+              aria-current={isActive ? 'step' : undefined}
             >
               <span className="step-marker">{isDone ? <FiCheck /> : index + 1}</span>
               <span className="step-label">{step.label}</span>

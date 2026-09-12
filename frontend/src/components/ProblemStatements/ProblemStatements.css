@@ -898,7 +898,8 @@
   }
 
   .ps-modal-container {
-    max-height: 92vh;
+    width: 100%;
+    max-height: calc(100dvh - 0.75rem);
     border-bottom-left-radius: 0;
     border-bottom-right-radius: 0;
     border-left: none;
@@ -934,5 +935,28 @@
     width: 100%;
     justify-content: center;
     padding: 0.75rem 1rem;
+  }
+
+  .ps-btn-icon.ps-btn-close {
+    width: 44px;
+    height: 44px;
+    flex: 0 0 44px;
+  }
+}
+
+@media (max-width: 420px) {
+  .ps-compact-card {
+    padding: 1.1rem;
+  }
+
+  .ps-card-footer {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .ps-view-details-btn {
+    width: 100%;
+    min-height: 44px;
+    justify-content: center;
   }
 }

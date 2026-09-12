@@ -38,6 +38,7 @@ import {
   FiFolder,
   FiExternalLink,
   FiBell,
+  FiMenu,
 } from 'react-icons/fi';
 import Toast from '../components/Toast/Toast';
 import AdminOfflineRegistrations from '../components/AdminOfflineRegistrations/AdminOfflineRegistrations';
@@ -219,6 +220,7 @@ export default function AdminPortal() {
   const [user, setUser] = useState(null);
   const [activeView, setActiveView] = useState(getInitialViewFromHash);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [isFocusMode, setIsFocusMode] = useState(false);
 
   const [dashboard, setDashboard] = useState(emptyDashboard);
@@ -619,12 +621,13 @@ export default function AdminPortal() {
       } else if (e.key === 'Escape') {
         if (activeEmbed) setActiveEmbed(null);
         if (isFocusMode) setIsFocusMode(false);
+        if (isMobileSidebarOpen) setIsMobileSidebarOpen(false);
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [teams, selectedTeamId, activeEmbed, isFocusMode, reviewFormStatus, reviewFormRemarks]);
+  }, [teams, selectedTeamId, activeEmbed, isFocusMode, isMobileSidebarOpen, reviewFormStatus, reviewFormRemarks]);
 
   const switchView = (view) => {
     setActiveView(view);
@@ -703,6 +706,7 @@ export default function AdminPortal() {
 
   const handleSwitchView = (viewId) => {
     setActiveView(viewId);
+    setIsMobileSidebarOpen(false);
     const slugMap = {
       eventConfig: 'event-config',
       problemStatements: 'problem-statements',
@@ -732,6 +736,24 @@ export default function AdminPortal() {
     window.addEventListener('hashchange', handleHashChange);
     return () => window.removeEventListener('hashchange', handleHashChange);
   }, []);
+
+  useEffect(() => {
+    if (!isMobileSidebarOpen) return undefined;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [isMobileSidebarOpen]);
+
+  useEffect(() => {
+    if (!isPsModalOpen) return undefined;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [isPsModalOpen]);
 
   useEffect(() => {
     if (user) {
@@ -835,10 +857,36 @@ export default function AdminPortal() {
 
   return (
     <div className={`admin-workspace-app ${isFocusMode ? 'focus-mode-active' : ''}`}>
+      {!isFocusMode && (
+        <header className="admin-mobile-topbar">
+          <button
+            type="button"
+            className="admin-mobile-menu-btn"
+            onClick={() => setIsMobileSidebarOpen((open) => !open)}
+            aria-expanded={isMobileSidebarOpen}
+            aria-controls="admin-navigation"
+            aria-label={isMobileSidebarOpen ? 'Close admin navigation' : 'Open admin navigation'}
+          >
+            {isMobileSidebarOpen ? <FiX /> : <FiMenu />}
+          </button>
+          <div>
+            <strong>HackWithVizag</strong>
+            <span>{navItems.find((item) => item.id === activeView)?.label || 'Admin Portal'}</span>
+          </div>
+        </header>
+      )}
+      {!isFocusMode && isMobileSidebarOpen && (
+        <button
+          type="button"
+          className="admin-sidebar-scrim"
+          aria-label="Close admin navigation"
+          onClick={() => setIsMobileSidebarOpen(false)}
+        />
+      )}
       
       {/* LEFT SIDEBAR: Persistent Navigation */}
       {!isFocusMode && (
-        <aside className={`admin-sidebar ${isSidebarCollapsed ? 'collapsed' : ''}`}>
+        <aside id="admin-navigation" className={`admin-sidebar ${isSidebarCollapsed ? 'collapsed' : ''} ${isMobileSidebarOpen ? 'mobile-open' : ''}`}>
           <div className="sidebar-brand-bar">
             <div className="brand-badge-box">
               <FiShield className="shield-icon" />
@@ -1002,7 +1050,7 @@ export default function AdminPortal() {
 
         {/* REVIEW WORKSPACE 3-COLUMN VIEW (Primary Working Interface) */}
         {['review', 'teams', 'screening', 'selected', 'rejected', 'submissions'].includes(activeView) && (
-          <div className="review-workspace-3col">
+          <div className={`review-workspace-3col ${selectedTeam ? 'has-selected-team' : ''}`}>
             
             {/* CENTER PANEL: REVIEW QUEUE LIST */}
             <div className="review-queue-column">
@@ -1109,7 +1157,8 @@ export default function AdminPortal() {
                     const color = statusColors[st] || 'gray';
 
                     return (
-                      <div
+                      <button
+                        type="button"
                         key={id}
                         className={`queue-submission-card ${isSelected ? 'selected' : ''}`}
                         onClick={() => openTeamDetails(id)}
@@ -1129,7 +1178,7 @@ export default function AdminPortal() {
                           <span className="meta-badge">{t.problemCode || 'Open Innovation'}</span>
                           <span className="meta-college truncate-text">{t.college || t.leaderCollege || 'NSRIT'}</span>
                         </div>
-                      </div>
+                      </button>
                     );
                   })
                 )}
@@ -1141,6 +1190,9 @@ export default function AdminPortal() {
             <div className="review-inspection-column">
               {selectedTeam ? (
                 <div className="inspection-workspace-content">
+                  <button type="button" className="mobile-review-back" onClick={() => { setSelectedTeam(null); setSelectedTeamId(null); }}>
+                    <FiChevronLeft /> Back to teams
+                  </button>
                   
                   {/* Section 1: Overview Header */}
                   <div className="inspection-section-header">
@@ -1214,11 +1266,11 @@ export default function AdminPortal() {
                           <button
                             type="button"
                             className="attachment-btn"
-                            title="Download Presentation"
+                            aria-label="Download presentation"
                             style={{ padding: '0.6rem 0.85rem' }}
                             onClick={() => handleDocumentAction('ppt', 'download', selectedTeam.project.pptFile.originalName || 'presentation.pptx')}
                           >
-                            <FiDownload />
+                            <FiDownload /> <span>Download PPT</span>
                           </button>
                         </div>
                       ) : (
@@ -1239,11 +1291,11 @@ export default function AdminPortal() {
                           <button
                             type="button"
                             className="attachment-btn"
-                            title="Download Supporting Document"
+                            aria-label="Download supporting document"
                             style={{ padding: '0.6rem 0.85rem' }}
                             onClick={() => handleDocumentAction('supporting', 'download', selectedTeam.project.supportingDocFile.originalName || 'supporting-document')}
                           >
-                            <FiDownload />
+                            <FiDownload /> <span>Download Document</span>
                           </button>
                         </div>
                       ) : (
@@ -2448,13 +2500,14 @@ export default function AdminPortal() {
         {/* PROBLEM STATEMENT CREATE/EDIT MODAL */}
         {isPsModalOpen && (
           <div className="admin-modal-overlay" onClick={() => setIsPsModalOpen(false)}>
-            <div className="admin-modal-card" onClick={(e) => e.stopPropagation()}>
+            <div className="admin-modal-card" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true" aria-label={editingPs ? 'Edit problem statement' : 'Add problem statement'}>
               <div className="modal-header-flex">
                 <h3>{editingPs ? 'Edit Problem Statement Track' : 'Create Problem Statement Track'}</h3>
                 <button
                   type="button"
                   className="close-modal-btn"
                   onClick={() => setIsPsModalOpen(false)}
+                  aria-label="Close problem statement editor"
                 >
                   <FiX />
                 </button>

@@ -127,6 +127,23 @@ export default function Dashboard() {
   const [activePreview, setActivePreview] = useState(null); // { type: 'ppt' | 'doc' | 'video' | 'abstract', url?: string, title?: string, content?: string } | null
   const [activeModal, setActiveModal] = useState(null); // 'announcements' | null
 
+  useEffect(() => {
+    if (!activePreview && !activeModal) return undefined;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    const closeOnEscape = (event) => {
+      if (event.key === 'Escape') {
+        setActivePreview(null);
+        setActiveModal(null);
+      }
+    };
+    window.addEventListener('keydown', closeOnEscape);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener('keydown', closeOnEscape);
+    };
+  }, [activePreview, activeModal]);
+
   const fetchDashboard = async () => {
     try {
       setLoading(true);
@@ -554,12 +571,12 @@ export default function Dashboard() {
                 <tbody>
                   {allTeamMembers.map((member, idx) => (
                     <tr key={member.id || idx}>
-                      <td>
+                      <td data-label="Role">
                         <span className={`role-pill ${member.isLeader ? 'role-leader' : 'role-member'}`}>
                           {member.isLeader ? '👑 Team Leader' : '👤 Member'}
                         </span>
                       </td>
-                      <td>
+                      <td data-label="Participant">
                         <div className="member-name-cell">
                           <span className="member-name-text">{safeDisplay(member.name, 'Participant')}</span>
                           <div style={{ display: 'flex', gap: '8px', fontSize: '0.78rem', color: '#94a3b8', marginTop: '2px' }}>
@@ -568,7 +585,7 @@ export default function Dashboard() {
                           </div>
                         </div>
                       </td>
-                      <td>
+                      <td data-label="Email">
                         {member.email ? (
                           <a href={`mailto:${member.email}`} className="member-email-link">
                             <FiMail /> {member.email}
@@ -577,7 +594,7 @@ export default function Dashboard() {
                           <span className="text-dim">Not provided</span>
                         )}
                       </td>
-                      <td>
+                      <td data-label="Phone">
                         {member.phone ? (
                           <a href={`tel:${member.phone}`} className="member-phone-link">
                             <FiPhone /> {member.phone}
@@ -586,15 +603,15 @@ export default function Dashboard() {
                           <span className="text-dim">Not provided</span>
                         )}
                       </td>
-                      <td>
+                      <td data-label="College">
                         <strong>{safeDisplay(member.college, 'Not provided')}</strong>
                       </td>
-                      <td>
+                      <td data-label="Branch / Year">
                         <span>
                           {safeDisplay(member.department, 'Dept Not Set')} • {safeDisplay(member.year, 'Year Not Set')}
                         </span>
                       </td>
-                      <td>
+                      <td data-label="Profiles">
                         <div className="member-socials-row">
                           {member.githubUrl && (
                             <a href={member.githubUrl} target="_blank" rel="noreferrer" className="social-icon-btn" title="GitHub">
@@ -969,10 +986,10 @@ export default function Dashboard() {
       {/* DOCUMENT & MEDIA PREVIEW MODAL */}
       {activePreview && (
         <div className="dash-modal-overlay" onClick={() => setActivePreview(null)}>
-          <div className="dash-modal-box modal-doc-viewer" onClick={(e) => e.stopPropagation()}>
+          <div className="dash-modal-box modal-doc-viewer" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true" aria-label={activePreview.title || 'Document preview'}>
             <div className="modal-header">
               <h3>{activePreview.title || 'Document Viewer'}</h3>
-              <button type="button" className="btn-close-modal" onClick={() => setActivePreview(null)}>
+              <button type="button" className="btn-close-modal" onClick={() => setActivePreview(null)} aria-label="Close document preview">
                 <FiX />
               </button>
             </div>
@@ -1023,10 +1040,10 @@ export default function Dashboard() {
       {/* ANNOUNCEMENTS MODAL */}
       {activeModal === 'announcements' && (
         <div className="dash-modal-overlay" onClick={() => setActiveModal(null)}>
-          <div className="dash-modal-box" onClick={(e) => e.stopPropagation()}>
+          <div className="dash-modal-box" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true" aria-label="Announcements">
             <div className="modal-header">
               <h3>Official Announcements</h3>
-              <button type="button" className="btn-close-modal" onClick={() => setActiveModal(null)}>
+              <button type="button" className="btn-close-modal" onClick={() => setActiveModal(null)} aria-label="Close dialog">
                 <FiX />
               </button>
             </div>

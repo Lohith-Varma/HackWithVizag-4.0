@@ -180,13 +180,13 @@ export default function AdminOfflineRegistrations({ onToast }) {
                     const offline = item.offlineRegistration;
                     return (
                       <tr key={item.id} onClick={() => openDetails(item.id)} tabIndex={0} onKeyDown={(event) => { if (event.key === 'Enter') openDetails(item.id); }}>
-                        <td><strong>{item.teamName}</strong><small>{item.id}</small></td>
-                        <td><strong>{item.leader?.name || 'Not available'}</strong><small>{item.college || 'Not available'}</small></td>
-                        <td>{offline.teamSize}</td>
-                        <td><strong>{item.projectTitle || 'Not available'}</strong><small>{item.problemCode || 'Not available'}</small></td>
-                        <td><code>{offline.utrId}</code></td>
-                        <td>{formatDate(offline.submittedAt)}</td>
-                        <td><span className="offline-submitted-badge">OFFLINE_SUBMITTED</span></td>
+                        <td data-label="Team"><strong>{item.teamName}</strong><small>{item.id}</small></td>
+                        <td data-label="Lead / College"><strong>{item.leader?.name || 'Not available'}</strong><small>{item.college || 'Not available'}</small></td>
+                        <td data-label="Size">{offline.teamSize}</td>
+                        <td data-label="Project / Problem"><strong>{item.projectTitle || 'Not available'}</strong><small>{item.problemCode || 'Not available'}</small></td>
+                        <td data-label="UTR"><code>{offline.utrId}</code></td>
+                        <td data-label="Submitted">{formatDate(offline.submittedAt)}</td>
+                        <td data-label="Status"><span className="offline-submitted-badge">OFFLINE_SUBMITTED</span></td>
                       </tr>
                     );
                   })}

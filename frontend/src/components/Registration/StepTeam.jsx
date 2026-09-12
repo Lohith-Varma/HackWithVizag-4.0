@@ -174,16 +174,9 @@ export default function StepTeam({ data, errors, onChange, leadName = '', leadCo
         </div>
 
         {/* TEAM SIZE SELECTION (STRICTLY 3 OR 4 ONLY) */}
-        <div className="field" style={{ gridColumn: 'span 2' }}>
+        <div className="field span-2">
           <span>Team Size (Total Members Including Leader) *</span>
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: '1fr 1fr',
-              gap: '1rem',
-              marginTop: '0.35rem',
-            }}
-          >
+          <div className="team-size-grid">
             <button
               type="button"
               className={`team-size-option-card ${selectedSize === 3 ? 'active' : ''}`}
@@ -261,7 +254,7 @@ export default function StepTeam({ data, errors, onChange, leadName = '', leadCo
           return (
             <div className="member-card" key={`member-${index + 1}`}>
               <div className="member-card-header">
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <div className="member-title-row">
                   <h4>Member {index + 2}</h4>
                   {member.isVerifiedUser && (
                     <span className="badge-tag" style={{ background: 'rgba(16, 185, 129, 0.2)', color: '#34d399', fontSize: '0.75rem', padding: '2px 8px', borderRadius: '4px' }}>
@@ -293,7 +286,7 @@ export default function StepTeam({ data, errors, onChange, leadName = '', leadCo
               <div className="form-grid member-fields">
                 <label className="field">
                   <span>Email Address *</span>
-                  <div style={{ display: 'flex', gap: '6px' }}>
+                  <div className="member-email-lookup">
                     <input
                       type="email"
                       value={member.email || ''}
@@ -385,7 +378,7 @@ export default function StepTeam({ data, errors, onChange, leadName = '', leadCo
                   {memberErrors.year && <small>{memberErrors.year}</small>}
                 </label>
 
-                <div className="field" style={{ gridColumn: 'span 2' }}>
+                <div className="field span-2">
                   <span>College (Auto-assigned)</span>
                   <div className="readonly-box" style={{ fontSize: '0.85rem', color: '#94a3b8', background: 'rgba(255,255,255,0.03)' }}>
                     🏛️ <strong>{member.college || effectiveLeadCollege}</strong> (Single-college team rule enforced)

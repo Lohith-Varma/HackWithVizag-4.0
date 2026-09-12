@@ -388,4 +388,87 @@
   .offline-detail-heading {
     flex-direction: column;
   }
+
+  .offline-admin-header,
+  .offline-list-summary,
+  .offline-pagination {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .offline-admin-header button,
+  .offline-admin-toolbar button,
+  .offline-pagination button,
+  .offline-view-screenshot {
+    width: 100%;
+    min-height: 48px;
+  }
+
+  .offline-table-wrap {
+    overflow: visible;
+    border: 0;
+  }
+
+  .offline-table,
+  .offline-table tbody,
+  .offline-table tr,
+  .offline-table td {
+    display: block;
+    width: 100%;
+    min-width: 0;
+  }
+
+  .offline-table thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+
+  .offline-table tr {
+    margin-bottom: 0.9rem;
+    padding: 0.45rem 1rem;
+    border: 1px solid var(--card-border);
+    border-radius: var(--radius-md);
+    background: rgba(10, 14, 30, 0.72);
+  }
+
+  .offline-table td {
+    display: grid;
+    grid-template-columns: minmax(92px, 0.45fr) minmax(0, 1fr);
+    gap: 0.75rem;
+    padding: 0.7rem 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    overflow-wrap: anywhere;
+  }
+
+  .offline-table td::before {
+    content: attr(data-label);
+    color: var(--color-text-secondary);
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  .offline-members-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .offline-screenshot-modal {
+    padding: 0.75rem;
+  }
+}
+
+@media (max-width: 420px) {
+  .offline-admin-view {
+    padding: 0.75rem;
+  }
+
+  .offline-table td {
+    grid-template-columns: 1fr;
+    gap: 0.25rem;
+  }
 }

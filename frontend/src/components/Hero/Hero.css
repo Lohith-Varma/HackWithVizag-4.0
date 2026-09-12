@@ -352,6 +352,36 @@
 
 /* Responsive Scaling */
 @media (max-width: 768px) {
+  .hero-section {
+    min-height: 100svh;
+    padding-top: 88px;
+    padding-inline: 0;
+  }
+
+  .hero-container,
+  .hero-content {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .hero-title {
+    width: 100%;
+    max-width: 100%;
+    font-size: clamp(2rem, 12vw, 3.25rem);
+    overflow-wrap: anywhere;
+  }
+
+  .hero-badge {
+    max-width: 100%;
+    padding-inline: 0.85rem;
+    text-align: center;
+  }
+
+  .badge-text {
+    font-size: 0.72rem;
+    letter-spacing: 0.075em;
+  }
+
   .hero-meta-grid {
     grid-template-columns: 1fr;
     gap: 1.25rem;
@@ -372,12 +402,19 @@
   }
 
   .timer-blocks {
-    gap: 0.5rem;
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 0.45rem;
+    width: 100%;
   }
 
   .timer-block {
-    min-width: 70px;
-    padding: 1rem 0.75rem;
+    min-width: 0;
+    padding: 0.85rem 0.35rem;
+  }
+
+  .timer-separator {
+    display: none;
   }
 
   .timer-number {
@@ -394,5 +431,24 @@
   .btn-hero-secondary {
     width: 100%;
     justify-content: center;
+  }
+}
+
+@media (max-width: 480px) {
+  .hero-meta-grid,
+  .hero-timer-container {
+    margin-bottom: 2.25rem;
+  }
+
+  .hero-tagline {
+    margin-bottom: 2.25rem;
+  }
+
+  .timer-number {
+    font-size: 1.5rem;
+  }
+
+  .registration-deadline {
+    line-height: 1.55;
   }
 }
