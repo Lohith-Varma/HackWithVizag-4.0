@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { FiCheckCircle, FiSearch, FiAlertCircle } from 'react-icons/fi';
 import { api } from '../../services/api';
+import { normalizeIndianPhone } from '../../utils/registrationValidation';
 
 const yearOptions = ['1st Year', '2nd Year', '3rd Year', '4th Year'];
 
@@ -325,6 +326,7 @@ export default function StepTeam({ data, errors, onChange, leadName = '', leadCo
                     type="tel"
                     value={member.phone || ''}
                     onChange={(e) => updateMember(index, 'phone', e.target.value)}
+                    onBlur={() => updateMember(index, 'phone', normalizeIndianPhone(member.phone))}
                     placeholder="10-digit mobile"
                   />
                   {memberErrors.phone && <small>{memberErrors.phone}</small>}

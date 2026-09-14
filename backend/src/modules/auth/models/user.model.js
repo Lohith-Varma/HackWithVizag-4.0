@@ -1,5 +1,6 @@
 import mongoose from "mongoose";
 import bcrypt from "bcrypt";
+import { normalizeIndianPhone } from "../../../utils/phone.js";
 
 const USER_ROLES = ["participant", "reviewer", "admin"];
 const USER_STATUSES = ["pending", "under_review", "selected", "rejected", "blocked"];
@@ -25,6 +26,7 @@ const userSchema = new mongoose.Schema(
       type: String,
       required: [true, "Phone number is required"],
       trim: true,
+      set: normalizeIndianPhone,
       match: [/^[6-9]\d{9}$/, "Phone number must be a valid 10 digit Indian mobile number"],
     },
     password: {

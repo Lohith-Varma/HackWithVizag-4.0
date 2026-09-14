@@ -1,9 +1,17 @@
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const phonePattern = /^[+]?\d[\d\s-]{7,14}\d$/;
+const phonePattern = /^[6-9]\d{9}$/;
+const harmlessPhoneFormattingPattern = /^[+\d\s()-]+$/;
 const urlPattern = /^https?:\/\/.+\..+/i;
 const youtubePattern = /^(https?:\/\/)?(www\.)?(youtube\.com|youtu\.be)\/.+/i;
 
 const required = (value) => !String(value || '').trim();
+
+export const normalizeIndianPhone = (value = '') => {
+  const input = String(value ?? '').trim();
+  if (!input || !harmlessPhoneFormattingPattern.test(input)) return input;
+  const digits = input.replace(/\D/g, '');
+  return digits.length === 12 && digits.startsWith('91') ? digits.slice(2) : digits;
+};
 
 export const countWords = (text = '') => {
   return String(text).trim().split(/\s+/).filter(Boolean).length;
@@ -56,8 +64,8 @@ export const validatePersonal = (personal = {}) => {
   if (personal.email && !emailPattern.test(personal.email)) {
     errors.email = 'Enter a valid email address';
   }
-  if (personal.phone && !phonePattern.test(personal.phone)) {
-    errors.phone = 'Enter a valid phone number';
+  if (personal.phone && !phonePattern.test(normalizeIndianPhone(personal.phone))) {
+    errors.phone = 'Enter a valid 10-digit Indian mobile number';
   }
   if (personal.year === 'Final Year') {
     errors.year = 'Please select 4th Year (Final Year is no longer an option)';
@@ -66,6 +74,7 @@ export const validatePersonal = (personal = {}) => {
 };
 
 export const validateTeam = (team = {}, _eventConfig = {}, leadCollege = '') => {
+  void _eventConfig;
   const errors = { members: [] };
 
   if (required(team.teamName)) errors.teamName = 'Team name is required';
@@ -103,7 +112,9 @@ export const validateTeam = (team = {}, _eventConfig = {}, leadCollege = '') => 
         seenMemberEmails.add(em);
       }
     }
-    if (member.phone && !phonePattern.test(member.phone)) memberErrors.phone = 'Enter a valid phone';
+    if (member.phone && !phonePattern.test(normalizeIndianPhone(member.phone))) {
+      memberErrors.phone = `Member ${index + 2} phone must be a valid 10-digit Indian mobile number`;
+    }
     if (member.year === 'Final Year') memberErrors.year = 'Please select 4th Year';
 
     if (member.college && normalizedLeadCollege) {

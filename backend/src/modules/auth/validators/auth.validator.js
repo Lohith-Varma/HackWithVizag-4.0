@@ -1,4 +1,5 @@
 import { body } from "express-validator";
+import { normalizeIndianPhone } from "../../../utils/phone.js";
 
 export const registerValidation = [
   body("name")
@@ -17,7 +18,7 @@ export const registerValidation = [
     .withMessage("Email is invalid")
     .normalizeEmail(),
   body("phone")
-    .customSanitizer((val) => (typeof val === "string" ? val.replace(/^\+91\s*/, "").replace(/\D/g, "") : val))
+    .customSanitizer(normalizeIndianPhone)
     .trim()
     .notEmpty()
     .withMessage("Phone number is required")

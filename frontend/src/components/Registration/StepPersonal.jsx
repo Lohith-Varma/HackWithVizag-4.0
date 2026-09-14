@@ -1,5 +1,5 @@
 import { FiImage } from 'react-icons/fi';
-import { formatBytes } from '../../utils/registrationValidation';
+import { formatBytes, normalizeIndianPhone } from '../../utils/registrationValidation';
 
 const years = ['1st Year', '2nd Year', '3rd Year', '4th Year'];
 
@@ -29,7 +29,7 @@ export default function StepPersonal({ data, errors, onChange, onFileChange }) {
 
         <label className="field">
           <span>Phone Number *</span>
-          <input type="tel" value={data.phone} onChange={update('phone')} placeholder="+91 98765 43210" />
+          <input type="tel" value={data.phone} onChange={update('phone')} onBlur={() => onChange('phone', normalizeIndianPhone(data.phone))} placeholder="10-digit mobile or +91 prefix" />
           {errors.phone && <small>{errors.phone}</small>}
         </label>
 

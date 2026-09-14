@@ -1,5 +1,6 @@
 import { asyncHandler } from "../../../utils/asyncHandler.js";
 import { sendSuccess } from "../../../utils/apiResponse.js";
+import { isValidIndianPhone, normalizeIndianPhone } from "../../../utils/phone.js";
 import ApiError from "../../../utils/apiError.js";
 import Team from "../../teams/models/team.model.js";
 import Project from "../../projects/models/project.model.js";
@@ -13,6 +14,14 @@ import {
   getSubmissionForUser,
   reviewProjectSubmission,
 } from "../services/submission.service.js";
+
+const requireIndianPhone = (value, fieldLabel) => {
+  const normalized = normalizeIndianPhone(value);
+  if (!isValidIndianPhone(normalized)) {
+    throw new ApiError(400, `${fieldLabel} phone number must be a valid 10-digit Indian mobile number.`);
+  }
+  return normalized;
+};
 
 export const getMySubmission = asyncHandler(async (req, res) => {
   const submission = await getSubmissionForUser(req.user.id);
@@ -46,6 +55,8 @@ export const submitFullRegistration = asyncHandler(async (req, res) => {
   if (!personal || !teamData || !projectData) {
     throw new ApiError(400, "Missing required registration payload sections");
   }
+
+  personal.phone = requireIndianPhone(personal.phone, "Team leader");
 
   const pptUpload = req.files?.pptFile?.[0];
   const supportingDocUpload = req.files?.supportingDocFile?.[0];
@@ -140,6 +151,7 @@ export const submitFullRegistration = asyncHandler(async (req, res) => {
 
   for (const m of memberList) {
     if (!m) continue;
+    m.phone = requireIndianPhone(m.phone, `Member ${memberUserIds.length + 1}`);
     const memberEmail = (m.email || "").toLowerCase().trim();
     if (!memberEmail) {
       throw new ApiError(400, "All team members must have a valid email address.");
@@ -348,6 +360,8 @@ export const registerTeamPhase = asyncHandler(async (req, res) => {
     throw new ApiError(400, `Team size must be exactly 3 or 4 members (including the Team Leader). Current count: ${totalMembers}`);
   }
 
+  personal.phone = requireIndianPhone(personal.phone, "Team leader");
+
   const [existingUserTeam, existingNamedTeam, leaderUser] = await Promise.all([
     Team.findOne({ $or: [{ leader: userId }, { members: userId }] }),
     Team.findOne({ teamName: new RegExp(`^${String(teamData.teamName).trim().replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}$`, "i") }),
@@ -363,7 +377,8 @@ export const registerTeamPhase = asyncHandler(async (req, res) => {
   const seenEmails = new Set([leaderEmail]);
   const resolvedMembers = [];
 
-  for (const member of memberList) {
+  for (const [memberIndex, member] of memberList.entries()) {
+    member.phone = requireIndianPhone(member.phone, `Member ${memberIndex + 2}`);
     const email = String(member.email || "").trim().toLowerCase();
     if (!email) throw new ApiError(400, "All team members must have a valid email address.");
     if (seenEmails.has(email)) throw new ApiError(400, `Duplicate member email "${email}". Each team member must have a unique email.`);

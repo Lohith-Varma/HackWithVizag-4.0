@@ -1,4 +1,21 @@
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
+import { normalizeIndianPhone } from '../utils/registrationValidation.js';
+
+const API_BASE_URL = import.meta.env?.VITE_API_BASE_URL || '/api';
+
+const normalizeRegistrationPhones = (registrationData = {}) => ({
+  ...registrationData,
+  personal: registrationData.personal
+    ? { ...registrationData.personal, phone: normalizeIndianPhone(registrationData.personal.phone) }
+    : registrationData.personal,
+  team: registrationData.team
+    ? {
+        ...registrationData.team,
+        members: Array.isArray(registrationData.team.members)
+          ? registrationData.team.members.map((member) => ({ ...member, phone: normalizeIndianPhone(member.phone) }))
+          : registrationData.team.members,
+      }
+    : registrationData.team,
+});
 
 const resolveApiBaseUrl = () => {
   const base = API_BASE_URL.replace(/\/$/, '');
@@ -267,16 +284,17 @@ export const api = {
 
   // Registration Submission API (Supports Multi-part File Uploads)
   async submitRegistration(registrationData) {
+    const normalizedRegistration = normalizeRegistrationPhones(registrationData);
     const formData = new FormData();
     
     // Copy files out to avoid stringifying circular/binary objects
-    const pptFile = registrationData.uploads?.pptFile;
-    const supportingDocFile = registrationData.uploads?.supportingDocFile;
+    const pptFile = normalizedRegistration.uploads?.pptFile;
+    const supportingDocFile = normalizedRegistration.uploads?.supportingDocFile;
 
     const payloadToSerialize = {
-      ...registrationData,
+      ...normalizedRegistration,
       uploads: {
-        ...registrationData.uploads,
+        ...normalizedRegistration.uploads,
         pptFile: undefined,
         supportingDocFile: undefined,
       },
@@ -299,7 +317,7 @@ export const api = {
   },
 
   async registerTeam(payload) {
-    return request('/submissions/team-registration', { method: 'POST', body: payload });
+    return request('/submissions/team-registration', { method: 'POST', body: normalizeRegistrationPhones(payload) });
   },
 
   async submitProject(registrationData) {
