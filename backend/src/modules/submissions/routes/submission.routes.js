@@ -2,7 +2,9 @@ import express from "express";
 import {
   finalSubmit,
   getMySubmission,
+  registerTeamPhase,
   reviewSubmission,
+  submitProjectPhase,
   submitFullRegistration,
 } from "../controllers/submission.controller.js";
 import { authenticate } from "../../../middleware/auth.middleware.js";
@@ -15,6 +17,8 @@ router.use(authenticate);
 router.get("/me", getMySubmission);
 router.get("/review/:projectId", reviewSubmission);
 router.post("/final/:projectId", finalSubmit);
+router.post("/team-registration", registerTeamPhase);
+router.post("/project", uploadProjectFiles, submitProjectPhase);
 router.post("/full", uploadProjectFiles, submitFullRegistration);
 
 export default router;

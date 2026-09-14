@@ -97,9 +97,11 @@ const emptyDashboard = {
   totalRegisteredTeams: 0,
   totalRegisteredParticipants: 0,
   totalSubmittedProjects: 0,
+  awaitingSubmissionTeams: 0,
   teamsUnderReview: 0,
   selectedTeams: 0,
   offlineRegisteredTeams: 0,
+  pendingOfflineRegistrationTeams: 0,
   rejectedTeams: 0,
   openInnovationEntries: 0,
   officialEntries: 0,
@@ -241,6 +243,7 @@ export default function AdminPortal() {
     problemStatement: '',
     sortBy: 'createdAt',
     sortOrder: 'desc',
+    phase: '',
     page: 1,
     limit: 50,
   });
@@ -387,6 +390,7 @@ export default function AdminPortal() {
   const [toast, setToast] = useState(null);
 
   const effectiveFilters = useMemo(() => {
+    if (activeView === 'review') return { ...filters, phase: 'submitted', status: '' };
     if (activeView === 'selected') return { ...filters, status: 'selected' };
     if (activeView === 'rejected') return { ...filters, status: 'rejected' };
     return filters;
@@ -497,7 +501,7 @@ export default function AdminPortal() {
 
   useEffect(() => {
     if (!user) return;
-    if (['teams', 'screening', 'selected', 'rejected', 'submissions'].includes(activeView)) {
+    if (['review', 'teams', 'screening', 'selected', 'rejected', 'submissions'].includes(activeView)) {
       loadTeams();
     } else if (activeView === 'analytics') {
       loadAnalytics();
@@ -592,7 +596,11 @@ export default function AdminPortal() {
 
 
   const handleFilterChip = (statusVal) => {
-    setFilters((prev) => ({ ...prev, status: prev.status === statusVal ? '' : statusVal, page: 1 }));
+    setFilters((prev) => ({ ...prev, status: prev.status === statusVal ? '' : statusVal, phase: '', page: 1 }));
+  };
+
+  const handlePhaseFilter = (phase) => {
+    setFilters((prev) => ({ ...prev, phase: prev.phase === phase ? '' : phase, status: '', page: 1 }));
   };
 
   const handleProblemTypeChip = (typeVal) => {
@@ -975,9 +983,19 @@ export default function AdminPortal() {
               <div className="kpi-card shadow-glow">
                 <div className="kpi-icon-box blue"><FiUsers /></div>
                 <div className="kpi-data">
-                  <span className="kpi-label">Total Teams</span>
+                  <span className="kpi-label">Total Registered</span>
                   <strong className="kpi-val">{dashboard.totalRegisteredTeams}</strong>
                 </div>
+              </div>
+
+              <div className="kpi-card">
+                <div className="kpi-icon-box blue"><FiFileText /></div>
+                <div className="kpi-data"><span className="kpi-label">PPT Submitted</span><strong className="kpi-val">{dashboard.totalSubmittedProjects}</strong></div>
+              </div>
+
+              <div className="kpi-card">
+                <div className="kpi-icon-box amber"><FiClock /></div>
+                <div className="kpi-data"><span className="kpi-label">Awaiting Submission</span><strong className="kpi-val">{dashboard.awaitingSubmissionTeams}</strong></div>
               </div>
 
               <div className="kpi-card">
@@ -1011,6 +1029,11 @@ export default function AdminPortal() {
                   <strong className="kpi-val">{dashboard.offlineRegisteredTeams}</strong>
                 </div>
               </button>
+
+              <div className="kpi-card">
+                <div className="kpi-icon-box amber"><FiClock /></div>
+                <div className="kpi-data"><span className="kpi-label">Pending Offline Registration</span><strong className="kpi-val">{dashboard.pendingOfflineRegistrationTeams}</strong></div>
+              </div>
             </div>
 
             {/* Quick Summary Section */}
@@ -1087,11 +1110,17 @@ export default function AdminPortal() {
                 <div className="filter-chips-row">
                   <button
                     type="button"
-                    className={`chip ${filters.status === '' ? 'active' : ''}`}
+                    className={`chip ${filters.status === '' && filters.phase === '' ? 'active' : ''}`}
                     onClick={() => handleFilterChip('')}
                   >
                     All ({pagination.total || teams.length})
                   </button>
+
+                  {activeView !== 'review' && <button type="button" className={`chip ${filters.phase === 'submission_pending' ? 'active' : ''}`} onClick={() => handlePhaseFilter('submission_pending')}>Submission Pending</button>}
+
+                  {activeView !== 'review' && <button type="button" className={`chip chip-blue ${filters.phase === 'submitted' ? 'active' : ''}`} onClick={() => handlePhaseFilter('submitted')}>Submitted</button>}
+
+                  {activeView !== 'review' && <button type="button" className={`chip chip-green ${filters.phase === 'offline_submitted' ? 'active' : ''}`} onClick={() => handlePhaseFilter('offline_submitted')}>Offline Submitted</button>}
 
                   <button
                     type="button"
@@ -1166,12 +1195,12 @@ export default function AdminPortal() {
                         <div className="queue-card-top">
                           <strong className="queue-team-name">{t.teamName}</strong>
                           <span className={`status-pill-mini status-pill-${color}`}>
-                            {statusLabels[st] || st}
+                            {t.submissionStatus === 'pending' ? 'Submission Pending' : (statusLabels[st] || st)}
                           </span>
                         </div>
 
                         <h4 className="queue-project-title truncate-text">
-                          {t.projectTitle || 'Untitled Project'}
+                          {t.projectTitle || 'Project not submitted'}
                         </h4>
 
                         <div className="queue-card-meta">
@@ -1431,6 +1460,7 @@ export default function AdminPortal() {
                           value={reviewFormStatus}
                           onChange={(e) => setReviewFormStatus(e.target.value)}
                           className="decision-select"
+                          disabled={selectedTeam.submissionStatus === 'pending'}
                         >
                           <option value="pending">Pending Review</option>
                           <option value="under_review">Under Review</option>
@@ -1476,7 +1506,7 @@ export default function AdminPortal() {
                           type="button"
                           className="secondary-action"
                           onClick={() => handleSaveReview(false)}
-                          disabled={isSaving}
+                          disabled={isSaving || selectedTeam.submissionStatus === 'pending'}
                         >
                           <FiSave /> Save Review (Ctrl+S)
                         </button>
@@ -1485,7 +1515,7 @@ export default function AdminPortal() {
                           type="button"
                           className="primary-action btn-save-next"
                           onClick={() => handleSaveReview(true)}
-                          disabled={isSaving}
+                          disabled={isSaving || selectedTeam.submissionStatus === 'pending'}
                         >
                           Save & Next →
                         </button>

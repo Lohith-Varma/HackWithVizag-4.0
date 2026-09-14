@@ -38,11 +38,10 @@ import { formatBytes } from '../utils/registrationValidation';
 import './Portal.css';
 
 const TIMELINE_STAGES = [
-  { id: 'Draft', label: 'Draft', icon: FiEdit3 },
-  { id: 'Submitted', label: 'Submitted', icon: FiCheckCircle },
-  { id: 'Under Review', label: 'Under Review', icon: FiClock },
-  { id: 'Selected', label: 'Selected', icon: FiAward },
-  { id: 'Offline Registration', label: 'Offline Reg', icon: FiMapPin },
+  { id: 'Team Registration', label: 'Team Registration', icon: FiUsers },
+  { id: 'Project Submission', label: 'Project Submission', icon: FiFileText },
+  { id: 'Evaluation', label: 'Evaluation', icon: FiClock },
+  { id: 'Offline Registration', label: 'Offline Registration', icon: FiMapPin },
 ];
 
 const STATUS_CONFIGS = {
@@ -55,6 +54,16 @@ const STATUS_CONFIGS = {
     actionLabel: 'Complete Registration',
     actionRoute: '#registration',
     themeClass: 'status-card-draft',
+  },
+  registered: {
+    badgeLabel: 'Team Registered',
+    badgeColor: 'blue',
+    badgeIcon: FiUsers,
+    title: 'Team Registration Complete',
+    description: 'Your team is registered and counted. Submit your project details and PPT for evaluation.',
+    actionLabel: 'Start Project Submission',
+    actionRoute: '#registration',
+    themeClass: 'status-card-submitted',
   },
   submitted: {
     badgeLabel: 'Submitted',
@@ -165,10 +174,15 @@ export default function Dashboard() {
   const team = dashboardData?.team || null;
   const project = dashboardData?.project || null;
   const submission = dashboardData?.submission || null;
-  const currentStage = dashboardData?.timelineStage || (submission ? 'Under Review' : 'Draft');
+  const submissionComplete = Boolean(submission?.finalSubmittedAt || (submission && submission.status !== 'draft') || project?.submittedAt || (team && team.currentStatus !== 'pending'));
+  const currentStage = dashboardData?.phases?.offlineRegistration === 'completed'
+    ? 'Offline Registration'
+    : dashboardData?.phases?.evaluation === 'selected' || dashboardData?.phases?.evaluation === 'rejected' || submissionComplete
+      ? 'Evaluation'
+      : team ? 'Project Submission' : 'Team Registration';
   const rawStatus = dashboardData?.offlineRegistration?.status === 'OFFLINE_SUBMITTED'
     ? 'offline_submitted'
-    : (dashboardData?.isEligibleForOffline ? 'selected' : (team?.currentStatus || submission?.status || 'draft'));
+    : (dashboardData?.isEligibleForOffline ? 'selected' : (team && !submissionComplete ? 'registered' : (team?.currentStatus || submission?.status || 'draft')));
   const status = rawStatus.toLowerCase().replace(' ', '_');
   const registrationId = dashboardData?.registrationId || (submission ? `HWV-2026-${submission._id.toString().slice(-6).toUpperCase()}` : 'HWV-2026-PENDING');
 
@@ -315,11 +329,10 @@ export default function Dashboard() {
 
   const getStageIndex = (stageName) => {
     const map = {
-      Draft: 0,
-      Submitted: 1,
-      'Under Review': 2,
-      Selected: 3,
-      'Offline Registration': 4,
+      'Team Registration': 0,
+      'Project Submission': 1,
+      Evaluation: 2,
+      'Offline Registration': 3,
     };
     return map[stageName] ?? 0;
   };
@@ -521,7 +534,7 @@ export default function Dashboard() {
               <div className="info-item-box">
                 <span className="info-label">Submission Status</span>
                 <strong className="info-value text-capitalize">
-                  {safeDisplay(submission?.status || team?.currentStatus || 'Draft')}
+                  {team && !submissionComplete ? 'Registered — Project Submission Pending' : safeDisplay(submission?.status || team?.currentStatus || 'Draft')}
                 </strong>
               </div>
 

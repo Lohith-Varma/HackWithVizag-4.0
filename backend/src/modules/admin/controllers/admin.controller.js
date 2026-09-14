@@ -52,11 +52,19 @@ const offlineTeamPopulate = [
   { path: "members", select: "name email phone college collegeName registeredNumber department year gender" },
 ];
 
-const normalizeTeam = ({ team, project = null, submission = null } = {}) => {
+const hasCompletedSubmission = (project, submission, team) => Boolean(
+  submission?.finalSubmittedAt ||
+  (submission && submission.status !== "draft") ||
+  project?.submittedAt ||
+  (team && team.currentStatus !== "pending")
+);
+
+const normalizeTeam = ({ team, project = null, submission = null, offlineRegistration = null } = {}) => {
   const regId = submission
     ? `HWV-2026-${submission._id.toString().slice(-6).toUpperCase()}`
     : `HWV-2026-${team._id.toString().slice(-6).toUpperCase()}`;
 
+  const submissionComplete = hasCompletedSubmission(project, submission, team);
   return {
     id: team._id.toString(),
     _id: team._id.toString(),
@@ -72,13 +80,17 @@ const normalizeTeam = ({ team, project = null, submission = null } = {}) => {
     remarks: team.remarks || "",
     reviewedBy: team.reviewedBy,
     reviewedAt: team.reviewedAt,
-    submissionDate: submission?.finalSubmittedAt || project?.submittedAt || project?.createdAt || team.createdAt,
+    submissionDate: submissionComplete ? (submission?.finalSubmittedAt || project?.submittedAt || project?.createdAt) : null,
     projectTitle: project?.title || "",
     problemCode: project?.problemCode || project?.problemStatementId?.code || (project?.problemType === "open" ? "Open Innovation" : "Track Not Set"),
     theme: project?.theme || project?.problemStatementId?.theme || "",
     problemType: project?.problemType || "official",
     project,
     submission,
+    registrationStatus: "completed",
+    submissionStatus: submissionComplete ? "submitted" : "pending",
+    evaluationStatus: submissionComplete ? formatStatus(team.currentStatus) : "not_ready",
+    offlineStatus: offlineRegistration?.status === "OFFLINE_SUBMITTED" ? "submitted" : "pending",
     createdAt: team.createdAt,
     updatedAt: team.updatedAt,
   };
@@ -189,6 +201,36 @@ const buildTeamQuery = async ({ search, status, college, department, theme, prob
   return query;
 };
 
+const applyPhaseFilter = async (query, phase) => {
+  if (!phase || phase === "registered") return query;
+  let ids = null;
+  if (phase === "submission_pending") {
+    const [submittedTeamIds, submittedProjectTeamIds, reviewedTeamIds] = await Promise.all([
+      Submission.find({ $or: [{ finalSubmittedAt: { $ne: null } }, { status: { $ne: "draft" } }] }).distinct("team"),
+      Project.find({ submittedAt: { $ne: null } }).distinct("team"),
+      Team.find({ currentStatus: { $ne: "pending" } }).distinct("_id"),
+    ]);
+    const completed = [...new Set([...submittedTeamIds, ...submittedProjectTeamIds, ...reviewedTeamIds].map(String))];
+    query._id = { ...(query._id || {}), $nin: completed };
+    return query;
+  }
+  if (phase === "submitted") {
+    const [submissionIds, projectIds, reviewedTeamIds] = await Promise.all([
+      Submission.find({ $or: [{ finalSubmittedAt: { $ne: null } }, { status: { $ne: "draft" } }] }).distinct("team"),
+      Project.find({ submittedAt: { $ne: null } }).distinct("team"),
+      Team.find({ currentStatus: { $ne: "pending" } }).distinct("_id"),
+    ]);
+    ids = [...new Set([...submissionIds, ...projectIds, ...reviewedTeamIds].map(String))];
+  } else if (phase === "offline_submitted") {
+    ids = (await OfflineRegistration.find({ status: "OFFLINE_SUBMITTED" }).distinct("team")).map(String);
+  }
+  if (ids) {
+    const existingIds = query._id?.$in?.map(String);
+    query._id = { ...(query._id || {}), $in: existingIds ? ids.filter((id) => existingIds.includes(id)) : ids };
+  }
+  return query;
+};
+
 const buildSort = (sort = "newest") => {
   if (sort === "oldest") return { createdAt: 1 };
   if (sort === "teamName") return { teamName: 1 };
@@ -197,16 +239,18 @@ const buildSort = (sort = "newest") => {
 
 const getProjectsAndSubmissions = async (teams) => {
   const teamIds = teams.map((team) => team._id);
-  const [projects, submissions] = await Promise.all([
+  const [projects, submissions, offlineRegistrations] = await Promise.all([
     Project.find({ team: { $in: teamIds } }).populate("problemStatementId"),
     Submission.find({ team: { $in: teamIds } })
       .populate("project")
       .populate("submittedBy", "name email phone role status"),
+    OfflineRegistration.find({ team: { $in: teamIds }, status: "OFFLINE_SUBMITTED" }),
   ]);
 
   return {
     projectByTeam: new Map(projects.map((project) => [project.team.toString(), project])),
     submissionByTeam: new Map(submissions.map((submission) => [submission.team.toString(), submission])),
+    offlineByTeam: new Map(offlineRegistrations.map((registration) => [registration.team.toString(), registration])),
   };
 };
 
@@ -219,6 +263,14 @@ const updateReviewState = async (teamId, adminId, { status, remarks }) => {
 
   if (!team) {
     throw new ApiError(404, "Team not found");
+  }
+
+  const [projectForReview, submissionForReview] = await Promise.all([
+    Project.findOne({ team: team._id }),
+    Submission.findOne({ team: team._id }),
+  ]);
+  if (status && !hasCompletedSubmission(projectForReview, submissionForReview, team)) {
+    throw new ApiError(409, "This team has registered but has not completed project submission and is not ready for evaluation.");
   }
 
   if (status) {
@@ -258,7 +310,7 @@ export const getDashboard = asyncHandler(async (_req, res) => {
     totalRegisteredTeams,
     totalRegisteredParticipants,
     totalProjects,
-    totalSubmittedProjects,
+    submittedTeamIds,
     pendingTeams,
     submittedTeams,
     teamsUnderReview,
@@ -275,7 +327,7 @@ export const getDashboard = asyncHandler(async (_req, res) => {
     Team.countDocuments(),
     User.countDocuments({ role: "participant" }),
     Project.countDocuments(),
-    Submission.countDocuments({ status: { $ne: "draft" } }),
+    Submission.find({ $or: [{ finalSubmittedAt: { $ne: null } }, { status: { $ne: "draft" } }] }).distinct("team"),
     Team.countDocuments({ currentStatus: "pending" }),
     Team.countDocuments({ currentStatus: "submitted" }),
     Team.countDocuments({ currentStatus: "under_review" }),
@@ -299,13 +351,20 @@ export const getDashboard = asyncHandler(async (_req, res) => {
   ]);
 
   const dailyRegistrations = dailyAgg.map((row) => ({ date: row._id, count: row.count }));
+  const [legacySubmittedProjectTeamIds, reviewedLegacyTeamIds] = await Promise.all([
+    Project.find({ submittedAt: { $ne: null } }).distinct("team"),
+    Team.find({ currentStatus: { $ne: "pending" } }).distinct("_id"),
+  ]);
+  const totalSubmittedProjects = new Set([...submittedTeamIds, ...legacySubmittedProjectTeamIds, ...reviewedLegacyTeamIds].map(String)).size;
 
   return sendSuccess(res, 200, "Admin dashboard fetched successfully", {
     cards: {
       totalRegisteredTeams,
       totalRegisteredParticipants,
       totalProjects,
-      totalSubmittedProjects: totalSubmittedProjects || totalProjects,
+      totalSubmittedProjects,
+      awaitingSubmissionTeams: Math.max(totalRegisteredTeams - totalSubmittedProjects, 0),
+      pendingOfflineRegistrationTeams: Math.max(selectedTeams - offlineRegisteredTeams, 0),
       pendingTeams,
       submittedTeams,
       teamsUnderReview,
@@ -406,7 +465,7 @@ export const listUsers = asyncHandler(async (_req, res) => {
 export const listTeams = asyncHandler(async (req, res) => {
   const page = toInt(req.query.page, 1, 1, 100000);
   const limit = toInt(req.query.limit, 10, 1, 100);
-  const query = await buildTeamQuery(req.query);
+  const query = await applyPhaseFilter(await buildTeamQuery(req.query), req.query.phase);
   const sort = buildSort(req.query.sort);
 
   const [teams, total] = await Promise.all([
@@ -418,12 +477,13 @@ export const listTeams = asyncHandler(async (req, res) => {
     Team.countDocuments(query),
   ]);
 
-  const { projectByTeam, submissionByTeam } = await getProjectsAndSubmissions(teams);
+  const { projectByTeam, submissionByTeam, offlineByTeam } = await getProjectsAndSubmissions(teams);
   const items = teams.map((team) =>
     normalizeTeam({
       team,
       project: projectByTeam.get(team._id.toString()) || null,
       submission: submissionByTeam.get(team._id.toString()) || null,
+      offlineRegistration: offlineByTeam.get(team._id.toString()) || null,
     })
   );
 

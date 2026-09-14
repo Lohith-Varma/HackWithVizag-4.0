@@ -29,6 +29,8 @@ import StepProblemStatement from '../components/Registration/StepProblemStatemen
 import StepProject from '../components/Registration/StepProject';
 import StepUpload from '../components/Registration/StepUpload';
 import StepReview from '../components/Registration/StepReview';
+import TeamRegistrationFlow from '../components/Registration/TeamRegistrationFlow';
+import ProjectSubmissionFlow from '../components/Registration/ProjectSubmissionFlow';
 import Toast from '../components/Toast/Toast';
 import { api, buildAssetUrl } from '../services/api';
 import {
@@ -411,6 +413,21 @@ export default function Registration() {
         <Toast message={toast?.message} type={toast?.type} onDismiss={() => setToast(null)} />
       </main>
     );
+  }
+
+  const hasCompletedProjectSubmission = Boolean(
+    existingTeamData?.submission?.finalSubmittedAt ||
+    (existingTeamData?.submission && existingTeamData.submission.status !== 'draft') ||
+    existingTeamData?.project?.submittedAt ||
+    (existingTeamData?.team && existingTeamData.team.currentStatus !== 'pending')
+  );
+
+  if (!existingTeamData?.team) {
+    return <TeamRegistrationFlow initialData={registration} eventConfig={eventConfig} onRegistered={checkRegistrationStatus} />;
+  }
+
+  if (!hasCompletedProjectSubmission) {
+    return <ProjectSubmissionFlow teamData={existingTeamData} initialData={registration} eventConfig={eventConfig} currentUser={currentUser} onSubmitted={checkRegistrationStatus} />;
   }
 
   // -------------------------------------------------------------

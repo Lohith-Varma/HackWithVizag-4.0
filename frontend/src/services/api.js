@@ -298,6 +298,18 @@ export const api = {
     });
   },
 
+  async registerTeam(payload) {
+    return request('/submissions/team-registration', { method: 'POST', body: payload });
+  },
+
+  async submitProject(registrationData) {
+    const formData = new FormData();
+    formData.append('payload', JSON.stringify({ project: registrationData.project }));
+    if (registrationData.uploads?.pptFile instanceof File) formData.append('pptFile', registrationData.uploads.pptFile);
+    if (registrationData.uploads?.supportingDocFile instanceof File) formData.append('supportingDocFile', registrationData.uploads.supportingDocFile);
+    return request('/submissions/project', { method: 'POST', body: formData, isFormData: true });
+  },
+
   async saveRegistrationDraft(payload) {
     // Save locally or sync draft
     return { ok: true, draft: payload };

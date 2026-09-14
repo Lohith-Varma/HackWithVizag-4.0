@@ -34,11 +34,18 @@ export const getParticipantDashboard = asyncHandler(async (req, res) => {
     ]);
   }
 
-  // Calculate Timeline Stage
-  let timelineStage = "Draft";
-  let statusText = "Registration Draft In Progress";
+  const submissionComplete = Boolean(
+    submission?.finalSubmittedAt ||
+    (submission && submission.status !== "draft") ||
+    project?.submittedAt ||
+    (team && team.currentStatus !== "pending")
+  );
 
-  if (team && submission) {
+  // Calculate Timeline Stage while inferring legacy records from their existing data.
+  let timelineStage = team ? "Team Registered" : "Team Registration";
+  let statusText = team ? "Your team is registered. Complete project submission next." : "Register your team to begin.";
+
+  if (team && submissionComplete) {
     if (team.currentStatus === "selected") {
       timelineStage = "Selected";
       statusText = "Congratulations! Your team has been Selected!";
@@ -62,7 +69,7 @@ export const getParticipantDashboard = asyncHandler(async (req, res) => {
         activeEvent?.registrationEndDate
           ? new Date(activeEvent.registrationEndDate).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
           : "August 31"
-      }. Complete all 6 steps of the registration wizard.`,
+      }. Register your team first, then complete the separate project submission phase.`,
       date: new Date().toISOString(),
       type: "important",
     },
@@ -78,7 +85,16 @@ export const getParticipantDashboard = asyncHandler(async (req, res) => {
   const yearSuffix = activeEvent?.eventYear || "2026";
   const registrationId = submission
     ? `HWV-${yearSuffix}-${submission._id.toString().slice(-6).toUpperCase()}`
-    : null;
+    : team ? `HWV-${yearSuffix}-${team._id.toString().slice(-6).toUpperCase()}` : null;
+
+  const selected = ["selected", "shortlisted", "approved"].includes(team?.currentStatus);
+  const offlineSubmitted = offlineRegistration?.status === "OFFLINE_SUBMITTED";
+  const phases = {
+    teamRegistration: team ? "completed" : "pending",
+    projectSubmission: submissionComplete ? "completed" : team ? "pending" : "locked",
+    evaluation: !submissionComplete ? "locked" : team?.currentStatus === "rejected" ? "rejected" : selected ? "selected" : "under_review",
+    offlineRegistration: offlineSubmitted ? "completed" : selected ? "available" : "locked",
+  };
 
   return sendSuccess(res, 200, "Participant dashboard fetched successfully", {
     user,
@@ -90,8 +106,9 @@ export const getParticipantDashboard = asyncHandler(async (req, res) => {
     registrationId,
     timelineStage,
     statusText,
+    phases,
     announcements,
-    isEligibleForOffline: ["selected", "shortlisted", "approved"].includes(team?.currentStatus),
+    isEligibleForOffline: selected,
   });
 });
 

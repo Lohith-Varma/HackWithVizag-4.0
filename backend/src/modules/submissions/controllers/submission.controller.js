@@ -318,3 +318,210 @@ export const submitFullRegistration = asyncHandler(async (req, res) => {
     throw error;
   }
 });
+
+const normalizeCollege = (user = {}, fallback = "") =>
+  (user.collegeName || user.college || fallback || "").trim().toLowerCase();
+
+const profileFieldsFromRegistration = (personal = {}, fallbackName = "") => ({
+  name: personal.fullName || personal.name || fallbackName,
+  phone: personal.phone,
+  college: personal.collegeName || personal.college,
+  collegeName: personal.collegeName || personal.college,
+  registeredNumber: personal.registeredNumber || personal.regNo || "",
+  department: personal.department,
+  year: personal.year === "Final Year" ? "4th Year" : (personal.year || ""),
+  gender: personal.gender || "",
+  resumeUrl: personal.resumeUrl || personal.resume || "",
+  githubUrl: personal.githubUrl || personal.github || "",
+  linkedinUrl: personal.linkedinUrl || personal.linkedin || "",
+  portfolioUrl: personal.portfolioUrl || personal.portfolio || "",
+});
+
+export const registerTeamPhase = asyncHandler(async (req, res) => {
+  const userId = req.user.id;
+  const { personal = {}, team: teamData = {} } = req.body || {};
+  const memberList = Array.isArray(teamData.members) ? teamData.members.filter(Boolean) : [];
+  const totalMembers = 1 + memberList.length;
+
+  if (!teamData.teamName?.trim()) throw new ApiError(400, "Team name is required");
+  if (totalMembers !== 3 && totalMembers !== 4) {
+    throw new ApiError(400, `Team size must be exactly 3 or 4 members (including the Team Leader). Current count: ${totalMembers}`);
+  }
+
+  const [existingUserTeam, existingNamedTeam, leaderUser] = await Promise.all([
+    Team.findOne({ $or: [{ leader: userId }, { members: userId }] }),
+    Team.findOne({ teamName: new RegExp(`^${String(teamData.teamName).trim().replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}$`, "i") }),
+    User.findById(userId),
+  ]);
+  if (existingUserTeam) throw new ApiError(409, "You are already registered with a team.");
+  if (existingNamedTeam) throw new ApiError(409, `Team name "${teamData.teamName}" is already registered by another team.`);
+  if (!leaderUser) throw new ApiError(404, "Authenticated participant was not found");
+
+  const leaderProfile = profileFieldsFromRegistration(personal, leaderUser.name);
+  const leaderCollege = normalizeCollege(leaderUser, leaderProfile.collegeName);
+  const leaderEmail = String(leaderUser.email || req.user.email || personal.email || "").trim().toLowerCase();
+  const seenEmails = new Set([leaderEmail]);
+  const resolvedMembers = [];
+
+  for (const member of memberList) {
+    const email = String(member.email || "").trim().toLowerCase();
+    if (!email) throw new ApiError(400, "All team members must have a valid email address.");
+    if (seenEmails.has(email)) throw new ApiError(400, `Duplicate member email "${email}". Each team member must have a unique email.`);
+    seenEmails.add(email);
+
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      const existingMembership = await Team.findOne({
+        $or: [{ leader: existingUser._id }, { members: existingUser._id }],
+      });
+      if (existingMembership || existingUser.team) {
+        throw new ApiError(409, `Member email "${email}" is already registered with a team and cannot be added to another team.`);
+      }
+      const memberCollege = normalizeCollege(existingUser, member.college);
+      if (leaderCollege && memberCollege && leaderCollege !== memberCollege) {
+        throw new ApiError(400, "All team members must belong to the same college. Cross-college teams are not allowed.");
+      }
+    }
+    resolvedMembers.push({ member, existingUser });
+  }
+
+  Object.assign(leaderUser, leaderProfile);
+  await leaderUser.save();
+
+  const memberUsers = [];
+  for (const { member, existingUser } of resolvedMembers) {
+    const profile = profileFieldsFromRegistration(member, member.fullName || member.name || "Team Member");
+    profile.college = leaderUser.collegeName || leaderUser.college || profile.college;
+    profile.collegeName = leaderUser.collegeName || leaderUser.college || profile.collegeName;
+    if (existingUser) {
+      Object.entries(profile).forEach(([key, value]) => {
+        if (value !== undefined && value !== "") existingUser[key] = value;
+      });
+      await existingUser.save();
+      memberUsers.push(existingUser);
+    } else {
+      memberUsers.push(await User.create({
+        ...profile,
+        email: String(member.email).trim().toLowerCase(),
+        phone: profile.phone || "9999999999",
+        role: "participant",
+        status: "pending",
+      }));
+    }
+  }
+
+  const memberIds = [leaderUser._id, ...memberUsers.map((member) => member._id)];
+  const team = await Team.create({
+    teamName: teamData.teamName.trim(),
+    leader: leaderUser._id,
+    members: memberIds,
+    currentStatus: "pending",
+  });
+  await User.updateMany({ _id: { $in: memberIds } }, { team: team._id });
+  await team.populate("leader members", "name email phone college collegeName registeredNumber department year gender role status");
+
+  return sendSuccess(res, 201, "Team registered successfully. Project submission is now available.", {
+    team,
+    registrationId: `HWV-2026-${team._id.toString().slice(-6).toUpperCase()}`,
+    phase: "REGISTERED",
+  });
+});
+
+export const submitProjectPhase = asyncHandler(async (req, res) => {
+  const userId = req.user.id;
+  const activeEvent = await Event.findOne({ activeEvent: true });
+  const bodyData = req.body.payload ? JSON.parse(req.body.payload) : req.body;
+  const projectData = bodyData?.project || bodyData;
+  const pptUpload = req.files?.pptFile?.[0];
+  const supportingDocUpload = req.files?.supportingDocFile?.[0];
+
+  const team = await Team.findOne({ $or: [{ leader: userId }, { members: userId }] });
+  if (!team) throw new ApiError(409, "Register your team before submitting a project.");
+  if (team.leader.toString() !== userId) throw new ApiError(403, "Only the team leader can submit the project");
+  if (![3, 4].includes(team.members.length)) throw new ApiError(409, "Team size must be exactly 3 or 4 members before project submission.");
+  if (team.currentStatus !== "pending") throw new ApiError(409, "Project has already been submitted or review has started.");
+  if (await Submission.exists({ team: team._id, $or: [{ finalSubmittedAt: { $ne: null } }, { status: { $ne: "draft" } }] })) {
+    throw new ApiError(409, "Project has already been submitted.");
+  }
+  if (!pptUpload) throw new ApiError(400, "Project PPT is required");
+
+  const requiredFields = ["title", "theme", "problemStatement", "abstract", "githubRepository"];
+  const missingField = requiredFields.find((field) => !String(projectData?.[field] || "").trim());
+  if (missingField) throw new ApiError(400, `${missingField} is required`);
+  const minAbstractWords = activeEvent?.minAbstractWords || 50;
+  const maxAbstractWords = activeEvent?.maxAbstractWords || 500;
+  const wordCount = String(projectData.abstract).trim().split(/\s+/).filter(Boolean).length;
+  if (wordCount < minAbstractWords || wordCount > maxAbstractWords) {
+    throw new ApiError(400, `Abstract must be between ${minAbstractWords} and ${maxAbstractWords} words. Current count: ${wordCount}`);
+  }
+  if (!/^https?:\/\/(www\.)?github\.com\/[\w.-]+\/[\w.-]+\/?$/i.test(String(projectData.githubRepository).trim())) {
+    throw new ApiError(400, "Enter a valid GitHub repository URL (e.g. https://github.com/username/repository)");
+  }
+
+  validateUploadedFile(pptUpload, { kind: "ppt", maxBytes: (activeEvent?.maxPptSizeMb || 15) * 1024 * 1024 });
+  if (supportingDocUpload) {
+    validateUploadedFile(supportingDocUpload, { kind: "supportingDoc", maxBytes: (activeEvent?.maxSupportingDocSizeMb || 15) * 1024 * 1024 });
+  }
+  await ensurePrivateBucket();
+
+  const uploadedObjects = [];
+  let projectPersisted = false;
+  try {
+    const uploadedPpt = await uploadFile({ folder: "ppt", ownerId: team._id, file: pptUpload });
+    uploadedObjects.push(uploadedPpt);
+    const pptFile = { ...uploadedPpt, url: `/api/projects/team/${team._id}/documents/ppt`, path: uploadedPpt.storagePath };
+    let supportingDocFile = {};
+    if (supportingDocUpload) {
+      const uploadedDoc = await uploadFile({ folder: "supporting-documents", ownerId: team._id, file: supportingDocUpload });
+      uploadedObjects.push(uploadedDoc);
+      supportingDocFile = { ...uploadedDoc, url: `/api/projects/team/${team._id}/documents/supporting`, path: uploadedDoc.storagePath };
+    }
+
+    const submittedAt = new Date();
+    const project = await Project.findOneAndUpdate(
+      { team: team._id },
+      {
+        team: team._id,
+        title: projectData.title,
+        theme: projectData.theme,
+        problemStatement: projectData.problemStatement,
+        problemStatementId: projectData.problemStatementId || null,
+        problemCode: projectData.problemCode || "",
+        problemType: projectData.problemType || "official",
+        abstract: projectData.abstract,
+        technologyStack: projectData.technologyStack || "",
+        githubRepository: projectData.githubRepository,
+        demoVideoUrl: projectData.demoVideoUrl || "",
+        pptFile,
+        supportingDocFile,
+        submittedAt,
+      },
+      { upsert: true, new: true, runValidators: true, setDefaultsOnInsert: true }
+    );
+    projectPersisted = true;
+
+    team.currentStatus = "under_review";
+    await team.save();
+    const submission = await Submission.findOneAndUpdate(
+      { team: team._id },
+      { team: team._id, project: project._id, submittedBy: userId, status: "under_review", finalSubmittedAt: submittedAt },
+      { upsert: true, new: true, runValidators: true, setDefaultsOnInsert: true }
+    ).populate("team").populate("project");
+
+    const yearSuffix = activeEvent?.eventYear || "2026";
+    return sendSuccess(res, 201, "Project submitted successfully", {
+      registrationId: `HWV-${yearSuffix}-${submission._id.toString().slice(-6).toUpperCase()}`,
+      status: "under_review",
+      phase: "SUBMITTED",
+      submissionDate: submittedAt.toISOString(),
+      submission,
+    });
+  } catch (error) {
+    if (!projectPersisted) {
+      await Promise.all(uploadedObjects.map((file) => deleteStoredFile(file).catch((cleanupError) => {
+        console.error(`[storage-cleanup] context=project-phase path=${file.storagePath} success=false message=${cleanupError.message}`);
+      })));
+    }
+    throw error;
+  }
+});
