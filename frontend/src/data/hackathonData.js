@@ -119,7 +119,7 @@ export const TIMELINE_DATA = [
   {
     id: 'step-6',
     title: 'Registration Desk & Opening Ceremony',
-    date: 'September 20, 2026',
+    date: 'September 25, 2026',
     desc: 'Physical reporting at the NSRIT College, registration desk and opening ceremony.',
     status: 'upcoming'
   },
