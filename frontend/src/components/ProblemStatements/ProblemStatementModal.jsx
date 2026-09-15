@@ -194,15 +194,15 @@ export default function ProblemStatementModal({ problem, isOpen, onClose, onSele
               <ul className="ps-deliverables-list">
                 <li>
                   <FiCheck className="ps-check-icon" />
-                  <span>PPT presentation following the official hackathon template.</span>
+                  <span>PPT, Abstract are required as submissions</span>
                 </li>
                 <li>
                   <FiCheck className="ps-check-icon" />
-                  <span>Working software/hardware prototype or simulation demonstration.</span>
+                  <span>Working prototype with online requirements should be ready before attending the offline hackathon</span>
                 </li>
                 <li>
                   <FiCheck className="ps-check-icon" />
-                  <span>Public GitHub repository link with clean documentation and architecture diagrams.</span>
+                  <span>Public GitHub repository link where your code and documentation are hosted</span>
                 </li>
               </ul>
             </div>

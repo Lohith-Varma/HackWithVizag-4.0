@@ -6,6 +6,8 @@ import Team from "../../teams/models/team.model.js";
 import ProblemStatement from "../../problemStatements/models/problemStatement.model.js";
 import RegistrationLead from "../../inquiries/models/registrationLead.model.js";
 import OfflineRegistration from "../../offlineRegistration/models/offlineRegistration.model.js";
+import AuditLog from "../models/auditLog.model.js";
+import { deleteTeamSafely, deleteUserSafely } from "../services/deletion.service.js";
 import { asyncHandler } from "../../../utils/asyncHandler.js";
 import ApiError from "../../../utils/apiError.js";
 import { sendSuccess } from "../../../utils/apiResponse.js";
@@ -458,8 +460,20 @@ export const getOfflineRegistrationDetails = asyncHandler(async (req, res) => {
 
 
 export const listUsers = asyncHandler(async (_req, res) => {
-  const users = await User.find().sort({ createdAt: -1 });
-  return sendSuccess(res, 200, "Users fetched successfully", { users });
+  const [users, teams] = await Promise.all([
+    User.find().select(adminUserFields + " team updatedAt").sort({ createdAt: -1 }).lean(),
+    Team.find().select("teamName leader members").lean(),
+  ]);
+  const membershipByUser = new Map();
+  teams.forEach((team) => {
+    const ids = new Set([team.leader?.toString(), ...(team.members || []).map((id) => id.toString())]);
+    ids.forEach((id) => id && membershipByUser.set(id, team));
+  });
+  const normalizedUsers = users.map((account) => ({
+    ...account,
+    team: membershipByUser.get(account._id.toString()) || null,
+  }));
+  return sendSuccess(res, 200, "Users fetched successfully", { users: normalizedUsers });
 });
 
 export const listTeams = asyncHandler(async (req, res) => {
@@ -845,18 +859,49 @@ export const exportAdminData = asyncHandler(async (req, res) => {
 
 export const deleteTeam = asyncHandler(async (req, res) => {
   const teamId = req.params.id || req.params.teamId;
-  const team = await Team.findById(teamId);
-  if (!team) {
-    throw new ApiError(404, "Team not found");
+  const result = await deleteTeamSafely({ teamId, confirmation: req.body.confirmation, req });
+  return sendSuccess(res, 200, "Team deleted successfully", { deleted: result.counts });
+});
+
+export const deleteUser = asyncHandler(async (req, res) => {
+  await deleteUserSafely({
+    userId: req.params.userId,
+    confirmation: req.body.confirmation,
+    req,
+  });
+  return sendSuccess(res, 200, "User deleted successfully");
+});
+
+export const listAuditLogs = asyncHandler(async (req, res) => {
+  const page = toInt(req.query.page, 1, 1, 100000);
+  const limit = toInt(req.query.limit, 50, 1, 100);
+  const query = {};
+  if (req.query.action) query.action = req.query.action;
+  if (req.query.result) query.result = req.query.result;
+  if (req.query.from || req.query.to) {
+    query.createdAt = {};
+    if (req.query.from) query.createdAt.$gte = new Date(`${req.query.from}T00:00:00.000Z`);
+    if (req.query.to) query.createdAt.$lte = new Date(`${req.query.to}T23:59:59.999Z`);
+  }
+  const search = String(req.query.search || "").trim();
+  if (search) {
+    const regex = new RegExp(escapeRegex(search), "i");
+    query.$or = [
+      { actorAdminEmail: regex },
+      { targetLabel: regex },
+      { targetId: regex },
+      { reason: regex },
+    ];
   }
 
-  // Remove references
-  await User.updateMany({ team: team._id }, { team: null });
-  await Project.deleteMany({ team: team._id });
-  await Submission.deleteMany({ team: team._id });
-  await Team.findByIdAndDelete(team._id);
-
-  return sendSuccess(res, 200, "Team and associated submission deleted successfully");
+  const [auditLogs, total] = await Promise.all([
+    AuditLog.find(query).sort({ createdAt: -1 }).skip((page - 1) * limit).limit(limit).lean(),
+    AuditLog.countDocuments(query),
+  ]);
+  return sendSuccess(res, 200, "Audit logs fetched successfully", {
+    auditLogs,
+    pagination: { page, limit, total, pages: Math.max(Math.ceil(total / limit), 1) },
+  });
 });
 
 export const updateAdminTeamDetails = asyncHandler(async (req, res) => {

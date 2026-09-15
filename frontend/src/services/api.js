@@ -410,10 +410,23 @@ export const api = {
     });
   },
 
-  async deleteAdminTeam(id) {
+  async deleteAdminTeam(id, confirmation) {
     return request(`/admin/team/${id}`, {
       method: 'DELETE',
+      body: { confirmation },
     });
+  },
+
+  async getAdminUsers() {
+    return request('/admin/users');
+  },
+
+  async deleteAdminUser(id, confirmation) {
+    return request(`/admin/users/${id}`, { method: 'DELETE', body: { confirmation } });
+  },
+
+  async getAdminAuditLogs(params) {
+    return request('/admin/audit-logs', { params });
   },
 
   async sendAdminTeamEmail(id, payload) {

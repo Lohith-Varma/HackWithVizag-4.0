@@ -1673,6 +1673,202 @@
   margin-top: 1.5rem;
 }
 
+.danger-zone-block {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.25rem;
+  border-color: rgba(239, 68, 68, 0.45);
+  background: rgba(127, 29, 29, 0.12);
+}
+
+.danger-zone-block p,
+.admin-view-note,
+.destructive-modal-card p {
+  color: var(--color-text-secondary);
+  line-height: 1.6;
+}
+
+.danger-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-height: 44px;
+  padding: 0.7rem 1rem;
+  border: 1px solid rgba(248, 113, 113, 0.75);
+  border-radius: var(--radius-md);
+  background: #b91c1c;
+  color: #fff;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.danger-action:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+.danger-action:not(:disabled):hover {
+  background: #dc2626;
+}
+
+.admin-view-note {
+  max-width: 900px;
+  padding: 0.9rem 1rem;
+  border-left: 3px solid var(--color-accent);
+  background: rgba(255, 255, 255, 0.035);
+}
+
+.admin-record-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 1rem;
+}
+
+.admin-record-card,
+.audit-log-card {
+  padding: 1.25rem;
+}
+
+.admin-record-heading,
+.admin-record-actions,
+.audit-log-primary {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.admin-record-heading h3 {
+  margin: 0 0 0.3rem;
+}
+
+.admin-record-heading a {
+  color: var(--color-accent);
+  overflow-wrap: anywhere;
+}
+
+.admin-record-details {
+  display: grid;
+  gap: 0.65rem;
+  margin: 1.25rem 0;
+}
+
+.admin-record-details div {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.admin-record-details dt,
+.deletion-blocked-note {
+  color: var(--color-text-secondary);
+}
+
+.admin-record-details dd {
+  margin: 0;
+  text-align: right;
+  overflow-wrap: anywhere;
+}
+
+.admin-empty-state {
+  padding: 2rem;
+  color: var(--color-text-secondary);
+  text-align: center;
+}
+
+.audit-filter-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(150px, 1fr));
+  gap: 1rem;
+}
+
+.audit-search-field {
+  grid-column: 1 / -1;
+}
+
+.audit-list {
+  display: grid;
+  gap: 0.85rem;
+}
+
+.audit-log-primary {
+  align-items: center;
+  justify-content: flex-start;
+  flex-wrap: wrap;
+}
+
+.audit-log-primary time {
+  color: var(--color-text-secondary);
+}
+
+.audit-result {
+  padding: 0.25rem 0.55rem;
+  border-radius: 999px;
+  background: rgba(148, 163, 184, 0.15);
+  font-size: 0.75rem;
+  font-weight: 800;
+}
+
+.audit-result-success { color: #4ade80; }
+.audit-result-failed,
+.audit-result-denied,
+.audit-result-partial_failure { color: #f87171; }
+.audit-result-pending_storage { color: #fbbf24; }
+
+.audit-log-details {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.6rem 1.25rem;
+  margin-top: 1rem;
+  color: var(--color-text-secondary);
+  overflow-wrap: anywhere;
+}
+
+.danger-kicker {
+  display: block;
+  margin-bottom: 0.25rem;
+  color: #f87171;
+  font-size: 0.75rem;
+  font-weight: 900;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+
+.destructive-modal-card {
+  width: min(600px, 100%);
+  border-color: rgba(239, 68, 68, 0.5);
+}
+
+.destructive-target {
+  padding: 0.85rem 1rem;
+  border-radius: var(--radius-md);
+  background: rgba(239, 68, 68, 0.1);
+  color: #fff !important;
+  overflow-wrap: anywhere;
+}
+
+.destructive-list {
+  display: grid;
+  gap: 0.5rem;
+  padding-left: 1.35rem;
+  color: var(--color-text-secondary);
+}
+
+.preservation-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.55rem;
+  padding: 0.75rem;
+  border-radius: var(--radius-md);
+  background: rgba(34, 197, 94, 0.08);
+}
+
+.destructive-confirm-field {
+  margin-top: 1rem;
+}
+
 @keyframes admin-spin {
   to {
     transform: rotate(360deg);
@@ -2364,6 +2560,29 @@
   .profile-card-content {
     align-items: flex-start;
     flex-direction: column;
+  }
+
+  .danger-zone-block,
+  .admin-record-heading,
+  .admin-record-actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .danger-zone-block .danger-action,
+  .admin-record-actions .danger-action {
+    width: 100%;
+    min-height: 48px;
+  }
+
+  .admin-record-grid,
+  .audit-filter-grid,
+  .audit-log-details {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .audit-search-field {
+    grid-column: auto;
   }
 
   .workspace-header {

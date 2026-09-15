@@ -215,9 +215,30 @@ export const fileExists = async (reference) => Boolean(await getFileMetadata(ref
 
 export const isSupabaseFile = (file) => file?.storageProvider === "supabase" && Boolean(file.storagePath);
 
-export const deleteStoredFile = async (file) => {
-  if (!isSupabaseFile(file)) return false;
-  return deleteFile({ storagePath: file.storagePath, bucket: file.bucket });
+export const deleteStoredFile = async (file, { legacyFolder, allowLegacyDelete = false } = {}) => {
+  if (isSupabaseFile(file)) {
+    return deleteFile({ storagePath: file.storagePath, bucket: file.bucket });
+  }
+
+  if (!allowLegacyDelete) return false;
+  const storedReference = file?.url || file?.path || file?.filename || "";
+  const filename = path.basename(String(storedReference).replace(/\\/g, "/"));
+  if (!legacyFolder || !filename || filename === ".") return false;
+
+  const folderRoot = path.resolve(legacyUploadRoot, legacyFolder);
+  const resolvedPath = path.resolve(folderRoot, filename);
+  if (!resolvedPath.startsWith(`${folderRoot}${path.sep}`)) {
+    throw new ApiError(400, "Invalid legacy storage path");
+  }
+
+  try {
+    await fs.unlink(resolvedPath);
+    console.info(`[storage] provider=legacy path=${resolvedPath} deleteSuccessful=true`);
+    return true;
+  } catch (error) {
+    if (error.code === "ENOENT") return false;
+    throw new ApiError(502, "Legacy file cleanup failed");
+  }
 };
 
 export const downloadStoredFile = async (file, { legacyFolder } = {}) => {

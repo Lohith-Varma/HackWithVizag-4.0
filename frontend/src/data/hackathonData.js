@@ -111,34 +111,41 @@ export const TIMELINE_DATA = [
   },
   {
     id: 'step-5',
-    title: 'Offline Registration & Welcome',
+    title: 'Offline Registration',
     date: 'September 15 - 20, 2026',
+    desc: 'Complete the offline registration process and fee payment for shortlisted teams. Mandatory for participation in the hackathon.',
+    status: 'active'
+  },
+  {
+    id: 'step-6',
+    title: 'Registration Desk & Opening Ceremony',
+    date: 'September 20, 2026',
     desc: 'Physical reporting at the NSRIT College, registration desk and opening ceremony.',
     status: 'upcoming'
   },
   {
-    id: 'step-6',
+    id: 'step-7',
     title: 'Hackathon Day 1 (Hacking Starts)',
     date: 'September 25, 2026 - 09:00 AM',
     desc: 'Hacking begins! Mentors start rounds to guide teams. Midnight coding and fun mini-events.',
     status: 'upcoming'
   },
   {
-    id: 'step-7',
+    id: 'step-8',
     title: 'Hackathon Day 2 (Final Pitch)',
     date: 'September 26, 2026 - 01:00 PM',
     desc: 'Hacking stops. Pitch preparation begins. Initial demo reviews by judges at individual tables.',
     status: 'upcoming'
   },
   {
-    id: 'step-8',
+    id: 'step-9',
     title: 'Grand Finale & Presentation',
     date: 'September 26, 2026 - 02:00 PM',
     desc: 'Top 10 teams pitch on the main stage to the jury. Q&A session with industry titans.',
     status: 'upcoming'
   },
   {
-    id: 'step-9',
+    id: 'step-10',
     title: 'Winners Announcement',
     date: 'September 26, 2026 - 04:00 PM',
     desc: 'Valedictory function, prize distribution, networking and photoshoots.',

@@ -85,6 +85,8 @@ const navItems = [
   { id: 'dashboard', label: 'Dashboard', icon: FiGrid },
   { id: 'review', label: 'Review Queue', icon: FiSliders },
   { id: 'teams', label: 'All Teams', icon: FiUsers },
+  { id: 'users', label: 'Users', icon: FiUsers },
+  { id: 'auditLogs', label: 'Audit Logs', icon: FiShield },
   { id: 'offlineRegistrations', label: 'Offline Registered Teams', icon: FiFileText },
   { id: 'leads', label: 'Notification Leads', icon: FiBell },
   { id: 'problemStatements', label: 'Problem Statements', icon: FiLayers },
@@ -213,6 +215,8 @@ const getInitialViewFromHash = () => {
   if (hash.includes('leads') || hash.includes('notifications')) return 'leads';
   if (hash.includes('offline-registrations') || hash.includes('offlineregistrations')) return 'offlineRegistrations';
   if (hash.includes('teams')) return 'teams';
+  if (hash.includes('users')) return 'users';
+  if (hash.includes('audit-logs') || hash.includes('auditlogs')) return 'auditLogs';
   if (hash.includes('dashboard')) return 'dashboard';
   if (hash.includes('review')) return 'review';
   return 'dashboard';
@@ -230,6 +234,12 @@ export default function AdminPortal() {
   const [teams, setTeams] = useState([]);
   const [selectedTeam, setSelectedTeam] = useState(null);
   const [selectedTeamId, setSelectedTeamId] = useState(null);
+  const [users, setUsers] = useState([]);
+  const [auditLogs, setAuditLogs] = useState([]);
+  const [auditFilters, setAuditFilters] = useState({ action: '', result: '', search: '', from: '', to: '' });
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [deleteConfirmation, setDeleteConfirmation] = useState('');
+  const [isDeleting, setIsDeleting] = useState(false);
   const [activeEmbed, setActiveEmbed] = useState(null);
   const [reviewFormStatus, setReviewFormStatus] = useState('under_review');
   const [reviewFormRemarks, setReviewFormRemarks] = useState('');
@@ -415,6 +425,30 @@ export default function AdminPortal() {
     }
   }, [effectiveFilters]);
 
+  const loadUsers = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const result = await api.getAdminUsers();
+      setUsers(result.users || []);
+    } catch (error) {
+      setToast({ type: 'error', message: error.message || 'Unable to load users.' });
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  const loadAuditLogs = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const result = await api.getAdminAuditLogs(auditFilters);
+      setAuditLogs(result.auditLogs || []);
+    } catch (error) {
+      setToast({ type: 'error', message: error.message || 'Unable to load audit logs.' });
+    } finally {
+      setIsLoading(false);
+    }
+  }, [auditFilters]);
+
   const loadAnalytics = useCallback(async () => {
     setIsLoading(true);
     try {
@@ -511,8 +545,50 @@ export default function AdminPortal() {
       loadProblemStatements();
     } else if (activeView === 'leads') {
       loadNotificationLeads();
+    } else if (activeView === 'users') {
+      loadUsers();
+    } else if (activeView === 'auditLogs') {
+      loadAuditLogs();
     }
-  }, [user, activeView, loadTeams, loadAnalytics, loadEventConfig, loadProblemStatements, loadNotificationLeads]);
+  }, [user, activeView, loadTeams, loadAnalytics, loadEventConfig, loadProblemStatements, loadNotificationLeads, loadUsers, loadAuditLogs]);
+
+  const openDeleteConfirmation = (type, target) => {
+    setDeleteTarget({ type, target });
+    setDeleteConfirmation('');
+  };
+
+  const closeDeleteConfirmation = () => {
+    if (isDeleting) return;
+    setDeleteTarget(null);
+    setDeleteConfirmation('');
+  };
+
+  const handleConfirmedDelete = async () => {
+    if (!deleteTarget) return;
+    const { type, target } = deleteTarget;
+    const expected = type === 'team' ? target.teamName : target.email;
+    if (deleteConfirmation.trim().toLowerCase() !== String(expected || '').trim().toLowerCase()) return;
+    setIsDeleting(true);
+    try {
+      if (type === 'team') {
+        await api.deleteAdminTeam(target.id || target._id, deleteConfirmation.trim());
+        setSelectedTeam(null);
+        setSelectedTeamId(null);
+        await Promise.all([loadTeams(), loadDashboard()]);
+        setToast({ type: 'success', message: `Team ${target.teamName} was deleted. User accounts were preserved.` });
+      } else {
+        await api.deleteAdminUser(target._id || target.id, deleteConfirmation.trim());
+        await Promise.all([loadUsers(), loadDashboard()]);
+        setToast({ type: 'success', message: `User ${target.email} was deleted.` });
+      }
+      setDeleteTarget(null);
+      setDeleteConfirmation('');
+    } catch (error) {
+      setToast({ type: 'error', message: error.message || 'Deletion failed.' });
+    } finally {
+      setIsDeleting(false);
+    }
+  };
 
   const openTeamDetails = async (id) => {
     if (!id) return;
@@ -723,6 +799,8 @@ export default function AdminPortal() {
       settings: 'settings',
       dashboard: 'dashboard',
       teams: 'teams',
+      users: 'users',
+      auditLogs: 'audit-logs',
       offlineRegistrations: 'offline-registrations',
       review: 'review',
     };
@@ -755,13 +833,13 @@ export default function AdminPortal() {
   }, [isMobileSidebarOpen]);
 
   useEffect(() => {
-    if (!isPsModalOpen) return undefined;
+    if (!isPsModalOpen && !deleteTarget) return undefined;
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
     return () => {
       document.body.style.overflow = previousOverflow;
     };
-  }, [isPsModalOpen]);
+  }, [isPsModalOpen, deleteTarget]);
 
   useEffect(() => {
     if (user) {
@@ -1524,6 +1602,20 @@ export default function AdminPortal() {
 
                   </div>
 
+                  <div className="inspection-block danger-zone-block">
+                    <div>
+                      <h3 className="block-label">Danger Zone</h3>
+                      <p>Delete this team, its project, submission, offline registration, and owned uploads. Member user accounts are preserved.</p>
+                    </div>
+                    <button
+                      type="button"
+                      className="danger-action"
+                      onClick={() => openDeleteConfirmation('team', selectedTeam)}
+                    >
+                      <FiTrash2 /> Delete Team
+                    </button>
+                  </div>
+
                 </div>
               ) : (
                 <div className="no-team-selected-placeholder">
@@ -1534,6 +1626,108 @@ export default function AdminPortal() {
               )}
             </div>
 
+          </div>
+        )}
+
+        {activeView === 'users' && (
+          <div className="admin-subview-container">
+            <div className="workspace-header">
+              <div>
+                <span className="section-subtitle">Account Administration</span>
+                <h2>Users ({users.length})</h2>
+              </div>
+              <button type="button" className="secondary-action" onClick={loadUsers} disabled={isLoading}>
+                <FiRefreshCw /> Refresh
+              </button>
+            </div>
+            <p className="admin-view-note">Users attached to a team cannot be deleted. Delete their team first so membership and team-owned records are removed safely. Admin accounts are protected.</p>
+            <div className="admin-record-grid mt-4">
+              {isLoading ? (
+                <div className="dash-card admin-empty-state">Loading users…</div>
+              ) : users.length === 0 ? (
+                <div className="dash-card admin-empty-state">No users found.</div>
+              ) : users.map((account) => {
+                const accountId = account._id || account.id;
+                const team = account.team && typeof account.team === 'object' ? account.team : null;
+                const isLeader = team?.leader?.toString?.() === accountId?.toString?.();
+                const protectedAccount = account.role === 'admin';
+                return (
+                  <article key={accountId} className="dash-card admin-record-card">
+                    <div className="admin-record-heading">
+                      <div>
+                        <h3>{account.name || 'Unnamed user'}</h3>
+                        <a href={`mailto:${account.email}`}>{account.email}</a>
+                      </div>
+                      <span className={`status-pill status-pill-${protectedAccount ? 'red' : 'gray'}`}>{account.role}</span>
+                    </div>
+                    <dl className="admin-record-details">
+                      <div><dt>Status</dt><dd>{statusLabels[account.status] || account.status}</dd></div>
+                      <div><dt>Team</dt><dd>{team?.teamName || 'No team'}</dd></div>
+                      {team && <div><dt>Team role</dt><dd>{isLeader ? 'Team Leader' : 'Team Member'}</dd></div>}
+                      <div><dt>Created</dt><dd>{formatDate(account.createdAt)}</dd></div>
+                    </dl>
+                    <div className="admin-record-actions">
+                      {team ? (
+                        <span className="deletion-blocked-note">Delete the team first.</span>
+                      ) : protectedAccount ? (
+                        <span className="deletion-blocked-note">Protected admin account</span>
+                      ) : (
+                        <button type="button" className="danger-action" onClick={() => openDeleteConfirmation('user', account)}>
+                          <FiTrash2 /> Delete User
+                        </button>
+                      )}
+                    </div>
+                  </article>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {activeView === 'auditLogs' && (
+          <div className="admin-subview-container">
+            <div className="workspace-header">
+              <div>
+                <span className="section-subtitle">Append-only Administrative History</span>
+                <h2>Audit Logs</h2>
+              </div>
+              <button type="button" className="secondary-action" onClick={loadAuditLogs} disabled={isLoading}>
+                <FiRefreshCw /> Refresh
+              </button>
+            </div>
+            <div className="audit-filter-grid">
+              <label className="field"><span>Action</span><select value={auditFilters.action} onChange={(e) => setAuditFilters((v) => ({ ...v, action: e.target.value }))}>
+                <option value="">All actions</option>
+                <option value="TEAM_DELETED">Team deleted</option>
+                <option value="USER_DELETED">User deleted</option>
+                <option value="TEAM_DELETE_FAILED">Team delete failed</option>
+                <option value="USER_DELETE_FAILED">User delete failed</option>
+                <option value="UNAUTHORIZED_DELETE_ATTEMPT">Unauthorized attempt</option>
+              </select></label>
+              <label className="field"><span>Result</span><select value={auditFilters.result} onChange={(e) => setAuditFilters((v) => ({ ...v, result: e.target.value }))}>
+                <option value="">All results</option><option value="SUCCESS">Success</option><option value="FAILED">Failed</option><option value="DENIED">Denied</option><option value="PARTIAL_FAILURE">Partial failure</option><option value="PENDING_STORAGE">Pending storage</option>
+              </select></label>
+              <label className="field"><span>From</span><input type="date" value={auditFilters.from} onChange={(e) => setAuditFilters((v) => ({ ...v, from: e.target.value }))} /></label>
+              <label className="field"><span>To</span><input type="date" value={auditFilters.to} onChange={(e) => setAuditFilters((v) => ({ ...v, to: e.target.value }))} /></label>
+              <label className="field audit-search-field"><span>Search</span><input value={auditFilters.search} onChange={(e) => setAuditFilters((v) => ({ ...v, search: e.target.value }))} placeholder="Admin, target, ID, or reason" /></label>
+            </div>
+            <div className="audit-list mt-4">
+              {isLoading ? <div className="dash-card admin-empty-state">Loading audit history…</div> : auditLogs.length === 0 ? <div className="dash-card admin-empty-state">No matching audit records.</div> : auditLogs.map((log) => (
+                <article className="dash-card audit-log-card" key={log._id}>
+                  <div className="audit-log-primary">
+                    <time>{formatDate(log.createdAt)}</time>
+                    <strong>{log.action}</strong>
+                    <span className={`audit-result audit-result-${String(log.result).toLowerCase()}`}>{log.result}</span>
+                  </div>
+                  <div className="audit-log-details">
+                    <span><b>Admin:</b> {log.actorAdminEmail || log.actorAdminId || 'Unauthenticated'}</span>
+                    <span><b>Target:</b> {log.targetLabel || log.targetId} ({log.targetType})</span>
+                    <span><b>Target ID:</b> <code>{log.targetId}</code></span>
+                    {log.reason && <span><b>Reason:</b> {log.reason}</span>}
+                  </div>
+                </article>
+              ))}
+            </div>
           </div>
         )}
 
@@ -2526,6 +2720,51 @@ export default function AdminPortal() {
           </div>
         )}
 
+        {deleteTarget && (() => {
+          const isTeam = deleteTarget.type === 'team';
+          const target = deleteTarget.target;
+          const expected = isTeam ? target.teamName : target.email;
+          const confirmationMatches = isTeam
+            ? deleteConfirmation.trim() === String(expected || '')
+            : deleteConfirmation.trim().toLowerCase() === String(expected || '').trim().toLowerCase();
+          return (
+            <div className="admin-modal-overlay destructive-modal-overlay" onClick={closeDeleteConfirmation}>
+              <div className="admin-modal-card destructive-modal-card" onClick={(e) => e.stopPropagation()} role="alertdialog" aria-modal="true" aria-labelledby="delete-dialog-title">
+                <div className="modal-header-flex">
+                  <div>
+                    <span className="danger-kicker">Permanent action</span>
+                    <h3 id="delete-dialog-title">Delete {isTeam ? 'Team' : 'User'}?</h3>
+                  </div>
+                  <button type="button" className="close-modal-btn" onClick={closeDeleteConfirmation} disabled={isDeleting} aria-label="Cancel deletion"><FiX /></button>
+                </div>
+                <p className="destructive-target"><strong>{expected}</strong></p>
+                {isTeam ? (
+                  <>
+                    <p>This permanently deletes team-owned data and cannot be undone:</p>
+                    <ul className="destructive-list">
+                      <li>Team information and membership references</li>
+                      <li>Project, submission, PPT, and supporting document</li>
+                      <li>Offline registration and payment proof</li>
+                    </ul>
+                    <p className="preservation-note"><FiShield /> Participant user accounts and their profile photos will be preserved.</p>
+                  </>
+                ) : (
+                  <p>This permanently deletes the user account and its exclusively owned profile photo. Users attached to a team are blocked by the server.</p>
+                )}
+                <label className="field destructive-confirm-field">
+                  <span>Type the exact {isTeam ? 'team name' : 'email address'} to confirm</span>
+                  <input autoComplete="off" value={deleteConfirmation} onChange={(e) => setDeleteConfirmation(e.target.value)} placeholder={expected} />
+                </label>
+                <div className="admin-modal-actions">
+                  <button type="button" className="secondary-action" onClick={closeDeleteConfirmation} disabled={isDeleting}>Cancel</button>
+                  <button type="button" className="danger-action" onClick={handleConfirmedDelete} disabled={!confirmationMatches || isDeleting}>
+                    <FiTrash2 /> {isDeleting ? 'Deleting…' : `Delete ${isTeam ? 'Team' : 'User'}`}
+                  </button>
+                </div>
+              </div>
+            </div>
+          );
+        })()}
 
         {/* PROBLEM STATEMENT CREATE/EDIT MODAL */}
         {isPsModalOpen && (

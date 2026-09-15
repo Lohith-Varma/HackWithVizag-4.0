@@ -5,6 +5,7 @@ import helmet from "helmet";
 import morgan from "morgan";
 import { getDatabaseStatus } from "./config/database.js";
 import { errorHandler, notFoundHandler } from "./middleware/error.middleware.js";
+import { auditDeniedDestructiveRequest } from "./middleware/destructiveAudit.middleware.js";
 import adminRoutes from "./modules/admin/routes/admin.routes.js";
 import authRoutes from "./modules/auth/routes/auth.routes.js";
 import dashboardRoutes from "./modules/dashboard/routes/dashboard.routes.js";
@@ -71,6 +72,7 @@ app.use((req, _res, next) => {
 });
 app.use(cookieParser());
 app.use(morgan(process.env.NODE_ENV === "production" ? "combined" : "dev"));
+app.use(auditDeniedDestructiveRequest);
 
 
 // Uploaded files are private and are served only by authenticated API routes.
