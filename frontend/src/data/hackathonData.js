@@ -91,21 +91,21 @@ export const TIMELINE_DATA = [
   {
     id: 'step-2',
     title: 'Registration Closes',
-    date: 'September 15, 2026',
+    date: 'September 20, 2026',
     desc: 'Final date to submit team registrations. No further participants will be accepted.',
     status: 'active'
   },
   {
     id: 'step-3',
     title: 'PPT Submission Deadline',
-    date: 'September 15, 2026',
+    date: 'September 20, 2026',
     desc: 'Submit your solution idea proposal presentation (PPT) following our official guidelines.',
     status: 'active'
   },
   {
     id: 'step-4',
     title: 'Screening & Shortlisting',
-    date: 'September 20, 2026',
+    date: 'September 15 - 20, 2026',
     desc: 'Internal review of idea submissions. Top teams will be announced and invited to the offline round.',
     status: 'active'
   },

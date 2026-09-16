@@ -29,9 +29,8 @@ export default function Hero() {
     };
   }, []);
 
-  const targetDate = eventConfig?.hackathonDate
-    ? new Date(eventConfig.hackathonDate).getTime()
-    : new Date('2026-09-25T09:00:00').getTime();
+  const targetDate = new Date('2026-09-25T09:00:00').getTime();
+  // eventConfig?.hackathonDate ? new Date(eventConfig.hackathonDate).getTime() : new Date('2026-09-25T09:00:00').getTime();
 
   useEffect(() => {
     const calculateTimeLeft = () => {
@@ -90,7 +89,7 @@ export default function Hero() {
   const eventName = eventConfig?.eventName || 'HACK WITH VIZAG 4.0';
   const regDeadline = eventConfig?.registrationEndDate
     ? new Date(eventConfig.registrationEndDate).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
-    : 'August 31, 2026';
+    : 'September 20, 2026';
 
   return (
     <section id="home" className="hero-section">
@@ -146,7 +145,7 @@ export default function Hero() {
               <div>
                 <span className="meta-label">Registration Fee</span>
                 <span className="meta-value">
-                  {eventConfig?.registrationFee ? `₹${eventConfig.registrationFee}` : '₹500/- per participant'}
+                  {eventConfig?.registrationFee ? `₹${eventConfig.registrationFee}/- per participant` : '₹500/- per participant'}
                 </span>
               </div>
             </div>
@@ -180,7 +179,7 @@ export default function Hero() {
               </div>
             )}
             <div className="registration-deadline">
-              Registrations <strong>Open Now</strong> • Deadline: <strong>{regDeadline}</strong>
+              Registrations <strong>Open Now</strong> • Deadline: <strong>Extended to {regDeadline}</strong>
             </div>
           </motion.div>
 
