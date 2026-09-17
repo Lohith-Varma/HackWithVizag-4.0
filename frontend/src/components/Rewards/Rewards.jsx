@@ -111,7 +111,7 @@ export default function Rewards() {
             </div>
             <div className="benefit-item-card">
               <FiGift className="benefit-icon" />
-              <h5>Swag & Kits</h5>
+              <h5>Networking</h5>
               {/* <p>Stickers, water bottles, and notebooks in official welcome kits.</p> */}
             </div>
           </div>
