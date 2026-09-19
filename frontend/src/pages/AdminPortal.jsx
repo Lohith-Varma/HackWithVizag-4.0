@@ -42,6 +42,7 @@ import {
 } from 'react-icons/fi';
 import Toast from '../components/Toast/Toast';
 import AdminOfflineRegistrations from '../components/AdminOfflineRegistrations/AdminOfflineRegistrations';
+import AdminSpotRegistrations from '../components/AdminSpotRegistrations/AdminSpotRegistrations';
 import { api } from '../services/api';
 import './AdminPortal.css';
 
@@ -88,6 +89,7 @@ const navItems = [
   { id: 'users', label: 'Users', icon: FiUsers },
   { id: 'auditLogs', label: 'Audit Logs', icon: FiShield },
   { id: 'offlineRegistrations', label: 'Offline Registered Teams', icon: FiFileText },
+  { id: 'spotRegistrations', label: 'Spot Registrations', icon: FiUsers },
   { id: 'leads', label: 'Notification Leads', icon: FiBell },
   { id: 'problemStatements', label: 'Problem Statements', icon: FiLayers },
   { id: 'eventConfig', label: 'Event Config', icon: FiCalendar },
@@ -214,6 +216,7 @@ const getInitialViewFromHash = () => {
   if (hash.includes('problem-statements') || hash.includes('problemstatements')) return 'problemStatements';
   if (hash.includes('leads') || hash.includes('notifications')) return 'leads';
   if (hash.includes('offline-registrations') || hash.includes('offlineregistrations')) return 'offlineRegistrations';
+  if (hash.includes('spot-registrations') || hash.includes('spotregistrations')) return 'spotRegistrations';
   if (hash.includes('teams')) return 'teams';
   if (hash.includes('users')) return 'users';
   if (hash.includes('audit-logs') || hash.includes('auditlogs')) return 'auditLogs';
@@ -802,6 +805,7 @@ export default function AdminPortal() {
       users: 'users',
       auditLogs: 'audit-logs',
       offlineRegistrations: 'offline-registrations',
+      spotRegistrations: 'spot-registrations',
       review: 'review',
     };
     const slug = slugMap[viewId] || viewId;
@@ -1147,6 +1151,10 @@ export default function AdminPortal() {
 
         {activeView === 'offlineRegistrations' && (
           <AdminOfflineRegistrations onToast={setToast} />
+        )}
+
+        {activeView === 'spotRegistrations' && (
+          <AdminSpotRegistrations onToast={setToast} />
         )}
 
         {/* REVIEW WORKSPACE 3-COLUMN VIEW (Primary Working Interface) */}
@@ -1703,6 +1711,9 @@ export default function AdminPortal() {
                 <option value="TEAM_DELETE_FAILED">Team delete failed</option>
                 <option value="USER_DELETE_FAILED">User delete failed</option>
                 <option value="UNAUTHORIZED_DELETE_ATTEMPT">Unauthorized attempt</option>
+                <option value="SPOT_REGISTRATION_CREATED">Spot Registration created</option>
+                <option value="SPOT_REGISTRATION_UPDATED">Spot Registration updated</option>
+                <option value="SPOT_REGISTRATION_CONFIRMED">Spot Registration confirmed</option>
               </select></label>
               <label className="field"><span>Result</span><select value={auditFilters.result} onChange={(e) => setAuditFilters((v) => ({ ...v, result: e.target.value }))}>
                 <option value="">All results</option><option value="SUCCESS">Success</option><option value="FAILED">Failed</option><option value="DENIED">Denied</option><option value="PARTIAL_FAILURE">Partial failure</option><option value="PENDING_STORAGE">Pending storage</option>

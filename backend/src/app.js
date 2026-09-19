@@ -13,6 +13,7 @@ import eventRoutes from "./modules/events/routes/event.routes.js";
 import problemStatementRoutes from "./modules/problemStatements/routes/problemStatement.routes.js";
 import inquiryRoutes from "./modules/inquiries/routes/inquiry.routes.js";
 import offlineRegistrationRoutes from "./modules/offlineRegistration/routes/offlineRegistration.routes.js";
+import spotRegistrationRoutes from "./modules/spotRegistrations/routes/spotRegistration.routes.js";
 import projectRoutes from "./modules/projects/routes/project.routes.js";
 import submissionRoutes from "./modules/submissions/routes/submission.routes.js";
 import teamRoutes from "./modules/teams/routes/team.routes.js";
@@ -101,6 +102,7 @@ app.use("/api/teams", teamRoutes);
 app.use("/api/projects", projectRoutes);
 app.use("/api/submissions", submissionRoutes);
 app.use("/api/offline-registration", offlineRegistrationRoutes);
+app.use("/api/spot-registrations", spotRegistrationRoutes);
 app.use("/api/admin", adminRoutes);
 
 app.use(notFoundHandler);

@@ -2,28 +2,11 @@ import OfflineRegistration from "../models/offlineRegistration.model.js";
 import { asyncHandler } from "../../../utils/asyncHandler.js";
 import ApiError from "../../../utils/apiError.js";
 import { sendSuccess } from "../../../utils/apiResponse.js";
-import Event from "../../events/models/event.model.js";
 import Project from "../../projects/models/project.model.js";
 import { validateUploadedFile } from "../../../middleware/upload.middleware.js";
 import { deleteStoredFile, downloadStoredFile, uploadFile } from "../../../services/storage.service.js";
 import { sendFileBuffer } from "../../../utils/fileResponse.js";
-
-const getPaymentConfig = async (team, { required = true } = {}) => {
-  const teamSize = team.members.length;
-  if (![3, 4].includes(teamSize)) throw new ApiError(400, "Offline registration is available only for 3 or 4 member teams");
-  const event = await Event.findOne({ activeEvent: true });
-  const config = teamSize === 3 ? event?.offlinePaymentConfig?.threeMembers : event?.offlinePaymentConfig?.fourMembers;
-  const configured = Boolean(config?.qrCodeUrl) && Number.isFinite(config?.fee) && config.fee > 0;
-  if (!configured && required) {
-    throw new ApiError(503, "Offline payment configuration is not available. Please contact the organisers.");
-  }
-  return {
-    teamSize,
-    expectedAmount: configured ? config.fee : null,
-    qrCodeUrl: configured ? config.qrCodeUrl : "",
-    configured,
-  };
-};
+import { getOfflinePaymentConfig } from "../../../services/offlinePayment.service.js";
 
 const serializeRegistration = (registration) => registration && ({
   ...registration.toObject(),
@@ -37,7 +20,7 @@ export const getOfflineRegistrationEligibility = asyncHandler(async (req, res) =
   ]);
   // A previously submitted team must continue to see its submitted state even
   // if organisers later rotate/remove the QR configuration.
-  const payment = offlineRegistration ? null : await getPaymentConfig(req.team, { required: false });
+  const payment = offlineRegistration ? null : await getOfflinePaymentConfig(req.team.members.length, { required: false });
   return sendSuccess(res, 200, "Team is eligible for offline registration", {
     eligible: true,
     team: req.team,
@@ -63,7 +46,7 @@ export const submitOfflineRegistration = asyncHandler(async (req, res) => {
     maxBytes: Number(process.env.MAX_PAYMENT_PROOF_UPLOAD_BYTES || 5 * 1024 * 1024),
   });
   if (await OfflineRegistration.exists({ team: teamId })) throw new ApiError(409, "Offline registration has already been submitted for this team");
-  const payment = await getPaymentConfig(req.team);
+  const payment = await getOfflinePaymentConfig(req.team.members.length);
   const confirmationCode = `HWV-OFF-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
   const uploadedScreenshot = await uploadFile({
     folder: "payment-screenshots",

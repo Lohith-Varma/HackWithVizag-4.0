@@ -11,6 +11,9 @@ const auditLogSchema = new mongoose.Schema(
         "TEAM_DELETE_FAILED",
         "USER_DELETE_FAILED",
         "UNAUTHORIZED_DELETE_ATTEMPT",
+        "SPOT_REGISTRATION_CREATED",
+        "SPOT_REGISTRATION_UPDATED",
+        "SPOT_REGISTRATION_CONFIRMED",
       ],
       index: true,
     },
@@ -21,7 +24,7 @@ const auditLogSchema = new mongoose.Schema(
       index: true,
     },
     actorAdminEmail: { type: String, trim: true, lowercase: true, default: "" },
-    targetType: { type: String, enum: ["TEAM", "USER"], required: true, index: true },
+    targetType: { type: String, enum: ["TEAM", "USER", "SPOT_REGISTRATION"], required: true, index: true },
     targetId: { type: String, required: true, trim: true, index: true },
     targetLabel: { type: String, trim: true, default: "" },
     result: {

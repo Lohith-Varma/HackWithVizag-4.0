@@ -47,7 +47,7 @@ export const deleteUserValidation = [
 export const listAuditLogsValidation = [
   query("page").optional().isInt({ min: 1 }).withMessage("Page must be a positive number"),
   query("limit").optional().isInt({ min: 1, max: 100 }).withMessage("Limit must be between 1 and 100"),
-  query("action").optional().isIn(["TEAM_DELETED", "USER_DELETED", "TEAM_DELETE_FAILED", "USER_DELETE_FAILED", "UNAUTHORIZED_DELETE_ATTEMPT"]).withMessage("Invalid audit action"),
+  query("action").optional().isIn(["TEAM_DELETED", "USER_DELETED", "TEAM_DELETE_FAILED", "USER_DELETE_FAILED", "UNAUTHORIZED_DELETE_ATTEMPT", "SPOT_REGISTRATION_CREATED", "SPOT_REGISTRATION_UPDATED", "SPOT_REGISTRATION_CONFIRMED"]).withMessage("Invalid audit action"),
   query("result").optional().isIn(["SUCCESS", "FAILED", "DENIED", "PARTIAL_FAILURE", "PENDING_STORAGE"]).withMessage("Invalid audit result"),
   query("from").optional().isISO8601({ strict: true }).withMessage("From date must be YYYY-MM-DD"),
   query("to").optional().isISO8601({ strict: true }).withMessage("To date must be YYYY-MM-DD"),

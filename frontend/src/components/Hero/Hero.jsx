@@ -90,6 +90,7 @@ export default function Hero() {
   const regDeadline = eventConfig?.registrationEndDate
     ? new Date(eventConfig.registrationEndDate).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
     : 'September 20, 2026';
+  const spotRegistrationMessage = 'Spot registrations are now open — you can directly register your team.';
 
   return (
     <section id="home" className="hero-section">
@@ -112,6 +113,8 @@ export default function Hero() {
             <span className="badge-glow"></span>
             <span className="badge-text">Vizag's Grandest Tech Hackathon</span>
           </motion.div>
+
+          
 
           <motion.h1 variants={itemVariants} className="hero-title">
             {eventName.toUpperCase()}
@@ -183,9 +186,24 @@ export default function Hero() {
             </div>
           </motion.div>
 
+          <motion.div
+            variants={itemVariants}
+            className="spot-registration-ticker"
+            role="status"
+            aria-label={spotRegistrationMessage}
+          >
+            <div className="spot-registration-ticker-track" aria-hidden="true">
+              <span>{spotRegistrationMessage}</span>
+              <span>{spotRegistrationMessage}</span>
+            </div>
+          </motion.div>
+
           <motion.div variants={itemVariants} className="hero-ctas">
             <a href="#register" className="btn-hero-primary">
               Register Now <FiArrowRight />
+            </a>
+            <a href="#spot-registration" className="btn-hero-spot">
+              Spot Registration <FiArrowRight />
             </a>
             <a
               href="#themes"

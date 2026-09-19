@@ -1,0 +1,93 @@
+.spot-page {
+  min-height: 100vh;
+  padding: 7rem 1rem 3rem;
+  background:
+    radial-gradient(circle at 10% 0%, rgba(6, 182, 212, 0.12), transparent 34rem),
+    radial-gradient(circle at 95% 30%, rgba(124, 58, 237, 0.14), transparent 30rem),
+    var(--color-bg);
+}
+
+.spot-shell { width: min(980px, 100%); margin: 0 auto; padding: 0; }
+.spot-header { text-align: center; padding: 1rem 0 2rem; }
+.spot-header h1 { font-size: clamp(2.1rem, 8vw, 4rem); }
+.spot-header p { max-width: 700px; margin: 1rem auto 0; }
+
+.spot-progress {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  list-style: none;
+  margin: 0 0 1.25rem;
+  padding: 0;
+}
+.spot-progress li { position: relative; display: grid; justify-items: center; gap: .45rem; color: var(--color-text-muted); }
+.spot-progress li::before { content: ''; position: absolute; top: 19px; right: 50%; width: 100%; height: 2px; background: var(--card-border); z-index: 0; }
+.spot-progress li:first-child::before { display: none; }
+.spot-progress li > span { position: relative; z-index: 1; display: grid; place-items: center; width: 40px; height: 40px; border: 1px solid var(--card-border); border-radius: 50%; background: #0d1226; font-weight: 800; }
+.spot-progress li.active > span, .spot-progress li.complete > span { border-color: var(--color-accent); background: rgba(6, 182, 212, .18); color: #67e8f9; }
+.spot-progress li.active small, .spot-progress li.complete small { color: var(--color-text); }
+
+.spot-card { border: 1px solid var(--card-border); border-radius: 24px; background: rgba(12, 16, 34, .92); box-shadow: var(--shadow-lg); overflow: hidden; }
+.spot-step { min-height: 430px; padding: clamp(1.25rem, 4vw, 2.5rem); }
+.spot-step-title { display: flex; align-items: center; gap: .9rem; margin-bottom: 1.5rem; }
+.spot-step-title > svg, .spot-step-title > span { display: grid; place-items: center; width: 46px; height: 46px; flex: 0 0 46px; border-radius: 13px; background: rgba(6, 182, 212, .12); color: #67e8f9; font-weight: 800; }
+.spot-step-title small, .spot-review-card > small { color: var(--color-accent); text-transform: uppercase; letter-spacing: .1em; font-weight: 800; }
+.spot-step-title h2 { margin: .1rem 0 0; }
+.spot-note { margin: -.5rem 0 1.25rem; padding: .75rem 1rem; border-left: 3px solid var(--color-accent); background: rgba(6,182,212,.07); font-size: .9rem; }
+
+.spot-form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; }
+.spot-field { display: grid; align-content: start; gap: .4rem; min-width: 0; }
+.spot-field > span { color: var(--color-text-secondary); font-size: .82rem; font-weight: 700; }
+.spot-field input, .spot-field select { width: 100%; min-height: 48px; padding: .75rem .9rem; border: 1px solid var(--card-border); border-radius: 10px; background: rgba(4, 7, 18, .72); color: var(--color-text); }
+.spot-field input:focus, .spot-field select:focus { border-color: var(--color-accent); }
+.spot-field input[readonly] { opacity: .75; }
+.spot-field small { color: var(--color-text-muted); }
+.spot-field em { color: #fca5a5; font-size: .8rem; font-style: normal; }
+.spot-members { display: grid; gap: 1rem; }
+.spot-member-card { padding: 1.1rem; border: 1px solid var(--card-border); border-radius: 16px; background: rgba(255,255,255,.025); }
+.spot-member-card h3 { margin-bottom: 1rem; font-size: 1rem; color: #67e8f9; }
+
+.spot-payment-grid { display: grid; grid-template-columns: 1fr minmax(220px, 300px); gap: 1rem; align-items: stretch; }
+.spot-amount, .spot-qr { display: grid; align-content: center; justify-items: start; padding: 1.25rem; border: 1px solid var(--card-border); border-radius: 16px; background: rgba(255,255,255,.025); }
+.spot-amount strong { margin: .25rem 0; color: #6ee7b7; font-size: clamp(2rem, 6vw, 3.5rem); }
+.spot-qr { justify-items: center; color: var(--color-text-secondary); text-decoration: none; }
+.spot-qr img { width: min(220px, 100%); aspect-ratio: 1; object-fit: contain; border-radius: 12px; background: white; }
+.spot-payment-fields { margin-top: 1rem; }
+.spot-file-button { display: flex; align-items: center; gap: .6rem; min-height: 48px; padding: .7rem .9rem; border: 1px dashed var(--color-accent); border-radius: 10px; color: #67e8f9; cursor: pointer; overflow-wrap: anywhere; }
+.spot-file-button input { position: absolute; width: 1px; height: 1px; opacity: 0; }
+.spot-proof-preview { grid-column: 1 / -1; width: min(440px, 100%); max-height: 340px; object-fit: contain; border-radius: 12px; background: #050711; }
+
+.spot-review-grid, .spot-review-members { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .9rem; }
+.spot-review-members { margin-top: .9rem; }
+.spot-review-card { padding: 1rem; border: 1px solid var(--card-border); border-radius: 14px; background: rgba(255,255,255,.025); overflow-wrap: anywhere; }
+.spot-review-card p { font-size: .9rem; }
+.spot-error-banner { margin: .75rem 0 1rem; padding: .85rem 1rem; border: 1px solid rgba(248,113,113,.35); border-radius: 10px; background: rgba(248,113,113,.09); color: #fecaca; }
+
+.spot-actions { position: sticky; bottom: 0; display: flex; justify-content: space-between; gap: 1rem; padding: 1rem clamp(1.25rem, 4vw, 2.5rem); border-top: 1px solid var(--card-border); background: rgba(10, 14, 30, .96); backdrop-filter: blur(16px); }
+.spot-primary-button, .spot-secondary-button { display: inline-flex; align-items: center; justify-content: center; gap: .5rem; min-height: 48px; padding: .75rem 1.15rem; border-radius: 10px; font-weight: 800; cursor: pointer; text-decoration: none; }
+.spot-primary-button { border: 1px solid transparent; background: var(--color-accent); color: #061018; }
+.spot-primary-button:disabled { opacity: .55; cursor: wait; }
+.spot-secondary-button { border: 1px solid var(--card-border); background: transparent; color: var(--color-text); }
+
+.spot-success { width: min(680px, 100%); margin: 3rem auto 0; padding: clamp(1.5rem, 6vw, 3rem); border: 1px solid rgba(16,185,129,.35); border-radius: 24px; background: rgba(12, 25, 29, .9); text-align: center; }
+.spot-success > svg { width: 72px; height: 72px; margin-bottom: 1rem; color: #34d399; }
+.spot-success > div { display: grid; gap: .2rem; margin: 1rem 0; padding: 1rem; border: 1px solid var(--card-border); border-radius: 12px; }
+.spot-success > div strong { font-size: 1.25rem; color: #6ee7b7; overflow-wrap: anywhere; }
+.spot-success .spot-primary-button { margin-top: 1rem; }
+
+@media (max-width: 680px) {
+  .spot-page { padding: 6rem .75rem 1.5rem; }
+  .spot-progress li small { font-size: .68rem; }
+  .spot-progress li > span { width: 34px; height: 34px; }
+  .spot-progress li::before { top: 16px; }
+  .spot-step { min-height: 0; padding: 1.1rem; }
+  .spot-form-grid, .spot-payment-grid, .spot-review-grid, .spot-review-members { grid-template-columns: 1fr; }
+  .spot-actions { padding: .85rem 1rem; }
+  .spot-actions button { min-width: 44%; }
+}
+
+@media (max-width: 360px) {
+  .spot-progress li small { font-size: .58rem; letter-spacing: -.02em; }
+  .spot-actions { align-items: stretch; flex-direction: column-reverse; }
+  .spot-actions > span { display: none; }
+  .spot-actions button { width: 100%; }
+}

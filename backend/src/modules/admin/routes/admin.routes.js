@@ -41,6 +41,18 @@ import {
   updateTeamStatusValidation,
   updateUserStatusValidation,
 } from "../validators/admin.validator.js";
+import {
+  confirmSpotRegistration,
+  getSpotPaymentScreenshot,
+  getSpotRegistration,
+  listSpotRegistrations,
+  updateSpotRegistration,
+} from "../../spotRegistrations/controllers/spotRegistration.controller.js";
+import {
+  listSpotRegistrationsValidation,
+  spotIdValidation,
+} from "../../spotRegistrations/validators/spotRegistration.validator.js";
+import { uploadPaymentScreenshot } from "../../../middleware/upload.middleware.js";
 
 const router = Router();
 
@@ -54,6 +66,17 @@ router.get("/audit-logs", listAuditLogsValidation, validateRequest, listAuditLog
 router.get("/teams", listTeamsValidation, validateRequest, listTeams);
 router.get("/offline-registrations", listOfflineRegistrationsValidation, validateRequest, listOfflineRegistrations);
 router.get("/offline-registrations/:teamId", legacyTeamIdValidation, validateRequest, getOfflineRegistrationDetails);
+router.get("/spot-registrations", listSpotRegistrationsValidation, validateRequest, listSpotRegistrations);
+router.get("/spot-registrations/:id", spotIdValidation, validateRequest, getSpotRegistration);
+router.get("/spot-registrations/:id/payment-screenshot", spotIdValidation, validateRequest, getSpotPaymentScreenshot);
+router.patch(
+  "/spot-registrations/:id",
+  spotIdValidation,
+  validateRequest,
+  uploadPaymentScreenshot.single("paymentScreenshot"),
+  updateSpotRegistration
+);
+router.post("/spot-registrations/:id/confirm", spotIdValidation, validateRequest, confirmSpotRegistration);
 router.get("/team/:id", teamIdValidation, validateRequest, getTeamDetails);
 router.get("/teams/:teamId", legacyTeamIdValidation, validateRequest, getTeamDetails);
 router.put("/team/:id", teamIdValidation, validateRequest, updateAdminTeamDetails);

@@ -477,6 +477,43 @@ export const api = {
     });
   },
 
+  // Public Spot Registration APIs (no participant account required)
+  async getSpotPaymentInstructions(teamSize) {
+    return request('/spot-registrations/payment-instructions', { params: { teamSize } });
+  },
+
+  async submitSpotRegistration(payload) {
+    const form = new FormData();
+    const { paymentScreenshot, ...registration } = payload;
+    form.append('payload', JSON.stringify(registration));
+    form.append('paymentScreenshot', paymentScreenshot);
+    return request('/spot-registrations', { method: 'POST', body: form, isFormData: true });
+  },
+
+  async getAdminSpotRegistrations(params) {
+    return request('/admin/spot-registrations', { params });
+  },
+
+  async getAdminSpotRegistration(id) {
+    return request(`/admin/spot-registrations/${id}`);
+  },
+
+  async updateAdminSpotRegistration(id, payload) {
+    const form = new FormData();
+    const { paymentScreenshot, ...registration } = payload;
+    form.append('payload', JSON.stringify(registration));
+    if (paymentScreenshot instanceof File) form.append('paymentScreenshot', paymentScreenshot);
+    return request(`/admin/spot-registrations/${id}`, { method: 'PATCH', body: form, isFormData: true });
+  },
+
+  async confirmAdminSpotRegistration(id) {
+    return request(`/admin/spot-registrations/${id}/confirm`, { method: 'POST' });
+  },
+
+  async getAdminSpotPaymentScreenshot(id, fallbackName = 'spot-payment-screenshot') {
+    return fetchProtectedBlob(`/admin/spot-registrations/${id}/payment-screenshot`, fallbackName);
+  },
+
   async submitInquiry(payload) {
     return request('/inquiry', {
       method: 'POST',

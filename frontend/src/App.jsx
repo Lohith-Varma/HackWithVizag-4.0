@@ -17,6 +17,7 @@ import AdminPortal from './pages/AdminPortal';
 import Dashboard from './pages/Dashboard';
 import Registration from './pages/Registration';
 import OfflineRegistration from './pages/OfflineRegistration';
+import SpotRegistration from './pages/SpotRegistration';
 import { loadCurrentUser } from './utils/registrationStorage';
 import './App.css';
 
@@ -30,6 +31,7 @@ const routes = {
   '#coming-soon': 'registration',
   '#admin': 'admin',
   '#offline-registration': 'offline-registration',
+  '#spot-registration': 'spot-registration',
 };
 
 function getCurrentRoute() {
@@ -46,6 +48,7 @@ function getCurrentRoute() {
   }
   if (hash.startsWith('#dashboard')) return 'dashboard';
   if (hash.startsWith('#offline-registration')) return 'offline-registration';
+  if (hash.startsWith('#spot-registration')) return 'spot-registration';
   if (hash.startsWith('#auth') || hash.startsWith('#login')) return 'auth';
 
   const path = window.location.pathname.toLowerCase();
@@ -61,6 +64,7 @@ function getCurrentRoute() {
   }
   if (path.startsWith('/dashboard')) return 'dashboard';
   if (path.startsWith('/offline-registration')) return 'offline-registration';
+  if (path.startsWith('/spot-registration')) return 'spot-registration';
   if (path.startsWith('/auth') || path.startsWith('/login')) return 'auth';
 
   return routes[window.location.hash] || 'landing';
@@ -105,6 +109,7 @@ export default function App() {
       if (!currentUser) return <Auth />;
       return <OfflineRegistration />;
     }
+    if (route === 'spot-registration') return <SpotRegistration />;
     if (route === 'registration') {
       if (!currentUser) return <Auth />;
       return <Registration />;
