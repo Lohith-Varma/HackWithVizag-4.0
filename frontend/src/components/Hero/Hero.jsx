@@ -90,7 +90,7 @@ export default function Hero() {
   const regDeadline = eventConfig?.registrationEndDate
     ? new Date(eventConfig.registrationEndDate).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
     : 'September 20, 2026';
-  const spotRegistrationMessage = 'Spot registrations are now open — you can directly register your team.';
+  const spotRegistrationMessage = '📢 IMPORTANT: Participants registering after 19th September should register for Spot Registration. Existing participants can Login and continue their registration process.';
 
   return (
     <section id="home" className="hero-section">
@@ -199,9 +199,9 @@ export default function Hero() {
           </motion.div>
 
           <motion.div variants={itemVariants} className="hero-ctas">
-            <a href="#register" className="btn-hero-primary">
+            {/* <a href="#register" className="btn-hero-primary">
               Register Now <FiArrowRight />
-            </a>
+            </a> */}
             <a href="#spot-registration" className="btn-hero-spot">
               Spot Registration <FiArrowRight />
             </a>

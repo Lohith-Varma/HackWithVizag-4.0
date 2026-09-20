@@ -5,7 +5,7 @@ import './AdminSpotRegistrations.css';
 
 const currency = new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 });
 const date = (value) => value ? new Intl.DateTimeFormat('en-IN', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value)) : '—';
-const emptyMember = () => ({ name: '', email: '', phone: '', collegeName: '' });
+const emptyMember = () => ({ name: '', email: '', phone: '', registrationId: '', department: '', collegeName: '' });
 
 export default function AdminSpotRegistrations({ onToast }) {
   const [items, setItems] = useState([]);
@@ -120,7 +120,7 @@ export default function AdminSpotRegistrations({ onToast }) {
       </div>
 
       <form className="spot-admin-toolbar" onSubmit={(event) => { event.preventDefault(); load(1); }}>
-        <label><FiSearch /><span className="sr-only">Search Spot Registrations</span><input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Registration, team, college, leader, email or UTR" /></label>
+        <label><FiSearch /><span className="sr-only">Search Spot Registrations</span><input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Registration, student ID, department, team, email or UTR" /></label>
         <select value={status} onChange={(e) => setStatus(e.target.value)} aria-label="Filter by status"><option value="">All statuses</option><option value="SPOT_SUBMITTED">Pending</option><option value="SPOT_CONFIRMED">Confirmed</option></select>
         <button type="submit" className="primary-action">Search</button>
       </form>
@@ -168,7 +168,7 @@ export default function AdminSpotRegistrations({ onToast }) {
 
 function Status({ value }) { return <span className={`spot-status ${value === 'SPOT_CONFIRMED' ? 'confirmed' : 'pending'}`}>{value}</span>; }
 function Empty({ icon, text }) { return <div className="spot-admin-empty">{icon}<p>{text}</p></div>; }
-function Info({ person, title = 'Team Leader' }) { return <article className="spot-person"><small>{title}</small><strong>{person.name}</strong><a href={`mailto:${person.email}`}>{person.email}</a><span>{person.phone}</span><span>{person.collegeName}</span></article>; }
+function Info({ person, title = 'Team Leader' }) { return <article className="spot-person"><small>{title}</small><strong>{person.name}</strong><a href={`mailto:${person.email}`}>{person.email}</a><span>{person.phone}</span><span>Registration ID: {person.registrationId || '—'}</span><span>Department: {person.department || '—'}</span><span>{person.collegeName}</span></article>; }
 
 function EditForm({ value, busy, onChange, onLeader, onMember, onTeamSize, onCancel, onSubmit }) {
   return <form className="spot-admin-edit" onSubmit={onSubmit}>
@@ -187,5 +187,5 @@ function EditForm({ value, busy, onChange, onLeader, onMember, onTeamSize, onCan
 }
 
 function ParticipantFields({ title, value, onChange }) {
-  return <fieldset className="spot-edit-participant"><legend>{title}</legend><div className="spot-edit-grid"><label><span>Name</span><input required value={value.name} onChange={(e) => onChange('name', e.target.value)} /></label><label><span>Email</span><input required type="email" value={value.email} onChange={(e) => onChange('email', e.target.value)} /></label><label><span>Phone</span><input required type="text" value={value.phone} onChange={(e) => onChange('phone', e.target.value)} /></label><label><span>College</span><input required value={value.collegeName} onChange={(e) => onChange('collegeName', e.target.value)} /></label></div></fieldset>;
+  return <fieldset className="spot-edit-participant"><legend>{title}</legend><div className="spot-edit-grid"><label><span>Name</span><input required value={value.name} onChange={(e) => onChange('name', e.target.value)} /></label><label><span>Email</span><input required type="email" value={value.email} onChange={(e) => onChange('email', e.target.value)} /></label><label><span>Phone</span><input required type="text" value={value.phone} onChange={(e) => onChange('phone', e.target.value)} /></label><label><span>Registration ID</span><input required value={value.registrationId || ''} onChange={(e) => onChange('registrationId', e.target.value)} /></label><label><span>Department</span><input required value={value.department || ''} onChange={(e) => onChange('department', e.target.value)} /></label><label><span>College</span><input required value={value.collegeName} onChange={(e) => onChange('collegeName', e.target.value)} /></label></div></fieldset>;
 }

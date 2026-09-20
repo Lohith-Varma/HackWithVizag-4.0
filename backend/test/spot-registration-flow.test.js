@@ -12,10 +12,10 @@ const validPayload = (phones = ["123", "000", "anything-entered-by-user"]) => ({
   teamName: "Disposable Spot Team",
   collegeName: "NSRIT",
   teamSize: 3,
-  teamLeader: { name: "Leader", email: "spot-leader@example.com", phone: phones[0], collegeName: "NSRIT" },
+  teamLeader: { name: "Leader", email: "spot-leader@example.com", phone: phones[0], registrationId: "REG-001", department: "CSE", collegeName: "NSRIT" },
   members: [
-    { name: "Member 2", email: "spot-member2@example.com", phone: phones[1], collegeName: "NSRIT" },
-    { name: "Member 3", email: "spot-member3@example.com", phone: phones[2], collegeName: "nsrit" },
+    { name: "Member 2", email: "spot-member2@example.com", phone: phones[1], registrationId: "REG-002", department: "ECE", collegeName: "NSRIT" },
+    { name: "Member 3", email: "spot-member3@example.com", phone: phones[2], registrationId: "REG-003", department: "IT", collegeName: "nsrit" },
   ],
   utr: "TEST-UTR",
 });
@@ -41,6 +41,23 @@ test("Spot Registration enforces only phone presence, not phone format", () => {
   });
 });
 
+test("Spot Registration requires registration ID and department for every participant", () => {
+  for (const [path, mutate] of [
+    ["teamLeader.registrationId", (payload) => { payload.teamLeader.registrationId = ""; }],
+    ["teamLeader.department", (payload) => { payload.teamLeader.department = ""; }],
+    ["members.0.registrationId", (payload) => { payload.members[0].registrationId = ""; }],
+    ["members.1.department", (payload) => { payload.members[1].department = ""; }],
+  ]) {
+    const payload = validPayload();
+    mutate(payload);
+    assert.throws(() => validateSpotRegistration(payload), (error) => {
+      assert.equal(error.statusCode, 422);
+      assert.equal(error.errors[0].field, path);
+      return true;
+    });
+  }
+});
+
 test("Spot Registration enforces 3 or 4 members and one college", () => {
   assert.throws(() => validateSpotRegistration({ ...validPayload(), teamSize: 2 }), (error) => error.errors[0].message.includes("Team size must be 3 or 4"));
   assert.throws(() => validateSpotRegistration({ ...validPayload(), teamSize: 4 }), (error) => error.errors[0].message.includes("requires 3 additional members"));
@@ -63,6 +80,8 @@ test("Spot Registration schema has separate lifecycle, server fee fields, and a 
   assert.deepEqual(SpotRegistration.schema.path("teamSize").options.enum, [3, 4]);
   assert.equal(SpotRegistration.schema.path("teamLeader.phone").options.match, undefined);
   assert.equal(SpotRegistration.schema.path("teamLeader.phone").options.maxlength, undefined);
+  assert.equal(SpotRegistration.schema.path("teamLeader.registrationId").options.required[0], true);
+  assert.equal(SpotRegistration.schema.path("teamLeader.department").options.required[0], true);
   const participantIndex = SpotRegistration.schema.indexes().find(([fields]) => fields.participantEmails === 1);
   assert.equal(participantIndex?.[1]?.unique, true);
   assert.equal(SpotRegistration.collection.name, "spotregistrations");

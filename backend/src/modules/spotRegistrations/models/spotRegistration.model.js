@@ -12,6 +12,8 @@ const participantSchema = new mongoose.Schema(
     },
     // Spot Registration intentionally treats phone as free-form required text.
     phone: { type: String, required: [true, "Participant phone is required"], trim: true },
+    registrationId: { type: String, required: [true, "Participant registration ID is required"], trim: true, maxlength: 80 },
+    department: { type: String, required: [true, "Participant department is required"], trim: true, maxlength: 120 },
     collegeName: { type: String, required: [true, "Participant college is required"], trim: true, maxlength: 160 },
   },
   { _id: false }

@@ -24,6 +24,8 @@ const participant = (value, field, collegeName) => {
     email,
     // Required-field check only. Do not normalize or validate phone format.
     phone: requireText(value?.phone, `${field}.phone`, "Participant phone"),
+    registrationId: requireText(value?.registrationId, `${field}.registrationId`, "Participant registration ID", 80),
+    department: requireText(value?.department, `${field}.department`, "Participant department", 120),
     collegeName: requireText(value?.collegeName ?? collegeName, `${field}.collegeName`, "Participant college", 160),
   };
 };

@@ -134,6 +134,10 @@ export const listSpotRegistrations = asyncHandler(async (req, res) => {
       { collegeName: regex },
       { "teamLeader.name": regex },
       { "teamLeader.email": regex },
+      { "teamLeader.registrationId": regex },
+      { "teamLeader.department": regex },
+      { "members.registrationId": regex },
+      { "members.department": regex },
       { "payment.utr": regex },
     ];
   }

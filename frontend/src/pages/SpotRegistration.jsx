@@ -4,14 +4,14 @@ import { api, buildAssetUrl } from '../services/api';
 import './SpotRegistration.css';
 
 const steps = ['Team', 'Leader', 'Members', 'Payment', 'Review'];
-const emptyMember = () => ({ name: '', email: '', phone: '', collegeName: '' });
+const emptyMember = () => ({ name: '', email: '', phone: '', registrationId: '', department: '', collegeName: '' });
 const currency = new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 });
 
 export default function SpotRegistration() {
   const [step, setStep] = useState(0);
   const [form, setForm] = useState({
     teamName: '', collegeName: '', teamSize: 3,
-    teamLeader: { name: '', email: '', phone: '' },
+    teamLeader: { name: '', email: '', phone: '', registrationId: '', department: '' },
     members: [emptyMember(), emptyMember()],
     utr: '', paymentScreenshot: null,
   });
@@ -78,14 +78,16 @@ export default function SpotRegistration() {
       if (!form.collegeName.trim()) next.collegeName = 'College is required.';
     }
     if (index === 1) {
-      ['name', 'email', 'phone'].forEach((field) => {
-        if (!String(form.teamLeader[field] || '').trim()) next[`teamLeader.${field}`] = `${field === 'name' ? 'Name' : field === 'email' ? 'Email' : 'Phone'} is required.`;
+      ['name', 'email', 'phone', 'registrationId', 'department'].forEach((field) => {
+        const labels = { name: 'Name', email: 'Email', phone: 'Phone', registrationId: 'Registration ID', department: 'Department' };
+        if (!String(form.teamLeader[field] || '').trim()) next[`teamLeader.${field}`] = `${labels[field]} is required.`;
       });
     }
     if (index === 2) {
       form.members.forEach((member, memberIndex) => {
-        ['name', 'email', 'phone', 'collegeName'].forEach((field) => {
-          if (!String(member[field] || '').trim()) next[`members.${memberIndex}.${field}`] = `${field === 'collegeName' ? 'College' : field[0].toUpperCase() + field.slice(1)} is required.`;
+        ['name', 'email', 'phone', 'registrationId', 'department', 'collegeName'].forEach((field) => {
+          const labels = { name: 'Name', email: 'Email', phone: 'Phone', registrationId: 'Registration ID', department: 'Department', collegeName: 'College' };
+          if (!String(member[field] || '').trim()) next[`members.${memberIndex}.${field}`] = `${labels[field]} is required.`;
         });
         if (member.collegeName.trim().toLowerCase() !== form.collegeName.trim().toLowerCase()) {
           next[`members.${memberIndex}.collegeName`] = 'All participants must belong to the team college.';
@@ -184,6 +186,8 @@ export default function SpotRegistration() {
                 <Field label="Leader Name" error={errors['teamLeader.name']}><input value={form.teamLeader.name} onChange={(e) => setLeader('name', e.target.value)} required /></Field>
                 <Field label="Leader Email" error={errors['teamLeader.email']}><input type="email" value={form.teamLeader.email} onChange={(e) => setLeader('email', e.target.value)} required /></Field>
                 <Field label="Leader Phone" error={errors['teamLeader.phone']}><input type="text" value={form.teamLeader.phone} onChange={(e) => setLeader('phone', e.target.value)} required /></Field>
+                <Field label="Leader Registration ID" error={errors['teamLeader.registrationId']}><input value={form.teamLeader.registrationId} onChange={(e) => setLeader('registrationId', e.target.value)} required /></Field>
+                <Field label="Leader Department" error={errors['teamLeader.department']}><input value={form.teamLeader.department} onChange={(e) => setLeader('department', e.target.value)} required /></Field>
                 <Field label="College"><input value={form.collegeName} readOnly /></Field>
               </div>
             </div>
@@ -201,6 +205,8 @@ export default function SpotRegistration() {
                       <Field label="Name" error={errors[`members.${index}.name`]}><input value={member.name} onChange={(e) => setMember(index, 'name', e.target.value)} required /></Field>
                       <Field label="Email" error={errors[`members.${index}.email`]}><input type="email" value={member.email} onChange={(e) => setMember(index, 'email', e.target.value)} required /></Field>
                       <Field label="Phone" error={errors[`members.${index}.phone`]}><input type="text" value={member.phone} onChange={(e) => setMember(index, 'phone', e.target.value)} required /></Field>
+                      <Field label="Registration ID" error={errors[`members.${index}.registrationId`]}><input value={member.registrationId} onChange={(e) => setMember(index, 'registrationId', e.target.value)} required /></Field>
+                      <Field label="Department" error={errors[`members.${index}.department`]}><input value={member.department} onChange={(e) => setMember(index, 'department', e.target.value)} required /></Field>
                       <Field label="College" error={errors[`members.${index}.collegeName`]}><input value={member.collegeName} onChange={(e) => setMember(index, 'collegeName', e.target.value)} required /></Field>
                     </div>
                   </article>
@@ -238,7 +244,7 @@ export default function SpotRegistration() {
                 <Review title="Payment"><p><b>{payment?.expectedAmount ? currency.format(payment.expectedAmount) : 'Unavailable'}</b></p><p>UTR: {form.utr}</p><p>{form.paymentScreenshot?.name}</p></Review>
               </div>
               <div className="spot-review-members">
-                {allParticipants.map((person) => <Review key={person.email} title={person.role}><p><b>{person.name}</b></p><p>{person.email}</p><p>{person.phone}</p><p>{person.collegeName}</p></Review>)}
+                {allParticipants.map((person) => <Review key={person.email} title={person.role}><p><b>{person.name}</b></p><p>{person.email}</p><p>{person.phone}</p><p>ID: {person.registrationId}</p><p>{person.department}</p><p>{person.collegeName}</p></Review>)}
               </div>
               {errors.submit && <p className="spot-error-banner">{errors.submit}</p>}
             </div>
