@@ -78,7 +78,7 @@ const request = async (path, { method = 'GET', body, params, headers, isFormData
   return payload?.data ?? payload;
 };
 
-const downloadFile = async (path, params) => {
+const downloadFile = async (path, params, fallbackName) => {
   const response = await fetch(buildUrl(path, params), {
     credentials: 'include',
   });
@@ -90,7 +90,7 @@ const downloadFile = async (path, params) => {
 
   const blob = await response.blob();
   const disposition = response.headers.get('content-disposition') || '';
-  const filename = getDownloadFilename(disposition, `hack-with-vizag-export.${params?.format || 'csv'}`);
+  const filename = getDownloadFilename(disposition, fallbackName || `hack-with-vizag-export.${params?.format || 'csv'}`);
   const url = window.URL.createObjectURL(blob);
   const link = document.createElement('a');
   link.href = url;
@@ -455,6 +455,10 @@ export const api = {
 
   async exportAdminData(params) {
     return downloadFile('/admin/export', params);
+  },
+
+  async downloadPaidTeamsReport(source = 'all') {
+    return downloadFile('/admin/reports/paid-teams/export', { source }, 'Hack_With_Vizag_4.0_Paid_Teams.xlsx');
   },
 
   // Offline Registration APIs

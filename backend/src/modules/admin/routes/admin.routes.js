@@ -8,6 +8,7 @@ import {
   downloadTeamSubmission,
   serveAdminTeamDocument,
   exportAdminData,
+  exportPaidTeamsWorkbook,
   getAnalytics,
   getAdminOverview,
   getDashboard,
@@ -29,6 +30,7 @@ import {
 } from "../controllers/admin.controller.js";
 import {
   exportValidation,
+  paidTeamsExportValidation,
   legacyTeamIdValidation,
   deleteTeamValidation,
   deleteUserValidation,
@@ -91,6 +93,7 @@ router.get("/team/:id/documents/:type", teamIdValidation, validateRequest, serve
 router.get("/teams/:teamId/documents/:type", legacyTeamIdValidation, validateRequest, serveAdminTeamDocument);
 router.get("/submissions", listSubmissionsValidation, validateRequest, listSubmissions);
 router.get("/analytics", getAnalytics);
+router.get("/reports/paid-teams/export", paidTeamsExportValidation, validateRequest, exportPaidTeamsWorkbook);
 router.get("/export", exportValidation, validateRequest, exportAdminData);
 router.patch("/team/:id/status", teamIdValidation, updateTeamStatusValidation, validateRequest, updateTeamStatus);
 router.patch("/team/:id/remarks", teamIdValidation, updateTeamRemarksValidation, validateRequest, updateTeamRemarks);

@@ -13,6 +13,11 @@ import ApiError from "../../../utils/apiError.js";
 import { sendSuccess } from "../../../utils/apiResponse.js";
 import { downloadStoredFile } from "../../../services/storage.service.js";
 import { sendFileBuffer } from "../../../utils/fileResponse.js";
+import { getPaidTeamsReportData } from "../services/paidTeamsReport.service.js";
+import {
+  buildPaidTeamsFilename,
+  buildPaidTeamsWorkbookBuffer,
+} from "../services/paidTeamsWorkbook.service.js";
 
 const STATUS_TO_SUBMISSION_STATUS = {
   pending: "draft",
@@ -855,6 +860,28 @@ export const exportAdminData = asyncHandler(async (req, res) => {
   res.setHeader("Content-Type", "text/csv; charset=utf-8");
   res.setHeader("Content-Disposition", `attachment; filename="${scope}-export.csv"`);
   return res.status(200).send(toCsv(headers, rows));
+});
+
+export const exportPaidTeamsWorkbook = asyncHandler(async (req, res) => {
+  const source = req.query.source || "all";
+  const generatedAt = new Date();
+
+  try {
+    const teams = await getPaidTeamsReportData({ source });
+    const buffer = await buildPaidTeamsWorkbookBuffer({ teams, source, generatedAt });
+    const filename = buildPaidTeamsFilename(source, generatedAt);
+
+    res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+    res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
+    res.setHeader("Content-Length", buffer.length);
+    res.setHeader("Cache-Control", "no-store");
+    return res.status(200).send(buffer);
+  } catch (error) {
+    console.error(
+      `[paid-teams-export] source=${source} success=false message=${error?.message || "unknown"}`
+    );
+    throw new ApiError(500, "Unable to generate the Excel report. Please try again.");
+  }
 });
 
 export const deleteTeam = asyncHandler(async (req, res) => {

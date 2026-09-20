@@ -101,3 +101,10 @@ export const exportValidation = [
       return true;
     }),
 ];
+
+export const paidTeamsExportValidation = [
+  query("source")
+    .optional()
+    .isIn(["all", "offline", "spot"])
+    .withMessage("Source must be all, offline, or spot"),
+];

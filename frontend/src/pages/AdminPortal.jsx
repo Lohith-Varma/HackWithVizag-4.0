@@ -43,6 +43,7 @@ import {
 import Toast from '../components/Toast/Toast';
 import AdminOfflineRegistrations from '../components/AdminOfflineRegistrations/AdminOfflineRegistrations';
 import AdminSpotRegistrations from '../components/AdminSpotRegistrations/AdminSpotRegistrations';
+import AdminPaidRegistrationsReport from '../components/AdminPaidRegistrationsReport/AdminPaidRegistrationsReport';
 import { api } from '../services/api';
 import './AdminPortal.css';
 
@@ -90,6 +91,7 @@ const navItems = [
   { id: 'auditLogs', label: 'Audit Logs', icon: FiShield },
   { id: 'offlineRegistrations', label: 'Offline Registered Teams', icon: FiFileText },
   { id: 'spotRegistrations', label: 'Spot Registrations', icon: FiUsers },
+  { id: 'paidReports', label: 'Paid Reports', icon: FiDownload },
   { id: 'leads', label: 'Notification Leads', icon: FiBell },
   { id: 'problemStatements', label: 'Problem Statements', icon: FiLayers },
   { id: 'eventConfig', label: 'Event Config', icon: FiCalendar },
@@ -217,6 +219,7 @@ const getInitialViewFromHash = () => {
   if (hash.includes('leads') || hash.includes('notifications')) return 'leads';
   if (hash.includes('offline-registrations') || hash.includes('offlineregistrations')) return 'offlineRegistrations';
   if (hash.includes('spot-registrations') || hash.includes('spotregistrations')) return 'spotRegistrations';
+  if (hash.includes('paid-reports') || hash.includes('paidreports') || hash.includes('reports')) return 'paidReports';
   if (hash.includes('teams')) return 'teams';
   if (hash.includes('users')) return 'users';
   if (hash.includes('audit-logs') || hash.includes('auditlogs')) return 'auditLogs';
@@ -806,6 +809,7 @@ export default function AdminPortal() {
       auditLogs: 'audit-logs',
       offlineRegistrations: 'offline-registrations',
       spotRegistrations: 'spot-registrations',
+      paidReports: 'paid-reports',
       review: 'review',
     };
     const slug = slugMap[viewId] || viewId;
@@ -1155,6 +1159,10 @@ export default function AdminPortal() {
 
         {activeView === 'spotRegistrations' && (
           <AdminSpotRegistrations onToast={setToast} />
+        )}
+
+        {activeView === 'paidReports' && (
+          <AdminPaidRegistrationsReport onToast={setToast} />
         )}
 
         {/* REVIEW WORKSPACE 3-COLUMN VIEW (Primary Working Interface) */}

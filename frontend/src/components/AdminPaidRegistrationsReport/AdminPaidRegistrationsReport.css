@@ -1,0 +1,117 @@
+.paid-report-view {
+  padding: 1.5rem;
+}
+
+.paid-report-header p {
+  color: var(--text-secondary, #94a3b8);
+  margin: 0.4rem 0 0;
+}
+
+.paid-report-card {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) minmax(260px, 340px);
+  gap: 1.25rem;
+  align-items: start;
+  margin-top: 1.5rem;
+  padding: 1.5rem;
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  border-radius: 16px;
+  background: var(--surface-card, rgba(15, 23, 42, 0.72));
+}
+
+.paid-report-card-icon {
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  color: #38bdf8;
+  background: rgba(56, 189, 248, 0.12);
+  font-size: 1.4rem;
+}
+
+.paid-report-copy h3 {
+  margin: 0;
+}
+
+.paid-report-copy p {
+  max-width: 680px;
+  margin: 0.5rem 0 1rem;
+  color: var(--text-secondary, #94a3b8);
+}
+
+.paid-report-inclusions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+
+.paid-report-inclusions span {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-height: 36px;
+  padding: 0.45rem 0.7rem;
+  border-radius: 999px;
+  color: #cbd5e1;
+  background: rgba(148, 163, 184, 0.1);
+  font-size: 0.82rem;
+}
+
+.paid-report-inclusions svg {
+  color: #34d399;
+}
+
+.paid-report-controls {
+  display: grid;
+  gap: 0.6rem;
+}
+
+.paid-report-controls label {
+  font-weight: 700;
+}
+
+.paid-report-controls select {
+  width: 100%;
+  min-height: 44px;
+  padding: 0.65rem 0.75rem;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  border-radius: 10px;
+  color: inherit;
+  background: var(--surface-card, #111827);
+}
+
+.paid-report-controls small {
+  min-height: 2.4em;
+  color: var(--text-secondary, #94a3b8);
+}
+
+.paid-report-controls button {
+  min-height: 44px;
+  justify-content: center;
+}
+
+@media (max-width: 900px) {
+  .paid-report-card {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .paid-report-controls {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 560px) {
+  .paid-report-view {
+    padding: 1rem;
+  }
+
+  .paid-report-card {
+    grid-template-columns: 1fr;
+    padding: 1rem;
+  }
+
+  .paid-report-controls {
+    grid-column: auto;
+  }
+}
