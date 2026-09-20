@@ -132,7 +132,7 @@ export default function Navbar() {
 
           <div className="navbar-actions">
             <a href="#register" className="btn-register" onClick={(e) => handleLinkClick(e, '#register')}>
-              Register Now
+              Login
             </a>
             <button
               type="button"
