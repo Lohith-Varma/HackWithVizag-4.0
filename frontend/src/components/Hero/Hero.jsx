@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { FiCalendar, FiMapPin, FiAward, FiArrowRight } from 'react-icons/fi';
+import { FiAlertTriangle, FiCalendar, FiMapPin, FiAward, FiArrowRight } from 'react-icons/fi';
 import { api } from '../../services/api';
 import './Hero.css';
 
@@ -87,10 +87,11 @@ export default function Hero() {
   };
 
   const eventName = eventConfig?.eventName || 'HACK WITH VIZAG 4.0';
+  const isPostponed = true;
   const regDeadline = eventConfig?.registrationEndDate
     ? new Date(eventConfig.registrationEndDate).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
     : 'September 20, 2026';
-  const spotRegistrationMessage = '📢 IMPORTANT: Participants registering after 19th September should register for Spot Registration. Existing participants can Login and continue their registration process.';
+  const spotRegistrationMessage = '🚨 Hack With Vizag 4.0 is postponed due to the Red Alert and severe weather. Revised dates will be announced soon.';
 
   return (
     <section id="home" className="hero-section">
@@ -114,7 +115,37 @@ export default function Hero() {
             <span className="badge-text">Vizag's Grandest Tech Hackathon</span>
           </motion.div>
 
-          
+          <motion.aside
+            variants={itemVariants}
+            className="hero-announcement"
+            role="alert"
+            aria-labelledby="postponement-title"
+          >
+            <div className="announcement-heading">
+              <span className="announcement-icon" aria-hidden="true">
+                <FiAlertTriangle />
+              </span>
+              <div>
+                <span className="announcement-eyebrow">🚨 Important Announcement</span>
+                <h2 id="postponement-title">Hackathon <strong>Postponed</strong></h2>
+              </div>
+            </div>
+
+            <div className="announcement-copy">
+              <p>
+                Due to the Red Alert issued by the Government in view of the approaching cyclone and severe weather
+                conditions, Hack With Vizag 4.0 has been <strong>POSTPONED</strong>.
+              </p>
+              <p>The safety of all participants, mentors, judges, and organizers is our top priority.</p>
+              <p className="announcement-date"><FiCalendar aria-hidden="true" /> Revised dates will be announced soon.</p>
+              <p>We sincerely apologize for any inconvenience caused and appreciate your understanding and cooperation.</p>
+            </div>
+
+            <div className="announcement-signoff">
+              <strong>Stay safe. Stay updated. 🌧️</strong>
+              <span>— Team Hack With Vizag 4.0</span>
+            </div>
+          </motion.aside>
 
           <motion.h1 variants={itemVariants} className="hero-title">
             {eventName.toUpperCase()}
@@ -128,9 +159,11 @@ export default function Hero() {
             <div className="hero-meta-item">
               <FiCalendar className="meta-icon icon-primary" />
               <div>
-                <span className="meta-label">Date</span>
+                <span className="meta-label">{isPostponed ? 'Revised Date' : 'Date'}</span>
                 <span className="meta-value">
-                  {eventConfig?.hackathonDate
+                  {isPostponed
+                    ? 'To be announced'
+                    : eventConfig?.hackathonDate
                     ? new Date(eventConfig.hackathonDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
                     : 'Sept 25, 2026'}
                 </span>
@@ -155,8 +188,10 @@ export default function Hero() {
           </motion.div>
 
           <motion.div variants={itemVariants} className="hero-timer-container">
-            <h4 className="timer-title">Hacking Begins In</h4>
-            {timeLeft.isExpired ? (
+            <h4 className="timer-title">{isPostponed ? 'Schedule Update' : 'Hacking Begins In'}</h4>
+            {isPostponed ? (
+              <div className="timer-postponed">Event Postponed</div>
+            ) : timeLeft.isExpired ? (
               <div className="timer-live">HACKING IS LIVE!</div>
             ) : (
               <div className="timer-blocks">
@@ -182,7 +217,11 @@ export default function Hero() {
               </div>
             )}
             <div className="registration-deadline">
-              Registrations <strong>Open Now</strong> • Deadline: <strong>Extended to {regDeadline}</strong>
+              {isPostponed ? (
+                <>Registration and event schedule updates will be <strong>shared soon</strong>.</>
+              ) : (
+                <>Registrations <strong>Open Now</strong> • Deadline: <strong>Extended to {regDeadline}</strong></>
+              )}
             </div>
           </motion.div>
 
@@ -202,8 +241,8 @@ export default function Hero() {
             {/* <a href="#register" className="btn-hero-primary">
               Register Now <FiArrowRight />
             </a> */}
-            <a href="#spot-registration" className="btn-hero-spot">
-              Spot Registration <FiArrowRight />
+            <a href="#spot-registration" className="btn-hero-spot btn-hero-postponed">
+              Registration Updates <FiArrowRight />
             </a>
             <a
               href="#themes"
