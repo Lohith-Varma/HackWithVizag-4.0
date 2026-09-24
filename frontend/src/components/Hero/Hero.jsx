@@ -241,9 +241,9 @@ export default function Hero() {
             {/* <a href="#register" className="btn-hero-primary">
               Register Now <FiArrowRight />
             </a> */}
-            <a href="#spot-registration" className="btn-hero-spot btn-hero-postponed">
+            {/* <a href="#spot-registration" className="btn-hero-spot btn-hero-postponed">
               Registration Updates <FiArrowRight />
-            </a>
+            </a> */}
             <a
               href="#themes"
               className="btn-hero-secondary"
