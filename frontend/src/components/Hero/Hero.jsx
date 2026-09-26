@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { FiAlertTriangle, FiCalendar, FiMapPin, FiAward, FiArrowRight } from 'react-icons/fi';
+import { FiAlertTriangle, FiCalendar, FiMapPin, FiAward } from 'react-icons/fi';
 import { api } from '../../services/api';
 import './Hero.css';
 
@@ -29,8 +29,7 @@ export default function Hero() {
     };
   }, []);
 
-  const targetDate = new Date('2026-09-25T09:00:00').getTime();
-  // eventConfig?.hackathonDate ? new Date(eventConfig.hackathonDate).getTime() : new Date('2026-09-25T09:00:00').getTime();
+  const targetDate = new Date('2026-10-09T09:00:00').getTime();
 
   useEffect(() => {
     const calculateTimeLeft = () => {
@@ -87,11 +86,8 @@ export default function Hero() {
   };
 
   const eventName = eventConfig?.eventName || 'HACK WITH VIZAG 4.0';
-  const isPostponed = true;
-  const regDeadline = eventConfig?.registrationEndDate
-    ? new Date(eventConfig.registrationEndDate).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
-    : 'September 20, 2026';
-  const spotRegistrationMessage = '🚨 Hack With Vizag 4.0 is postponed due to the Red Alert and severe weather. Revised dates will be announced soon.';
+  const rescheduledDates = 'October 9–10, 2026';
+  const dateAnnouncementMessage = `🚨 Rescheduled dates announced • Hack With Vizag 4.0 • ${rescheduledDates}`;
 
   return (
     <section id="home" className="hero-section">
@@ -118,31 +114,37 @@ export default function Hero() {
           <motion.aside
             variants={itemVariants}
             className="hero-announcement"
-            role="alert"
-            aria-labelledby="postponement-title"
+            role="status"
+            aria-labelledby="rescheduled-title"
           >
             <div className="announcement-heading">
               <span className="announcement-icon" aria-hidden="true">
                 <FiAlertTriangle />
               </span>
               <div>
-                <span className="announcement-eyebrow">🚨 Important Announcement</span>
-                <h2 id="postponement-title">Hackathon <strong>Postponed</strong></h2>
+                <span className="announcement-eyebrow">🚨 Rescheduled Dates Announced</span>
+                <h2 id="rescheduled-title">Hack With Vizag 4.0</h2>
               </div>
+            </div>
+
+            <div className="announcement-date-highlight">
+              <FiCalendar aria-hidden="true" />
+              <span className="announcement-date-text">
+                <span>October</span>
+                <span>9–10, 2026</span>
+              </span>
             </div>
 
             <div className="announcement-copy">
               <p>
-                Due to the Red Alert issued by the Government in view of the approaching cyclone and severe weather
-                conditions, Hack With Vizag 4.0 has been <strong>POSTPONED</strong>.
+                The hackathon was previously postponed due to the Red Alert issued by the Government in view of the
+                cyclone and severe weather conditions.
               </p>
-              <p>The safety of all participants, mentors, judges, and organizers is our top priority.</p>
-              <p className="announcement-date"><FiCalendar aria-hidden="true" /> Revised dates will be announced soon.</p>
-              <p>We sincerely apologize for any inconvenience caused and appreciate your understanding and cooperation.</p>
+              <p className="announcement-return"><strong>We’re back and ready to hack! 🎉</strong></p>
+              <p>Get ready to build, innovate, and compete at Hack With Vizag 4.0.</p>
             </div>
 
             <div className="announcement-signoff">
-              <strong>Stay safe. Stay updated. 🌧️</strong>
               <span>— Team Hack With Vizag 4.0</span>
             </div>
           </motion.aside>
@@ -159,14 +161,8 @@ export default function Hero() {
             <div className="hero-meta-item">
               <FiCalendar className="meta-icon icon-primary" />
               <div>
-                <span className="meta-label">{isPostponed ? 'Revised Date' : 'Date'}</span>
-                <span className="meta-value">
-                  {isPostponed
-                    ? 'To be announced'
-                    : eventConfig?.hackathonDate
-                    ? new Date(eventConfig.hackathonDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
-                    : 'Sept 25, 2026'}
-                </span>
+                <span className="meta-label">Rescheduled Dates</span>
+                <span className="meta-value">{rescheduledDates}</span>
               </div>
             </div>
             <div className="hero-meta-item">
@@ -188,10 +184,8 @@ export default function Hero() {
           </motion.div>
 
           <motion.div variants={itemVariants} className="hero-timer-container">
-            <h4 className="timer-title">{isPostponed ? 'Schedule Update' : 'Hacking Begins In'}</h4>
-            {isPostponed ? (
-              <div className="timer-postponed">Event Postponed</div>
-            ) : timeLeft.isExpired ? (
+            <h4 className="timer-title">Hacking Begins In</h4>
+            {timeLeft.isExpired ? (
               <div className="timer-live">HACKING IS LIVE!</div>
             ) : (
               <div className="timer-blocks">
@@ -217,11 +211,7 @@ export default function Hero() {
               </div>
             )}
             <div className="registration-deadline">
-              {isPostponed ? (
-                <>Registration and event schedule updates will be <strong>shared soon</strong>.</>
-              ) : (
-                <>Registrations <strong>Open Now</strong> • Deadline: <strong>Extended to {regDeadline}</strong></>
-              )}
+              Rescheduled event • <strong>{rescheduledDates}</strong>
             </div>
           </motion.div>
 
@@ -229,21 +219,15 @@ export default function Hero() {
             variants={itemVariants}
             className="spot-registration-ticker"
             role="status"
-            aria-label={spotRegistrationMessage}
+            aria-label={dateAnnouncementMessage}
           >
             <div className="spot-registration-ticker-track" aria-hidden="true">
-              <span>{spotRegistrationMessage}</span>
-              <span>{spotRegistrationMessage}</span>
+              <span>{dateAnnouncementMessage}</span>
+              <span>{dateAnnouncementMessage}</span>
             </div>
           </motion.div>
 
           <motion.div variants={itemVariants} className="hero-ctas">
-            {/* <a href="#register" className="btn-hero-primary">
-              Register Now <FiArrowRight />
-            </a> */}
-            {/* <a href="#spot-registration" className="btn-hero-spot btn-hero-postponed">
-              Registration Updates <FiArrowRight />
-            </a> */}
             <a
               href="#themes"
               className="btn-hero-secondary"

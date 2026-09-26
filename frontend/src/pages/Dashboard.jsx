@@ -378,7 +378,7 @@ export default function Dashboard() {
   const upcomingDates = [
     { label: 'Screening Results', date: 'Aug 25, 2026', icon: FiClock, status: 'upcoming' },
     { label: 'Offline Registration Opens', date: 'Sept 1, 2026', icon: FiMapPin, status: 'upcoming' },
-    { label: 'Hackathon Grand Event', date: 'Sept 25-26, 2026', icon: FiCalendar, status: 'event' },
+    { label: 'Hackathon Grand Event', date: 'Oct 9–10, 2026', icon: FiCalendar, status: 'event' },
   ];
 
   const getYoutubeEmbedUrl = (url) => {

@@ -20,7 +20,6 @@ import './RegistrationSoon.css';
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export default function RegistrationSoon() {
-  const [eventConfig, setEventConfig] = useState(null);
   const [email, setEmail] = useState('');
   const [name, setName] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -40,26 +39,8 @@ export default function RegistrationSoon() {
     seconds: 0,
   });
 
-  // Fetch event configuration if available
-  useEffect(() => {
-    let isMounted = true;
-    api.getEventConfig()
-      .then((res) => {
-        if (isMounted && res.event) {
-          setEventConfig(res.event);
-        }
-      })
-      .catch(() => { });
-
-    return () => {
-      isMounted = false;
-    };
-  }, []);
-
-  // Set target date for registration announcement countdown (or hackathon date fallback)
-  const targetDate = eventConfig?.hackathonDate
-    ? new Date(eventConfig.hackathonDate).getTime()
-    : new Date('2026-09-25T09:00:00').getTime();
+  // Official rescheduled hackathon start date.
+  const targetDate = new Date('2026-10-09T09:00:00').getTime();
 
   useEffect(() => {
     const calculateTimeLeft = () => {
