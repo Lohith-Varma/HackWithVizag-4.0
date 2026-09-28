@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { FiAlertTriangle, FiCalendar, FiMapPin, FiAward } from 'react-icons/fi';
+import { FiAlertTriangle, FiCalendar, FiMapPin, FiAward, FiArrowRight } from 'react-icons/fi';
 import { api } from '../../services/api';
 import './Hero.css';
 
@@ -228,6 +228,9 @@ export default function Hero() {
           </motion.div>
 
           <motion.div variants={itemVariants} className="hero-ctas">
+            <a href="#spot-registration" className="btn-hero-primary">
+              Register Here <FiArrowRight />
+            </a>
             <a
               href="#themes"
               className="btn-hero-secondary"
