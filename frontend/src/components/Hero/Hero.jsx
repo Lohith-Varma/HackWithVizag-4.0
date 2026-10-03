@@ -29,7 +29,7 @@ export default function Hero() {
     };
   }, []);
 
-  const targetDate = new Date('2026-10-09T09:00:00').getTime();
+  const targetDate = new Date('2026-10-10T09:00:00').getTime();
 
   useEffect(() => {
     const calculateTimeLeft = () => {
@@ -86,7 +86,7 @@ export default function Hero() {
   };
 
   const eventName = eventConfig?.eventName || 'HACK WITH VIZAG 4.0';
-  const rescheduledDates = 'October 9–10, 2026';
+  const rescheduledDates = 'October 10–11, 2026';
   const dateAnnouncementMessage = `🚨 Rescheduled dates announced • Hack With Vizag 4.0 • ${rescheduledDates}`;
 
   return (
@@ -131,7 +131,7 @@ export default function Hero() {
               <FiCalendar aria-hidden="true" />
               <span className="announcement-date-text">
                 <span>October</span>
-                <span>9–10, 2026</span>
+                <span>10–11, 2026</span>
               </span>
             </div>
 

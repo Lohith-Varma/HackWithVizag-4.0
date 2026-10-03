@@ -157,13 +157,13 @@ export const ELIGIBILITY_DATA = [
   {
     id: 'elig-1',
     title: 'Eligible Institutions',
-    desc: 'Open to all recognized engineering and science colleges across the nation.',
+    desc: 'Open to all recognized engineering colleges across the nation.',
     icon: 'FiBookOpen'
   },
   {
     id: 'elig-2',
     title: 'Course & Stream',
-    desc: 'B.Tech or equivalent technology backgrounds are eligible.',
+    desc: 'B.Tech students of any stream are eligible.',
     icon: 'FiCode'
   },
   {

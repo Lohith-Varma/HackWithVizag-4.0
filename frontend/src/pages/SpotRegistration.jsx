@@ -152,8 +152,8 @@ export default function SpotRegistration() {
       <section className="spot-shell">
         <header className="spot-header">
           <span className="section-subtitle">Direct Offline Event Entry</span>
-          <h1>Spot Registration</h1>
-          <p>No account or project submission is required. Register your 3- or 4-member team and submit the payment proof.</p>
+          <h1>Direct Registration</h1>
+          <p>No account or project submission is required. Register your 3- or 4-member team and submit.</p>
         </header>
 
         <ol className="spot-progress" aria-label="Registration progress">
@@ -181,7 +181,7 @@ export default function SpotRegistration() {
           {step === 1 && (
             <div className="spot-step">
               <div className="spot-step-title"><span>02</span><div><small>Step 2</small><h2>Team Leader</h2></div></div>
-              <p className="spot-note">Phone is stored exactly as entered and is not format-validated.</p>
+              <p className="spot-note">Phone is stored exactly as entered</p>
               <div className="spot-form-grid">
                 <Field label="Leader Name" error={errors['teamLeader.name']}><input value={form.teamLeader.name} onChange={(e) => setLeader('name', e.target.value)} required /></Field>
                 <Field label="Leader Email" error={errors['teamLeader.email']}><input type="email" value={form.teamLeader.email} onChange={(e) => setLeader('email', e.target.value)} required /></Field>
