@@ -228,9 +228,9 @@ export default function Hero() {
           </motion.div>
 
           <motion.div variants={itemVariants} className="hero-ctas">
-            <a href="#spot-registration" className="btn-hero-primary">
+            {/* <a href="#spot-registration" className="btn-hero-primary">
               Register Here <FiArrowRight />
-            </a>
+            </a> */}
             <a
               href="#themes"
               className="btn-hero-secondary"

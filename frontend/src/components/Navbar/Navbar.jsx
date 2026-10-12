@@ -130,7 +130,7 @@ export default function Navbar() {
             })}
           </ul>
 
-          <div className="navbar-actions">
+          {/* <div className="navbar-actions">
             <a href="#register" className="btn-register" onClick={(e) => handleLinkClick(e, '#register')}>
               Login
             </a>
@@ -144,7 +144,7 @@ export default function Navbar() {
             >
               {isMobileMenuOpen ? <FiX size={24} /> : <FiMenu size={24} />}
             </button>
-          </div>
+          </div> */}
         </div>
       </nav>
 
